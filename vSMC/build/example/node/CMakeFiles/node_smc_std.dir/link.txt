@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/node_smc_std.dir/src/node_smc_std.cpp.o  -o node_smc_std -lrt -lpthread 

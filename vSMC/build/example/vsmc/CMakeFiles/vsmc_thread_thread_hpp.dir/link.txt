@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_thread_thread_hpp.dir/src/vsmc_thread_thread.cpp.o  -o vsmc_thread_thread_hpp -lrt -lpthread 

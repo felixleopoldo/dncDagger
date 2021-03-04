@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_math_math_hpp.dir/src/vsmc_math_math.cpp.o  -o vsmc_math_math_hpp -lrt 

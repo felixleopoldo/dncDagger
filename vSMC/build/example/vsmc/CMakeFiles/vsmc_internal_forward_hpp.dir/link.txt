@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_internal_forward_hpp.dir/src/vsmc_internal_forward.cpp.o  -o vsmc_internal_forward_hpp -lrt 

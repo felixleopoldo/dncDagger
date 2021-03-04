@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  ordersmc:
+    image: ordersmc:4.8
+    build:
+      context: .
+      #dockerfile: ./Dockerfile

@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_internal_traits_hpp.dir/src/vsmc_internal_traits.cpp.o  -o vsmc_internal_traits_hpp -lrt 

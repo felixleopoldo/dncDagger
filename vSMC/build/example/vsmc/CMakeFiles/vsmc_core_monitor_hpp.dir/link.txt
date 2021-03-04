@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_core_monitor_hpp.dir/src/vsmc_core_monitor.cpp.o  -o vsmc_core_monitor_hpp -lrt 

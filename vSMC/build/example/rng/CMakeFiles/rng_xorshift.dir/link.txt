@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/rng_xorshift.dir/src/rng_xorshift.cpp.o  -o rng_xorshift -lrt 

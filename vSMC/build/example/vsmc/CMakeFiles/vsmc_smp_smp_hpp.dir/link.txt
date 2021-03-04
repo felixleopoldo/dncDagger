@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_smp_smp_hpp.dir/src/vsmc_smp_smp.cpp.o  -o vsmc_smp_smp_hpp -lrt -fopenmp -lpthread 

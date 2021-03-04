@@ -1,0 +1,325 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_c4895/fast"
+/usr/bin/make -f CMakeFiles/cmTC_c4895.dir/build.make CMakeFiles/cmTC_c4895.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_c4895.dir/CheckSymbolExists.c.o
+/usr/bin/cc -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS -I/workspaces/order_smc/vSMC/include   -o CMakeFiles/cmTC_c4895.dir/CheckSymbolExists.c.o   -c /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_c4895
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c4895.dir/link.txt --verbose=1
+/usr/bin/cc      -rdynamic CMakeFiles/cmTC_c4895.dir/CheckSymbolExists.c.o  -o cmTC_c4895 
+/usr/bin/ld: CMakeFiles/cmTC_c4895.dir/CheckSymbolExists.c.o: in function `main':
+CheckSymbolExists.c:(.text+0x16): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_c4895.dir/build.make:87: cmTC_c4895] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_c4895/fast] Error 2
+
+File /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_945b5/fast"
+/usr/bin/make -f CMakeFiles/cmTC_945b5.dir/build.make CMakeFiles/cmTC_945b5.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_945b5.dir/CheckFunctionExists.c.o
+/usr/bin/cc -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS  -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_945b5.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.13/Modules/CheckFunctionExists.c
+Linking C executable cmTC_945b5
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_945b5.dir/link.txt --verbose=1
+/usr/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_945b5.dir/CheckFunctionExists.c.o  -o cmTC_945b5 -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[1]: *** [CMakeFiles/cmTC_945b5.dir/build.make:87: cmTC_945b5] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_945b5/fast] Error 2
+
+
+Performing C++ SOURCE FILE Test CILK_FOUND failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_ade44/fast"
+/usr/bin/make -f CMakeFiles/cmTC_ade44.dir/build.make CMakeFiles/cmTC_ade44.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_ade44.dir/src.cxx.o
+/usr/local/bin/c++  -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS -I/workspaces/order_smc/vSMC/include  -DCILK_FOUND -fcilkplus   -o CMakeFiles/cmTC_ade44.dir/src.cxx.o -c /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:10: fatal error: cilk/cilk.h: No such file or directory
+   32 | #include <cilk/cilk.h>
+      |          ^~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_ade44.dir/build.make:66: CMakeFiles/cmTC_ade44.dir/src.cxx.o] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_ade44/fast] Error 2
+
+Return value: 1
+Source file was:
+//============================================================================
+// vSMC/cmake/FindCilk.cpp
+//----------------------------------------------------------------------------
+//                         vSMC: Scalable Monte Carlo
+//----------------------------------------------------------------------------
+// Copyright (c) 2013,2014, Yan Zhou
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//============================================================================
+
+#include <cilk/cilk.h>
+#include <cilk/reducer_opadd.h>
+
+int main ()
+{
+    unsigned N = 1000;
+    unsigned C = (N * (N - 1)) / 2;
+    cilk::reducer_opadd<unsigned> T;
+    cilk_for(unsigned i = 0; i != N; ++i) T += i;
+
+    return T.get_value() != C;
+}
+
+Performing C++ SOURCE FILE Test CILK_FOUND failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_eaff8/fast"
+/usr/bin/make -f CMakeFiles/cmTC_eaff8.dir/build.make CMakeFiles/cmTC_eaff8.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_eaff8.dir/src.cxx.o
+/usr/local/bin/c++  -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS -I/workspaces/order_smc/vSMC/include  -DCILK_FOUND   -o CMakeFiles/cmTC_eaff8.dir/src.cxx.o -c /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:10: fatal error: cilk/cilk.h: No such file or directory
+   32 | #include <cilk/cilk.h>
+      |          ^~~~~~~~~~~~~
+compilation terminated.
+make[1]: *** [CMakeFiles/cmTC_eaff8.dir/build.make:66: CMakeFiles/cmTC_eaff8.dir/src.cxx.o] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_eaff8/fast] Error 2
+
+Return value: 1
+Source file was:
+//============================================================================
+// vSMC/cmake/FindCilk.cpp
+//----------------------------------------------------------------------------
+//                         vSMC: Scalable Monte Carlo
+//----------------------------------------------------------------------------
+// Copyright (c) 2013,2014, Yan Zhou
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//============================================================================
+
+#include <cilk/cilk.h>
+#include <cilk/reducer_opadd.h>
+
+int main ()
+{
+    unsigned N = 1000;
+    unsigned C = (N * (N - 1)) / 2;
+    cilk::reducer_opadd<unsigned> T;
+    cilk_for(unsigned i = 0; i != N; ++i) T += i;
+
+    return T.get_value() != C;
+}
+
+Performing C++ SOURCE FILE Test AESNI_FOUND failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_888ed/fast"
+/usr/bin/make -f CMakeFiles/cmTC_888ed.dir/build.make CMakeFiles/cmTC_888ed.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_888ed.dir/src.cxx.o
+/usr/local/bin/c++  -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS -I/workspaces/order_smc/vSMC/include  -DAESNI_FOUND   -o CMakeFiles/cmTC_888ed.dir/src.cxx.o -c /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx
+In file included from /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx: In function 'int main()':
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:42:9: error: '__builtin_ia32_aeskeygenassist128' needs isa option -maes -msse2
+   42 |     m = _mm_aeskeygenassist_si128(m, 1);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+make[1]: *** [CMakeFiles/cmTC_888ed.dir/build.make:66: CMakeFiles/cmTC_888ed.dir/src.cxx.o] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_888ed/fast] Error 2
+
+Return value: 1
+Source file was:
+//============================================================================
+// vSMC/cmake/FindAESNI.cpp
+//----------------------------------------------------------------------------
+//                         vSMC: Scalable Monte Carlo
+//----------------------------------------------------------------------------
+// Copyright (c) 2013,2014, Yan Zhou
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//============================================================================
+
+#include <wmmintrin.h>
+#include <iostream>
+
+int main ()
+{
+    __m128i m = _mm_setzero_si128();
+    char a[32];
+    for (std::size_t i = 0; i != 32; ++i)
+        a[i] = static_cast<char>(i);
+    m = _mm_loadu_si128(reinterpret_cast<const __m128i *>(a));
+    m = _mm_aeskeygenassist_si128(m, 1);
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(a), m);
+    std::cout << a[0] << std::endl;
+}
+
+Performing C++ SOURCE FILE Test RDRAND_FOUND failed with the following output:
+Change Dir: /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_02d83/fast"
+/usr/bin/make -f CMakeFiles/cmTC_02d83.dir/build.make CMakeFiles/cmTC_02d83.dir/build
+make[1]: Entering directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_02d83.dir/src.cxx.o
+/usr/local/bin/c++  -DVSMC_HAS_C99LIB_MATH=1 -DVSMC_HAS_CXX11LIB_CMATH=1 -DVSMC_HAS_CXX11LIB_FUNCTIONAL=1 -DVSMC_HAS_CXX11LIB_RANDOM=1 -D__CL_ENABLE_EXCEPTIONS -D__STDC_CONSTANT_MACROS -I/workspaces/order_smc/vSMC/include  -DRDRAND_FOUND   -o CMakeFiles/cmTC_02d83.dir/src.cxx.o -c /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx
+In file included from /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:
+/usr/local/lib/gcc/x86_64-linux-gnu/10.2.0/include/immintrin.h: In function 'int main()':
+/usr/local/lib/gcc/x86_64-linux-gnu/10.2.0/include/immintrin.h:171:1: error: inlining failed in call to 'always_inline' 'int _rdrand16_step(short unsigned int*)': target specific option mismatch
+  171 | _rdrand16_step (unsigned short *__P)
+      | ^~~~~~~~~~~~~~
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:43:19: note: called from here
+   43 |     _rdrand16_step(&r16);
+      |     ~~~~~~~~~~~~~~^~~~~~
+In file included from /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:
+/usr/local/lib/gcc/x86_64-linux-gnu/10.2.0/include/immintrin.h:178:1: error: inlining failed in call to 'always_inline' 'int _rdrand32_step(unsigned int*)': target specific option mismatch
+  178 | _rdrand32_step (unsigned int *__P)
+      | ^~~~~~~~~~~~~~
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:44:19: note: called from here
+   44 |     _rdrand32_step(&r32);
+      |     ~~~~~~~~~~~~~~^~~~~~
+In file included from /workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:32:
+/usr/local/lib/gcc/x86_64-linux-gnu/10.2.0/include/immintrin.h:277:1: error: inlining failed in call to 'always_inline' 'int _rdrand64_step(long long unsigned int*)': target specific option mismatch
+  277 | _rdrand64_step (unsigned long long *__P)
+      | ^~~~~~~~~~~~~~
+/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp/src.cxx:45:19: note: called from here
+   45 |     _rdrand64_step(&r64);
+      |     ~~~~~~~~~~~~~~^~~~~~
+make[1]: *** [CMakeFiles/cmTC_02d83.dir/build.make:66: CMakeFiles/cmTC_02d83.dir/src.cxx.o] Error 1
+make[1]: Leaving directory '/workspaces/order_smc/vSMC/build/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_02d83/fast] Error 2
+
+Return value: 1
+Source file was:
+//============================================================================
+// vSMC/cmake/FindRDRAND.cpp
+//----------------------------------------------------------------------------
+//                         vSMC: Scalable Monte Carlo
+//----------------------------------------------------------------------------
+// Copyright (c) 2013,2014, Yan Zhou
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//   Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+//   Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//============================================================================
+
+#include <immintrin.h>
+
+int main ()
+{
+    unsigned short r16;
+    unsigned r32;
+#if defined(_MSC_VER) || defined(__INTEL_COMPILER)
+    unsigned __int64 r64;
+#else
+    unsigned long long r64;
+#endif
+    _rdrand16_step(&r16);
+    _rdrand32_step(&r32);
+    _rdrand64_step(&r64);
+
+    return 0;
+}
+

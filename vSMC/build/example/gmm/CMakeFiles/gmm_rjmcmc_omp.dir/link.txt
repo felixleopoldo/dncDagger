@@ -1,0 +1,1 @@
+/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/gmm_rjmcmc_omp.dir/src/gmm_rjmcmc_omp.cpp.o  -o gmm_rjmcmc_omp -lrt -fopenmp 
