@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/node_smc_omp.dir/src/node_smc_omp.cpp.o  -o node_smc_omp -lrt -fopenmp 

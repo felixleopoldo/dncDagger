@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_smp_adapter_hpp.dir/src/vsmc_smp_adapter.cpp.o  -o vsmc_smp_adapter_hpp -lrt 

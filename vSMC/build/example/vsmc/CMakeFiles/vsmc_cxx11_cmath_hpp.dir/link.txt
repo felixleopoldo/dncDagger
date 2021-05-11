@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_cxx11_cmath_hpp.dir/src/vsmc_cxx11_cmath.cpp.o  -o vsmc_cxx11_cmath_hpp -lrt 

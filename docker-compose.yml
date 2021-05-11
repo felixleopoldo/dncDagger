@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   ordersmc:
-    image: ordersmc:4.8
+    image: ordersmc:gcc
     build:
       context: .
-      #dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.ubuntu

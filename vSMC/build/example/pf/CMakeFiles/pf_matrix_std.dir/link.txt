@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/pf_matrix_std.dir/src/pf_matrix_std.cpp.o  -o pf_matrix_std -lrt -lpthread 

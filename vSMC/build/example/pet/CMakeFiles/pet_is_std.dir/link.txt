@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/pet_is_std.dir/src/pet_is_std.cpp.o  -o pet_is_std -lrt -lpthread 

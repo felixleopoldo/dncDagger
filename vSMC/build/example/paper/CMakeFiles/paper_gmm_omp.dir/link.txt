@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/paper_gmm_omp.dir/src/paper_gmm_omp.cpp.o  -o paper_gmm_omp -lrt -fopenmp 

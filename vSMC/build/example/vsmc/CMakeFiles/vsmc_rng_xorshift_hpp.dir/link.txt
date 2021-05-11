@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_rng_xorshift_hpp.dir/src/vsmc_rng_xorshift.cpp.o  -o vsmc_rng_xorshift_hpp -lrt 

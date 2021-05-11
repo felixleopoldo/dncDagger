@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/cpuid_info.dir/src/cpuid_info.cpp.o  -o cpuid_info -lrt 

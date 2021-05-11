@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_utility_cpuid_hpp.dir/src/vsmc_utility_cpuid.cpp.o  -o vsmc_utility_cpuid_hpp -lrt 

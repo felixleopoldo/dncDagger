@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_smp_backend_seq_hpp.dir/src/vsmc_smp_backend_seq.cpp.o  -o vsmc_smp_backend_seq_hpp -lrt 

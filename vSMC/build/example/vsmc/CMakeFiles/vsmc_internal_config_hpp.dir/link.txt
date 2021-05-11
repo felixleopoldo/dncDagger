@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_internal_config_hpp.dir/src/vsmc_internal_config.cpp.o  -o vsmc_internal_config_hpp -lrt 

@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/node_pmcmc_std.dir/src/node_pmcmc_std.cpp.o  -o node_pmcmc_std -lrt -lpthread 

@@ -8,15 +8,15 @@ sumsc <- function(scores) {
   return(log(sum(exp(scores - max(scores)))) + max(scores))
 }
 
-data <- read.csv("myasiandata.csv")[-1,]
+#data <- read.csv("myasiandata.csv")[-1,]
+data <- read.csv("myhepar2data2000.csv")[-1,]
 
-myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
+myscore <- scoreparameters(scoretype = "bdecat", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 
-startorder <- c(1, 4, 7, 2, 6, 3, 8, 5)
+startorder <- seq(dim(data)[2])
 
 startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
-startspace[8, 3] <- 1
-startspace
+
 scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = FALSE, startspace = startspace)
 scoretable
 

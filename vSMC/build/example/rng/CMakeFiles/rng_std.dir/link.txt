@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/rng_std.dir/src/rng_std.cpp.o  -o rng_std -lrt 

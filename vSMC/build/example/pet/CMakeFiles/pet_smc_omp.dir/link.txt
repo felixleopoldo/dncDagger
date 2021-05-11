@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/pet_smc_omp.dir/src/pet_smc_omp.cpp.o  -o pet_smc_omp -lrt -fopenmp 

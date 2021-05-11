@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_utility_aligned_memory_hpp.dir/src/vsmc_utility_aligned_memory.cpp.o  -o vsmc_utility_aligned_memory_hpp -lrt 

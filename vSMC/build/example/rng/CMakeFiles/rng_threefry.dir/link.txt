@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/rng_threefry.dir/src/rng_threefry.cpp.o  -o rng_threefry -lrt 

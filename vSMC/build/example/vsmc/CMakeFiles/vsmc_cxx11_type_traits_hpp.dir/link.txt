@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/vsmc_cxx11_type_traits_hpp.dir/src/vsmc_cxx11_type_traits.cpp.o  -o vsmc_cxx11_type_traits_hpp -lrt 

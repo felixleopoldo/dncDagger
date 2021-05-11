@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/paper_pf.dir/src/paper_pf.cpp.o  -o paper_pf -lrt 

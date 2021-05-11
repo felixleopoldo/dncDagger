@@ -1,1 +1,0 @@
-/usr/local/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/gmm_pmcmc_std.dir/src/gmm_pmcmc_std.cpp.o  -o gmm_pmcmc_std -lrt -lpthread 
