@@ -10,7 +10,7 @@ sumsc <- function(scores) {
 
 #data <- read.csv("myasiandata.csv")[-1,]
 data <- read.csv("myhepar2data2000.csv")[-1,]
-
+vars = names(data)
 myscore <- scoreparameters(scoretype = "bdecat", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 
 startorder <- seq(dim(data)[2])
@@ -19,6 +19,12 @@ startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
 
 scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = FALSE, startspace = startspace)
 scoretable
+
+##omcmcres <- orderMCMC(myscore, scoreout = TRUE, plus1=TRUE, MAP = FALSE, startorder = startorder, scoretable = scoretable, startspace = startspace)
+#omcmcres$maxorder
+#omcmcres
+#smcorder = c(64, 22, 62, 47, 60, 58, 36, 26, 67, 63, 69, 6, 45, 53, 16, 25, 18, 39, 7, 38, 41, 32, 2, 20, 61, 68, 19, 28, 44, 1, 24, 31, 5, 37, 4, 0, 46, 40, 17, 33, 30, 54, 50, 35, 49, 57, 23, 52, 11, 66, 12, 9, 8, 29, 56, 27, 48, 13, 59, 21, 51, 34, 55, 43, 3, 15, 14, 65, 42, 10) +1
+#vars[smcorder]
 
 res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = FALSE, startorder = startorder, scoretable = scoretable, startspace = startspace)
 res

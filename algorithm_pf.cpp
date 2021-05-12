@@ -140,12 +140,13 @@ int main(int argc, char **argv)
     // PrintVector(orderscores);
 
     // std::cout << "New scoring " << std::endl;
+    std::map<cache_keytype, std::vector<double>> cache;
     OrderScoring scoring(aliases,
                          numparents,
                          rowmaps_backwards,
                          plus1listsparents,
                          scoretable,
-                         bannedscore);
+                         bannedscore, cache);
 
     // std::vector<double> orderscores2 = scoring.score(order, 4, 4);
     // PrintVector(orderscores2);

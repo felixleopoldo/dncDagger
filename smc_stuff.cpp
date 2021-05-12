@@ -2,6 +2,8 @@
 #include <RInside.h>
 #include <cassert>
 
+typedef std::tuple<std::vector<int>, int, int> cache_keytype;
+
 class OrderScoring
 {
 private:
@@ -13,6 +15,7 @@ private:
     std::vector<std::vector<std::vector<double>>> scoretable;
     std::vector<Rcpp::NumericMatrix> scoresmatrices;
     std::vector<int> permy;
+    std::map<cache_keytype, std::vector<double>> cache;
 
 public:
     OrderScoring(
@@ -21,8 +24,12 @@ public:
         std::vector<Rcpp::IntegerVector> rowmaps_backwards,
         std::vector<Rcpp::IntegerVector> plus1listsparents,
         std::vector<std::vector<std::vector<double>>> scoretable,
-        std::vector<Rcpp::NumericMatrix> scoresmatrices) : aliases(aliases), numparents(numparents), rowmaps_backwards(rowmaps_backwards),
-                                                           plus1listsparents(plus1listsparents), scoretable(scoretable), scoresmatrices(scoresmatrices)
+        std::vector<Rcpp::NumericMatrix> scoresmatrices,
+        std::map<cache_keytype, std::vector<double>> cache) : aliases(aliases), numparents(numparents),
+                                                               rowmaps_backwards(rowmaps_backwards),
+                                                               plus1listsparents(plus1listsparents), 
+                                                               scoretable(scoretable), scoresmatrices(scoresmatrices),
+                                                               cache(cache)
 
     {
     }
@@ -30,8 +37,15 @@ public:
     /**
          * Score elements in scorenodes from scorepositions and n_elemens on.
          */
-    std::vector<double> score(const std::vector<int> &scorenodes, const int &from_orderpos, const int &n_elements) const
+    std::vector<double> score(const std::vector<int> &scorenodes, const int &from_orderpos, const int &n_elements) 
     {
+        // If in cache
+        cache_keytype suborder = std::make_tuple(scorenodes, from_orderpos, n_elements);
+        if (cache.count(suborder))
+        {
+            //std::cout << "cache hit" << std::endl;
+            return (cache[suborder]);
+        }
         std::size_t n = scorenodes.size();
         std::vector<double> orderscores(n, 0.0);            // orderscores <- vector("double", n)
         std::vector<std::vector<int>> allowedscorelists(n); // allowedscorelists < -vector("list", n)
@@ -114,6 +128,7 @@ public:
             }
             k++;
         }
+        cache[suborder] = orderscores;
         return (orderscores);
     }
 };
@@ -265,14 +280,14 @@ std::vector<double> dist_from_logprobs(std::vector<double> &log_probs)
  * Score neigborhood of ordering.
  * when the element at index index_of_el_to_insert is inserted at positions 0,..,first_n_elements.
  */
-std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_order_neigh(const OrderScoring &scoring,
+std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_order_neigh( OrderScoring &scoring,
                                                                                         const std::vector<int> &input_order,
                                                                                         const std::vector<double> &nodes_scores,
                                                                                         double input_order_score,
                                                                                         int first_n_elements,
                                                                                         int index_of_el_to_insert, std::default_random_engine generator);
 
-std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_order_neigh(const OrderScoring &scoring,
+std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_order_neigh( OrderScoring &scoring,
                                                                                         const std::vector<int> &input_order,
                                                                                         const std::vector<double> &input_node_scores,
                                                                                         double input_order_score,
@@ -285,6 +300,15 @@ std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_orde
     std::vector<double> node_scores(input_node_scores);
     std::vector<int> order(input_order);
     double order_score(input_order_score);
+
+    //cache_keytype neig_cache_key = std::make_tuple(input_order, input_order_score, index_of_el_to_insert);
+    //typedef std::tuple<std::discrete_distribution<int>, std::vector<std::vector<double> > > dist_nodescores;
+    //std::map<cache_keytype, dist_nodescores > neig_cache;
+    // if(neig_cache.count(neig_cache_key)){
+    //     int pos = neig_cache[neig_cache_key].distribution(generator);
+    //     node_scores = neig_cache[neig_cache_key][pos].nodescores[]
+    //     return (std::make_tuple(order, std::log(neig_dist[insert_pos]), node_scores, order_scores[insert_pos]));
+    // }
 
     int node = order[index_of_el_to_insert];
     move_element(order, index_of_el_to_insert, first_n_elements); // put it in the back
@@ -335,10 +359,6 @@ std::tuple<std::vector<int>, double, std::vector<double>, double> score_sub_orde
         new_node_scores = scoring.score(order, i - 1, 2); // Only need to rescore the swapped nodes
         node_scores[node1] = new_node_scores[node1];
         node_scores[node2] = new_node_scores[node2];
-
-        //node_scores_tmp = scoring.score(order, 0, first_n_elements + 1);
-        //double order_score_check = std::accumulate(node_scores_tmp.begin(), node_scores_tmp.end(), 0.0);
-        ///assert(order_score_check == order_scores[i - 1]);
     }
 
     return (std::make_tuple(order, std::log(neig_dist[insert_pos]), node_scores, order_scores[insert_pos]));
@@ -369,8 +389,8 @@ int rand_int_in_range(std::size_t from, std::size_t to)
     return (from + (std::rand() % (to - from + 1)));
 }
 
-void smc(const OrderScoring &scoring, std::size_t N, std::size_t p);
-void smc(const OrderScoring &scoring, std::size_t N, std::size_t p)
+void smc( OrderScoring &scoring, std::size_t N, std::size_t p);
+void smc( OrderScoring &scoring, std::size_t N, std::size_t p)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -457,8 +477,8 @@ void smc(const OrderScoring &scoring, std::size_t N, std::size_t p)
         log_node_scores_prev = log_node_scores;
         log_order_scores_prev = log_order_scores;
     }
-    
-    int maxElementIndex = std::max_element(norm_w.begin(), norm_w.end()) - norm_w.begin();
+
+    int maxElementIndex = std::max_element(log_order_scores.begin(), log_order_scores.end()) - log_order_scores.begin();
 
     std::map<std::vector<int>, double> orders_probs;
     std::set<std::vector<int>> distinct_orders;
