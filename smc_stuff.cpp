@@ -93,7 +93,7 @@ public:
                 // Sice there new additin is so small I get precision error, sice we get log(1-0.99999999999999) = -inf
                 //double max = std::max(node_scores[node_a], nodeb_as_plus1_score);                                                 // I should use order_scores not node scores here. Or something. This is not right at least.
                 //std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
-                if(std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0) { // -10 is arbitrary
+                if(std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 1) { // -10 is arbitrary
                     // OK
                     //std::cout << "NO RECOMPUTE order score for node" << std::endl;
                     nodea_score = std::log(std::exp(node_scores[node_a]) - std::exp(nodeb_as_plus1_score)); // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
@@ -132,7 +132,7 @@ public:
                 std::swap(ordering[nodea_index], ordering[nodeb_index]);                                // Swap back.
                 double max = std::max(node_scores[node_b], nodea_as_plus1_score);
                 
-                if(std::abs(nodea_as_plus1_score - node_scores[node_b]) > 0) { // -10 is arbitrary
+                if(std::abs(nodea_as_plus1_score - node_scores[node_b]) > 1) { // -10 is arbitrary
                     nodeb_score = std::log(std::exp(node_scores[node_b] - max) + std::exp(nodea_as_plus1_score - max)) + max;
                 } else {
                     std::swap(ordering[nodea_index], ordering[nodeb_index]);
@@ -397,20 +397,15 @@ double score_sub_order_neigh(OrderScoring &scoring,
         //PrintVector(order);
         int node1 = order[i - 1];
         int node2 = order[i];
-
         //std::vector<int> ordertmp(order);
         //std::vector<double> node_scorestmp(node_scores);
         //const auto& [node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, ordertmp, node_scorestmp); // This should update the orderscore directly maybe.
         const auto& [node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, order, node_scores); // This should update the orderscore directly maybe.
         node1_score = node1_scoretmp;
         node2_score = node2_scoretmp;
-
-
         // std::swap(order[i - 1], order[i]);
         // node1_score = scoring.score_pos(order, i);     
         // node2_score = scoring.score_pos(order, i - 1); 
-
-
         double node1_score_diff = node1_score - node_scores[node1];
         double node2_score_diff = node2_score - node_scores[node2];
         order_scores[i - 1] = order_scores[i] + node1_score_diff + node2_score_diff; //- (node_scores[node1] + node_scores[node2]) + (node1_score + node2_score);        
@@ -442,9 +437,27 @@ double score_sub_order_neigh(OrderScoring &scoring,
     {
         int node1 = output_order[i - 1];
         int node2 = output_order[i];
-        std::swap(output_order[i - 1], output_order[i]);
-        node1_score = scoring.score_pos(output_order, i);
-        node2_score = scoring.score_pos(output_order, i - 1);
+
+
+        //std::vector<int> output_ordertmp(output_order);
+        //std::vector<double> output_node_scorestmp(output_node_scores);
+        //const auto& [node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, output_ordertmp, output_node_scorestmp); // This should update the orderscore directly maybe.
+        
+        const auto& [node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, output_order, output_node_scores); // This should update the orderscore directly maybe.
+        node1_score = node1_scoretmp;
+        node2_score = node2_scoretmp;
+        
+    
+
+        //std::swap(output_order[i - 1], output_order[i]);
+        //node1_score = scoring.score_pos(output_order, i);
+        //node2_score = scoring.score_pos(output_order, i - 1);
+            
+        //std::cout << node1_score << "  " << node1_scoretmp << std::endl;
+        //std::cout << node2_score << "  " << node2_scoretmp << std::endl << std::endl;
+        //assert(std::abs(node1_score - node1_scoretmp) < 0.001);
+        //node2_score = node2_scoretmp;
+        
         output_node_scores[node1] = node1_score;
         output_node_scores[node2] = node2_score;
     }
