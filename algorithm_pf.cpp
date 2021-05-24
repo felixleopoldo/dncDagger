@@ -32,8 +32,6 @@
 //#include "algorithm_pf.hpp"
 #include <RInside.h>
 #include "smc_stuff.cpp"
-#include <chrono>
-using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
@@ -53,7 +51,12 @@ int main(int argc, char **argv)
         ++argv;
     }
 
-    std::string r_code = "source(\"felixtestar.R\"); ret";
+    //std::string r_code = "source(\"felixtestar.R\"); ret";
+    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); ret";
+    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+
+    //std::string r_code = "source(\"readtables.R\"); ret";
 
     Rcpp::List ret = R.parseEval(r_code);
 
@@ -78,12 +81,24 @@ int main(int argc, char **argv)
 
     // Read banned score
     Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
-    std::vector<Rcpp::NumericMatrix> bannedscore;
-
+    //std::vector<Rcpp::NumericMatrix> bannedscore;
+    std::vector<std::vector<std::vector<double>>> bannedscore;
     for (std::size_t i = 0; i < p; i++)
     {
         Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(bannedscoreR[i]);
-        bannedscore.push_back(m);
+        //std::vector<std::vector<double>> mat;
+        std::vector<std::vector<double>> mat(m.rows(), std::vector<double>(m.cols()));
+        for (std::size_t j = 0; j < m.rows(); j++){
+            for (std::size_t k = 0; k < m.cols(); k++){
+                mat[j][k] = m(j,k);
+                //NumericVector v = m( _ , j );
+                //std::vector<double> row;
+                //for(auto val: v){
+                //    row.push_back(val);
+                //}
+            }
+        }
+        bannedscore.push_back(mat);
     }
 
     // Read rowmaps_backwards
@@ -106,11 +121,15 @@ int main(int argc, char **argv)
 
     // Read plus1listsparents
     Rcpp::List plus1listsparentsR = Rcpp::as<Rcpp::List>(ret["plus1listsparents"]);
-    std::vector<Rcpp::IntegerVector> plus1listsparents;
+    std::vector<std::vector<int>> plus1listsparents;
     for (std::size_t i = 0; i < p; i++)
     {
         Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(plus1listsparentsR[i]);
-        plus1listsparents.push_back(m);
+        std::vector<int> tmp;
+        for (auto e : m){
+            tmp.push_back(e);
+        }
+        plus1listsparents.push_back(tmp);
     }
 
     std::vector<int> scorepositions(p);
@@ -140,7 +159,8 @@ int main(int argc, char **argv)
     // PrintVector(orderscores);
 
     // std::cout << "New scoring " << std::endl;
-    std::map<cache_keytype, std::vector<double>> cache;
+    //std::map<cache_keytype, std::vector<double>> cache;
+    std::map<cache_keytype3, std::vector<double>> cache;
     OrderScoring scoring(aliases,
                          numparents,
                          rowmaps_backwards,
@@ -180,14 +200,13 @@ int main(int argc, char **argv)
     // move_element(order, node_index, insert_pos);
 
     // PrintVector(order);
-    auto start = high_resolution_clock::now();
+   
     smc(scoring, N, order.size());
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
 
-    // To get the value of duration use the count()
-    // member function on the duration object
-    std::cout << duration.count() << " ms."<< std::endl;
+//    11 21 47 49 20 64  1 24 26 65  0 48 54 68 39 28 61 37 51 34 30 29 55 63 10
+// 15 46 44  6 60 53 25 57  8 43 16 59  5 62 31 35 41 23 52 45 38 58 33 22 40
+// 32  4  9 19 56 42 66 27 12 67 36 13 69 18  3 17 50  2 14  7
+   
     //algorithm_pf(N);
 
     exit(0);
