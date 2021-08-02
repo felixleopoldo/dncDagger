@@ -27,7 +27,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//============================================================================
+// ============================================================================
 
 //#include "algorithm_pf.hpp"
 #include <RInside.h>
@@ -138,28 +138,6 @@ int main(int argc, char **argv)
         scorepositions[i] = i;
     }
 
-    // int nsmall = 4;
-
-    // std::vector<int> sub_order(order.begin() + nsmall, order.end());
-    // std::vector<int> sub_scorepositions(scorepositions.begin() + nsmall, scorepositions.end());
-
-    // std::vector<double>
-    //     orderscores = orderscorePlus1(p,
-    //                                   sub_order,
-    //                                   sub_scorepositions,
-    //                                   aliases,
-    //                                   numparents,
-    //                                   rowmaps_backwards,
-    //                                   plus1listsparents,
-    //                                   scoretable,
-    //                                   bannedscore,
-    //                                   order);
-
-    // PrintVector(order);
-    // PrintVector(orderscores);
-
-    // std::cout << "New scoring " << std::endl;
-    //std::map<cache_keytype, std::vector<double>> cache;
     std::map<cache_keytype3, std::vector<double>> cache;
     OrderScoring scoring(aliases,
                          numparents,
@@ -168,46 +146,91 @@ int main(int argc, char **argv)
                          scoretable,
                          bannedscore, cache);
 
-    // std::vector<double> orderscores2 = scoring.score(order, 4, 4);
-    // PrintVector(orderscores2);
-
-    // int cur_order_length = 4;
-    // int tot_order_length = order.size();
-    // int to = order.size() - 1;
-
     int seed = 1;
     std::srand(seed);
-
-    // int node_index = rand_int_in_range(cur_order_length, to);
-    // std::cout << "node index " << node_index << ", node " << order[node_index] << std::endl;
-
-    // double order_score = std::accumulate(orderscores2.begin(), orderscores2.end(), 0);
-    // std::vector<double> neig_scoring = score_sub_order_neigh(scoring, order, orderscores2,
-    //                                                          order_score, cur_order_length, node_index);
-    // PrintVector(neig_scoring);
-
-    // std::vector<double> neig_dist = dist_from_logprobs(neig_scoring);
-    // PrintVector(neig_dist);
-
+   
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::default_random_engine generator(seed);
-    // std::discrete_distribution<int> distribution(neig_dist.begin(), neig_dist.end());
 
-    // int insert_pos = distribution(generator);
 
-    // std::cout << "insert pos " << insert_pos << std::endl;
 
-    // PrintVector(order);
-    // move_element(order, node_index, insert_pos);
 
-    // PrintVector(order);
-   
-    smc(scoring, N, order.size());
+    // std::vector<int> v = {0,1,2,3,4,5,6};
+    // const auto&[orders, new_nodes] = backward_order_sampler(v);
 
-//    11 21 47 49 20 64  1 24 26 65  0 48 54 68 39 28 61 37 51 34 30 29 55 63 10
-// 15 46 44  6 60 53 25 57  8 43 16 59  5 62 31 35 41 23 52 45 38 58 33 22 40
-// 32  4  9 19 56 42 66 27 12 67 36 13 69 18  3 17 50  2 14  7
-   
-    //algorithm_pf(N);
+    // for(auto o : orders){
+    //     PrintVector(o);
+    // }
 
+
+
+    auto start = high_resolution_clock::now();
+    const auto &[smc_log_w, smc_orders, smc_log_scores] = smc(scoring, N, order.size(), generator);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+
+    std::vector<double> * norm_w = dist_from_logprobs(smc_log_w);
+    std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
+
+    int maxElementIndex = std::max_element(smc_log_scores.begin(), smc_log_scores.end()) - smc_log_scores.begin();
+
+    //PrintVector(log_order_scores[p-1]);
+    std::map<std::vector<int>, double> orders_probs;
+    std::set<std::vector<int>> distinct_orders;
+
+    for (int i = 0; i < N; i++)
+    {
+        distinct_orders.insert(smc_orders[i]);
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        if (orders_probs.count(smc_orders[i]))
+        {
+            orders_probs[smc_orders[i]] += (*norm_w)[i];
+        }
+        else
+        {
+            orders_probs[smc_orders[i]] = (*norm_w)[i];
+        }
+    }
+
+    for (auto o : distinct_orders)
+    {
+        PrintVector(o);
+        std::vector<double> *scr = scoring.score(o, 0, p);
+        double sc = std::accumulate(scr->begin(), scr->end(), 0.0);
+        //std::cout << orders_probs[o] << " score " << sc << std::endl;
+        delete scr;
+    }
+
+    std::cout << "number of distinct orders: " << distinct_orders.size() << std::endl;
+    std::cout << "index: " << maxElementIndex << std::endl;
+    //PrintVector(new_orders[maxElementIndex]);
+    PrintVector(smc_orders[maxElementIndex]);
+
+    //std::cout << "prob: " << orders_probs[new_orders[maxElementIndex]] << std::endl;
+    std::cout << "prob: " << orders_probs[smc_orders[maxElementIndex]] << std::endl;
+    //std::cout << "score: " << log_order_scores[maxElementIndex] << std::endl;
+    std::cout << "score: " << smc_log_scores[maxElementIndex] << std::endl;
+    //PrintVector(smc_log_scores);
+    // To get the value of duration use the count()
+    // member function on the duration object
+    std::cout << duration.count() << " ms." << std::endl;
+    delete norm_w;
+
+    int M = 1000;
+
+    const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator);
+
+    std::cout << "PGibbs log scores " << std::endl;
+    PrintVector(pgibbs_log_scores);
+
+    for (auto & o: pgibbs_orders){
+        PrintVector(o);
+    }
+    int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
+    std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
     exit(0);
 }
