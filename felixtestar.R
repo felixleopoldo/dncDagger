@@ -25,13 +25,15 @@ startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
 scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = FALSE, startspace = startspace)
 scoretable
 vars
-omcmcres <- orderMCMC(myscore, scoreout = TRUE, chainout = TRUE, plus1 = TRUE, MAP = FALSE, startorder = startorder, scoretable = scoretable, startspace = startspace)
+omcmcres <- orderMCMC(myscore, scoreout = TRUE, chainout = TRUE, plus1 = TRUE, MAP = FALSE, 
+                      startorder = startorder, scoretable = scoretable, 
+                      startspace = startspace, iterations=1000000)
 omcmcres$maxorder
 #omcmcres$score
 #plot(omcmcres$trace, type="l")
 
 max(omcmcres$traceadd$orderscores)
-plot(omcmcres$traceadd$orderscores)
+plot(omcmcres$traceadd$orderscores[600:1000])
 #print(as.integer(omcmcres$maxorder) - 1)
 #print(omcmcres$score)
 

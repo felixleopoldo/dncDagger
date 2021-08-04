@@ -2,10 +2,36 @@
 #include <RInside.h>
 #include <cassert>
 #include <chrono>
+#include <thread>
+#include <iostream>
 using namespace std::chrono;
 typedef std::tuple<std::vector<int>, int, int> cache_keytype;
 typedef std::pair<std::vector<int>, std::set<int>> cache_keytype2;
 typedef std::pair<std::vector<int>, int> cache_keytype3;
+
+
+std::vector<std::size_t> parts(std::size_t m, std::size_t size)
+{
+    std::vector<std::size_t> res(size);
+
+    for (std::size_t i = 0; i != m; ++i) {
+        ++res[i % size];
+    }
+    return res;
+}
+
+std::size_t whichPart(std::size_t m, std::size_t size, std::size_t n)
+{
+    std::size_t index = 0;
+    for (auto i : parts(m, size)) {
+        if (n < i) {
+            return index;
+        }
+        ++index;
+        n -= i;
+    }
+    throw std::runtime_error("invalid argument");
+}
 
 template <typename T>
 void PrintVector(std::vector<T> &arr)
@@ -588,10 +614,10 @@ std::vector<double> orders_log_prop_probs(const std::vector<std::vector<int>> &o
 double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_length, int new_node_index, double current_orderscore, OrderScoring &scoring);
 double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_length, int new_node_index, double current_orderscore, OrderScoring &scoring)
 {
-    if (prev_order_length == 0)
-    {
-        return (-std::log(input_order.size()));
-    }
+    // if (prev_order_length == 0)
+    // {
+    //     return (-std::log(input_order.size()));
+    // }
 
     std::vector<int> order(input_order);
     // compute these in a sequence n= 1,2,3,...
@@ -600,7 +626,7 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
 
     //for node at index first_n_elements. The other nodes have the
     // same score sine those are still before in the ordering.
-    std::vector<double> order_scores(prev_order_length+1);
+    std::vector<double> order_scores(prev_order_length + 1);
     //std::vector<double> node_scores(first_n_elements);
     std::vector<double> node_scores(input_order.size());
 
@@ -620,9 +646,239 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
 
     // Sample the new ordering from the order_scores distribution, where the index
     // specifies the position were node is inserted.
+    //std::cout << "Scores to be dist" << std::endl;
+    //PrintVector(order_scores);
+    //std::cout << "Score for index "<< new_node_index <<": " << order_scores[new_node_index] << std::endl;
     std::vector<double> *neig_dist = dist_from_logprobs(order_scores); // TODO: dont need dist, just logs
+    //PrintVector(*neig_dist);
+    //std::cout << "prop prob" << (*neig_dist)[new_node_index] << std::endl;
+    return std::log((*neig_dist)[new_node_index]); // NOTE: This can be -Inf sometimes.
+}
 
-    return std::log((*neig_dist)[new_node_index]);
+// std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
+//                                                                                              const std::vector<std::vector<int>> &cond_orders,
+//                                                                                              const std::vector<int> &new_node_inds_cond_orders,
+//                                                                                              std::default_random_engine &generator);
+// std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
+//                                                                                              const std::vector<std::vector<int>> &cond_orders,
+//                                                                                              const std::vector<int> &new_node_inds_cond_orders,
+//                                                                                              std::default_random_engine &generator)
+// {
+//     std::size_t p = scoring.numparents.size();
+//     std::cout << "Starting conditional SMC " << std::endl;
+//     std::vector<std::vector<double>> log_w(p, std::vector<double>(N, 0.0));
+//     std::vector<std::vector<std::vector<int>>> orders(p, std::vector<std::vector<int>>(N, std::vector<int>(p)));
+//     std::vector<int> I(N);
+//     int node_index;
+//     double log_prop_prob;
+//     std::vector<std::vector<std::vector<double>>> log_node_scores(p, std::vector<std::vector<double>>(N, std::vector<double>(p, 0.0)));
+//     std::vector<std::vector<double>> log_order_scores(p, std::vector<double>(N));
+//     std::vector<double> *norm_w;
+
+//     for (size_t i = 0; i < N; i++)
+//     {
+//         for (size_t n = 0; n < p; n++)
+//         {
+//             for (size_t m = 0; m < p; m++)
+//             {
+//                 if (i == 0)
+//                 {
+//                     orders[n][i][m] = cond_orders[n][m];
+//                 }
+//                 else
+//                 {
+//                     orders[n][i][m] = m;
+//                 }
+//             }
+//         }
+//     }
+
+//     for (size_t n = 0; n < p; n++)
+//     {
+//         //std::cout << "\n\nn: " << n << " cache hits: " << scoring.cache_hits << " pgibbs order (first " << n + 1 << " elements) " << std::endl;
+//         //PrintVector(orders[n][0]);
+//         // Compute the conditional orders for particle Gibbs.
+//         std::vector<double> *sc = scoring.score(orders[n][0], 0, n + 1); // Score all the nodes in the sub order [0,..,n].
+//         log_node_scores[n][0] = *sc;
+
+//         //std::cout << "Node scores " << std::endl;
+//         //PrintVector(log_node_scores[n][0]);
+//         delete sc;
+//         log_order_scores[n][0] = std::accumulate(log_node_scores[n][0].begin(), log_node_scores[n][0].end(), 0.0); // TODO: this may be too slow.
+
+//         //std::cout << "fixed order score "  << log_order_scores[n][0] << std::endl;
+//         //std::cout << "Order score " << log_order_scores[n][0] << std::endl;
+
+//         if (n == 0)
+//         {
+//             log_w[n][0] = log_order_scores[n][0] - (-std::log(p));
+//         }
+//         else
+//         {
+//             // std::cout << "New node inds" << std::endl;
+//             // PrintVector(new_node_inds_cond_orders);
+//             double log_prop_prob, log_prop_prob2 = order_log_prop_prob(orders[n][0], n, new_node_inds_cond_orders[n - 1], log_order_scores[n - 1][0], scoring);
+//             //std::cout << "Log prop prob " << log_prop_prob << std::endl;
+//             assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
+
+//             if (!std::isfinite(log_prop_prob))
+//             {
+//                 log_prop_prob = std::numeric_limits<double>::min();
+//                 //log_w[n][0] =
+//             }
+//             log_w[n][0] = log_order_scores[n][0] - std::log(n + 1) - log_order_scores[n - 1][0] - (log_prop_prob - std::log(p - n));
+//             //std::cout << "w " << log_w[n][0] << std::endl;
+//             //assert(std::isfinite(log_prop_prob2));
+//             // TODO: BUG: Update log node scores!
+//         }
+
+//         // Update the rest of the particles.
+//         for (size_t i = 1; i < N; i++)
+//         {
+//             //std::cout << "\ni: " << i << std::endl;
+//             if (n == 0)
+//             {
+//                 // This is the initialisation
+//                 node_index = rand_int_in_range(n, p - 1); // Draw random node
+
+//                 if (node_index != 0)
+//                 {
+//                     move_element(orders[n][i], node_index, n); // Move to node_index to index n=0
+//                 }
+//                 std::vector<double> *sc = scoring.score(orders[n][i], n, 1); // OK, score only index 0
+//                 log_node_scores[n][i] = *sc;
+//                 delete sc;
+//                 log_order_scores[n][i] = log_node_scores[n][i][orders[n][i][n]]; // std::accumulate(log_node_scores[i].begin(), log_node_scores[i].end(), 0.0)
+//                 log_w[n][i] = log_order_scores[n][i] - (-std::log(p));           // First weight
+//             }
+//             else
+//             {
+//                 node_index = rand_int_in_range(n, p - 1); // Draw one of the remaining nodes
+//                 log_prop_prob = score_sub_order_neigh(scoring,
+//                                                       orders[n - 1][I[i]],
+//                                                       log_node_scores[n - 1][I[i]],
+//                                                       log_order_scores[n - 1][I[i]],
+//                                                       orders[n][i],
+//                                                       log_node_scores[n][i],
+//                                                       log_order_scores[n][i],
+//                                                       n,
+//                                                       node_index,
+//                                                       generator); // Propose from neighborhood.
+
+//                 //std::cout << "order score " << log_order_scores[n][i] << std::endl;
+//                 log_w[n][i] = log_order_scores[n][i] - std::log(n + 1) - log_order_scores[n - 1][I[i]] - (log_prop_prob - std::log(p - n));
+//             }
+//         }
+//         //PrintVector(log_w[n]);
+//         // rescale weights to
+//         norm_w = dist_from_logprobs(log_w[n]);
+//         std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
+//         delete norm_w;
+//         // Resample particles
+//         for (std::size_t i = 0; i < N; i++)
+//         {
+//             I[i] = distribution(generator);
+//         }
+//     }
+
+//     return (std::make_tuple(log_w[p - 1], orders[p - 1], log_order_scores[p - 1]));
+// }
+
+void smc_cond_kernel(std::size_t n,
+                     //std::size_t i,
+                     std::size_t i_from,
+                     std::size_t i_to,
+
+                     const std::vector<int> &I,
+                     std::vector<std::vector<double>> &log_w,
+                     std::vector<std::vector<std::vector<int>>> &orders,
+                     std::vector<std::vector<std::vector<double>>> &log_node_scores,
+                     std::vector<std::vector<double>> &log_order_scores,
+                     const std::vector<int> &new_node_inds_cond_orders,
+                     std::default_random_engine &generator,
+                     OrderScoring &scoring)
+{
+
+    for (size_t i = i_from; i < i_to; i++)
+    {
+        int node_index;
+        std::size_t p = scoring.numparents.size();
+        if (i == 0)
+        {
+            std::vector<double> *sc = scoring.score(orders[n][0], 0, n + 1); // Score all the nodes in the sub order [0,..,n].
+            log_node_scores[n][0] = *sc;
+
+            //std::cout << "Node scores " << std::endl;
+            //PrintVector(log_node_scores[n][0]);
+            delete sc;
+            log_order_scores[n][0] = std::accumulate(log_node_scores[n][0].begin(), log_node_scores[n][0].end(), 0.0); // TODO: this may be too slow.
+
+            //std::cout << "fixed order score "  << log_order_scores[n][0] << std::endl;
+            //std::cout << "Order score " << log_order_scores[n][0] << std::endl;
+
+            if (n == 0)
+            {
+                log_w[n][0] = log_order_scores[n][0] - (-std::log(p));
+            }
+            else
+            {
+                // std::cout << "New node inds" << std::endl;
+                // PrintVector(new_node_inds_cond_orders);
+                double log_prop_prob, log_prop_prob2 = order_log_prop_prob(orders[n][0], n, new_node_inds_cond_orders[n - 1], log_order_scores[n - 1][0], scoring);
+                //std::cout << "Log prop prob " << log_prop_prob << std::endl;
+                assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
+
+                if (!std::isfinite(log_prop_prob))
+                {
+                    log_prop_prob = std::numeric_limits<double>::min();
+                    //log_w[n][0] =
+                }
+                log_w[n][0] = log_order_scores[n][0] - std::log(n + 1) - log_order_scores[n - 1][0] - (log_prop_prob - std::log(p - n));
+                //std::cout << "w " << log_w[n][0] << std::endl;
+                //assert(std::isfinite(log_prop_prob2));
+                // TODO: BUG: Update log node scores!
+            }
+        }
+
+        if (i > 0)
+        // Update the rest of the particles.
+        //for (size_t i = 1; i < N; i++)
+        {
+            //std::cout << "\ni: " << i << std::endl;
+            if (n == 0)
+            {
+                // This is the initialisation
+                node_index = rand_int_in_range(n, p - 1); // Draw random node
+
+                if (node_index != 0)
+                {
+                    move_element(orders[n][i], node_index, n); // Move to node_index to index n=0
+                }
+                std::vector<double> *sc = scoring.score(orders[n][i], n, 1); // OK, score only index 0
+                log_node_scores[n][i] = *sc;
+                delete sc;
+                log_order_scores[n][i] = log_node_scores[n][i][orders[n][i][n]]; // std::accumulate(log_node_scores[i].begin(), log_node_scores[i].end(), 0.0)
+                log_w[n][i] = log_order_scores[n][i] - (-std::log(p));           // First weight
+            }
+            else
+            {
+                node_index = rand_int_in_range(n, p - 1); // Draw one of the remaining nodes
+                double log_prop_prob = score_sub_order_neigh(scoring,
+                                                             orders[n - 1][I[i]],
+                                                             log_node_scores[n - 1][I[i]],
+                                                             log_order_scores[n - 1][I[i]],
+                                                             orders[n][i],
+                                                             log_node_scores[n][i],
+                                                             log_order_scores[n][i],
+                                                             n,
+                                                             node_index,
+                                                             generator); // Propose from neighborhood.
+
+                //std::cout << "order score " << log_order_scores[n][i] << std::endl;
+                log_w[n][i] = log_order_scores[n][i] - std::log(n + 1) - log_order_scores[n - 1][I[i]] - (log_prop_prob - std::log(p - n));
+            }
+        }
+    }
 }
 
 std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
@@ -665,67 +921,72 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
 
     for (size_t n = 0; n < p; n++)
     {
+
         //std::cout << "\n\nn: " << n << " cache hits: " << scoring.cache_hits << " pgibbs order (first " << n + 1 << " elements) " << std::endl;
         //PrintVector(orders[n][0]);
         // Compute the conditional orders for particle Gibbs.
-        std::vector<double> *sc = scoring.score(orders[n][0], 0, n + 1); // Score all the nodes in the sub order [0,..,n].        
-        log_node_scores[n][0] = *sc;
-        // std::cout << "Node scores " << std::endl;
-        // PrintVector(log_node_scores[n][0]);
-        delete sc;
-        log_order_scores[n][0] = std::accumulate(log_node_scores[n][0].begin(), log_node_scores[n][0].end(), 0.0); // TODO: this may be too slow
-        //std::cout << "Order score " << log_order_scores[n][0] << std::endl;
-        
-        double log_prop_prob = 0;
-        // Compute proposal probabilities        
-        if (n > 0)
-        {
-            // std::cout << "New node inds" << std::endl;
-            // PrintVector(new_node_inds_cond_orders);
-            log_prop_prob = order_log_prop_prob(orders[n][0], n, new_node_inds_cond_orders[n-1], log_order_scores[n - 1][0], scoring); // BUG
-            // TODO: BUG: Update log node scores!
-        }
-        assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
-        //std::cout << "Log prop prob " << log_prop_prob << std::endl;
+        //std::vector<std::thread> threads(N);
 
-        log_w[n][0] = log_order_scores[n][0] - log_prop_prob;
+        int Num_Threads = std::thread::hardware_concurrency();
 
-        // Update the rest of the particles.
-        for (size_t i = 1; i < N; i++)
-        {
-            //std::cout << "\ni: " << i << std::endl;
-            if (n == 0)
-            {
-                // This is the initialisation
-                node_index = rand_int_in_range(n, p - 1); // Draw random node
+        std::vector<std::thread> threads(Num_Threads);
+        //std::cout << "num threads" << Num_Threads << std::endl;
 
-                if (node_index != 0)
-                {
-                    move_element(orders[n][i], node_index, n); // Move to node_index to index n=0
-                }
-                std::vector<double> *sc = scoring.score(orders[n][i], n, 1); // OK, score only index 0
-                log_node_scores[n][i] = *sc;
-                delete sc;
-                log_order_scores[n][i] = log_node_scores[n][i][orders[n][i][n]]; // std::accumulate(log_node_scores[i].begin(), log_node_scores[i].end(), 0.0)
-                log_w[n][i] = log_order_scores[n][i] - (-std::log(p));              // First weight
+        for (size_t i = 0; i < Num_Threads; i++){
+            int i_from = i * (N/Num_Threads);
+            int i_to = (i+1) * (N/Num_Threads);
+            //std::cout << i_from << "-" << i_to << std::endl;
+
+            if (i == Num_Threads-1){
+                i_to = N;
             }
-            else
-            {
-                node_index = rand_int_in_range(n, p - 1); // Draw one of the remaining nodes
-                log_prop_prob = score_sub_order_neigh(scoring,
-                                                      orders[n - 1][I[i]],
-                                                      log_node_scores[n - 1][I[i]],
-                                                      log_order_scores[n - 1][I[i]],
-                                                      orders[n][i],
-                                                      log_node_scores[n][i],
-                                                      log_order_scores[n][i],
-                                                      n,
-                                                      node_index,
-                                                      generator); // Propose from neighborhood.
-                log_w[n][i] = log_order_scores[n][i] - std::log(n + 1) - log_order_scores[n - 1][I[i]] - (log_prop_prob - std::log(p - n));
-            }
+
+            threads[i] = std::thread(smc_cond_kernel,
+                                     n,
+                                     i_from,
+                                     i_to,
+                                     std::ref(I),
+                                     std::ref(log_w),
+                                     std::ref(orders),
+                                     std::ref(log_node_scores),
+                                     std::ref(log_order_scores),
+                                     std::ref(new_node_inds_cond_orders),
+                                     std::ref(generator),
+                                     std::ref(scoring));
+
         }
 
+        // for (size_t i = 0; i < N; i++)
+        // {
+        //     threads[i] = std::thread(smc_cond_kernel,
+        //                              n,
+        //                              i_from,
+        //                              i_to,
+        //                              std::ref(I),
+        //                              std::ref(log_w),
+        //                              std::ref(orders),
+        //                              std::ref(log_node_scores),
+        //                              std::ref(log_order_scores),
+        //                              std::ref(new_node_inds_cond_orders),
+        //                              std::ref(generator),
+        //                              std::ref(scoring));
+        //     // smc_cond_kernel(n,
+        //     //                 i,
+        //     //                 I,
+        //     //                 log_w,
+        //     //                 orders,
+        //     //                 log_node_scores,
+        //     //                 log_order_scores,
+        //     //                 new_node_inds_cond_orders,
+        //     //                 generator,
+        //     //                 scoring);
+        // }
+
+        for (size_t i = 0; i < Num_Threads; i++)
+        {
+            threads[i].join();
+        }
+        //PrintVector(log_w[n]);
         // rescale weights to
         norm_w = dist_from_logprobs(log_w[n]);
         std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
@@ -755,6 +1016,7 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
     norm_w = dist_from_logprobs(smc_log_w);
     std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
     int sampled_index = distribution(generator);
+    delete norm_w;
     orders[0] = smc_orders[sampled_index];
     log_scores[0] = smc_log_scores[sampled_index];
     //orders[0] = [6, 7, 0, 5, 1, 3, 4, 2]
@@ -763,6 +1025,7 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
     PrintVector(orders[0]);
     for (std::size_t j = 1; j < M; j++)
     {
+
         std::cout << "PGibbs sample  " << j << std::endl;
         // Backward sample orders.
         const auto &[orders_cond_traj, new_node_inds_cond_orders] = backward_order_sampler(orders[j - 1]);
@@ -772,11 +1035,19 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
         // }
         const auto &[smc_cond_log_w, smc_cond_orders, smc_cond_log_scores] = smc_cond(scoring, N, orders_cond_traj, new_node_inds_cond_orders, generator);
         //std::cout << "Order sampled from conditinal SMC " << std::endl;
+
+        //std::cout << "smc_cond_log_scores " << std::endl;
+        //PrintVector(smc_cond_log_scores);
+        //std::cout << "smc_cond_log_w " << std::endl;
         //PrintVector(smc_cond_log_w);
         // Sample order from log_w and put in orders.
         norm_w = dist_from_logprobs(smc_cond_log_w);
+
         std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
         sampled_index = distribution(generator);
+        //std::cout << "norm_w " << std::endl;
+        //PrintVector(*norm_w);
+
         delete norm_w;
         orders[j] = smc_cond_orders[sampled_index];
         log_scores[j] = smc_cond_log_scores[sampled_index];

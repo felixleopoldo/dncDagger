@@ -146,7 +146,7 @@ int main(int argc, char **argv)
                          scoretable,
                          bannedscore, cache);
 
-    int seed = 1;
+    int seed = 2;
     std::srand(seed);
    
     std::random_device rd;
@@ -154,73 +154,62 @@ int main(int argc, char **argv)
     std::default_random_engine generator(seed);
 
 
+    // auto start = high_resolution_clock::now();
+    // const auto &[smc_log_w, smc_orders, smc_log_scores] = smc(scoring, N, order.size(), generator);
+    // auto stop = high_resolution_clock::now();
+    // auto duration = duration_cast<milliseconds>(stop - start);
 
+    // std::vector<double> * norm_w = dist_from_logprobs(smc_log_w);
+    // std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
 
-    // std::vector<int> v = {0,1,2,3,4,5,6};
-    // const auto&[orders, new_nodes] = backward_order_sampler(v);
+    // int maxElementIndex = std::max_element(smc_log_scores.begin(), smc_log_scores.end()) - smc_log_scores.begin();
 
-    // for(auto o : orders){
-    //     PrintVector(o);
+    // //PrintVector(log_order_scores[p-1]);
+    // std::map<std::vector<int>, double> orders_probs;
+    // std::set<std::vector<int>> distinct_orders;
+
+    // for (int i = 0; i < N; i++)
+    // {
+    //     distinct_orders.insert(smc_orders[i]);
     // }
 
+    // for (int i = 0; i < N; i++)
+    // {
+    //     if (orders_probs.count(smc_orders[i]))
+    //     {
+    //         orders_probs[smc_orders[i]] += (*norm_w)[i];
+    //     }
+    //     else
+    //     {
+    //         orders_probs[smc_orders[i]] = (*norm_w)[i];
+    //     }
+    // }
 
+    // for (auto o : distinct_orders)
+    // {
+    //     PrintVector(o);
+    //     std::vector<double> *scr = scoring.score(o, 0, p);
+    //     double sc = std::accumulate(scr->begin(), scr->end(), 0.0);
+    //     //std::cout << orders_probs[o] << " score " << sc << std::endl;
+    //     delete scr;
+    // }
 
-    auto start = high_resolution_clock::now();
-    const auto &[smc_log_w, smc_orders, smc_log_scores] = smc(scoring, N, order.size(), generator);
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
+    // std::cout << "number of distinct orders: " << distinct_orders.size() << std::endl;
+    // std::cout << "index: " << maxElementIndex << std::endl;
+    // //PrintVector(new_orders[maxElementIndex]);
+    // PrintVector(smc_orders[maxElementIndex]);
 
-    std::vector<double> * norm_w = dist_from_logprobs(smc_log_w);
-    std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
+    // //std::cout << "prob: " << orders_probs[new_orders[maxElementIndex]] << std::endl;
+    // std::cout << "prob: " << orders_probs[smc_orders[maxElementIndex]] << std::endl;
+    // //std::cout << "score: " << log_order_scores[maxElementIndex] << std::endl;
+    // std::cout << "score: " << smc_log_scores[maxElementIndex] << std::endl;
+    // //PrintVector(smc_log_scores);
+    // // To get the value of duration use the count()
+    // // member function on the duration object
+    // std::cout << duration.count() << " ms." << std::endl;
+    // delete norm_w;
 
-    int maxElementIndex = std::max_element(smc_log_scores.begin(), smc_log_scores.end()) - smc_log_scores.begin();
-
-    //PrintVector(log_order_scores[p-1]);
-    std::map<std::vector<int>, double> orders_probs;
-    std::set<std::vector<int>> distinct_orders;
-
-    for (int i = 0; i < N; i++)
-    {
-        distinct_orders.insert(smc_orders[i]);
-    }
-
-    for (int i = 0; i < N; i++)
-    {
-        if (orders_probs.count(smc_orders[i]))
-        {
-            orders_probs[smc_orders[i]] += (*norm_w)[i];
-        }
-        else
-        {
-            orders_probs[smc_orders[i]] = (*norm_w)[i];
-        }
-    }
-
-    for (auto o : distinct_orders)
-    {
-        PrintVector(o);
-        std::vector<double> *scr = scoring.score(o, 0, p);
-        double sc = std::accumulate(scr->begin(), scr->end(), 0.0);
-        //std::cout << orders_probs[o] << " score " << sc << std::endl;
-        delete scr;
-    }
-
-    std::cout << "number of distinct orders: " << distinct_orders.size() << std::endl;
-    std::cout << "index: " << maxElementIndex << std::endl;
-    //PrintVector(new_orders[maxElementIndex]);
-    PrintVector(smc_orders[maxElementIndex]);
-
-    //std::cout << "prob: " << orders_probs[new_orders[maxElementIndex]] << std::endl;
-    std::cout << "prob: " << orders_probs[smc_orders[maxElementIndex]] << std::endl;
-    //std::cout << "score: " << log_order_scores[maxElementIndex] << std::endl;
-    std::cout << "score: " << smc_log_scores[maxElementIndex] << std::endl;
-    //PrintVector(smc_log_scores);
-    // To get the value of duration use the count()
-    // member function on the duration object
-    std::cout << duration.count() << " ms." << std::endl;
-    delete norm_w;
-
-    int M = 1000;
+    int M = 10000;
 
     const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator);
 
