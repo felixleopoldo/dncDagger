@@ -4,17 +4,19 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
+#include "thread_pool.hpp"
+
 using namespace std::chrono;
 typedef std::tuple<std::vector<int>, int, int> cache_keytype;
 typedef std::pair<std::vector<int>, std::set<int>> cache_keytype2;
 typedef std::pair<std::vector<int>, int> cache_keytype3;
 
-
 std::vector<std::size_t> parts(std::size_t m, std::size_t size)
 {
     std::vector<std::size_t> res(size);
 
-    for (std::size_t i = 0; i != m; ++i) {
+    for (std::size_t i = 0; i != m; ++i)
+    {
         ++res[i % size];
     }
     return res;
@@ -23,8 +25,10 @@ std::vector<std::size_t> parts(std::size_t m, std::size_t size)
 std::size_t whichPart(std::size_t m, std::size_t size, std::size_t n)
 {
     std::size_t index = 0;
-    for (auto i : parts(m, size)) {
-        if (n < i) {
+    for (auto i : parts(m, size))
+    {
+        if (n < i)
+        {
             return index;
         }
         ++index;
@@ -785,10 +789,9 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
 // }
 
 void smc_cond_kernel(std::size_t n,
-                     //std::size_t i,
-                     std::size_t i_from,
-                     std::size_t i_to,
-
+                     std::size_t i,
+                     //std::size_t i_from,
+                     //std::size_t i_to,
                      const std::vector<int> &I,
                      std::vector<std::vector<double>> &log_w,
                      std::vector<std::vector<std::vector<int>>> &orders,
@@ -799,7 +802,7 @@ void smc_cond_kernel(std::size_t n,
                      OrderScoring &scoring)
 {
 
-    for (size_t i = i_from; i < i_to; i++)
+    //for (size_t i = i_from; i < i_to; i++)
     {
         int node_index;
         std::size_t p = scoring.numparents.size();
@@ -884,14 +887,16 @@ void smc_cond_kernel(std::size_t n,
 std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
                                                                                              const std::vector<std::vector<int>> &cond_orders,
                                                                                              const std::vector<int> &new_node_inds_cond_orders,
-                                                                                             std::default_random_engine &generator);
+                                                                                             std::default_random_engine &generator,
+                                                                                             thread_pool &pool);
 std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
                                                                                              const std::vector<std::vector<int>> &cond_orders,
                                                                                              const std::vector<int> &new_node_inds_cond_orders,
-                                                                                             std::default_random_engine &generator)
+                                                                                             std::default_random_engine &generator,
+                                                                                             thread_pool &pool)
 {
     std::size_t p = scoring.numparents.size();
-    std::cout << "Starting conditional SMC " << std::endl;
+    //std::cout << "Starting conditional SMC " << std::endl;
     std::vector<std::vector<double>> log_w(p, std::vector<double>(N, 0.0));
     std::vector<std::vector<std::vector<int>>> orders(p, std::vector<std::vector<int>>(N, std::vector<int>(p)));
     std::vector<int> I(N);
@@ -927,65 +932,79 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
         // Compute the conditional orders for particle Gibbs.
         //std::vector<std::thread> threads(N);
 
-        int Num_Threads = std::thread::hardware_concurrency();
-
-        std::vector<std::thread> threads(Num_Threads);
-        //std::cout << "num threads" << Num_Threads << std::endl;
-
-        for (size_t i = 0; i < Num_Threads; i++){
-            int i_from = i * (N/Num_Threads);
-            int i_to = (i+1) * (N/Num_Threads);
-            //std::cout << i_from << "-" << i_to << std::endl;
-
-            if (i == Num_Threads-1){
-                i_to = N;
-            }
-
-            threads[i] = std::thread(smc_cond_kernel,
-                                     n,
-                                     i_from,
-                                     i_to,
-                                     std::ref(I),
-                                     std::ref(log_w),
-                                     std::ref(orders),
-                                     std::ref(log_node_scores),
-                                     std::ref(log_order_scores),
-                                     std::ref(new_node_inds_cond_orders),
-                                     std::ref(generator),
-                                     std::ref(scoring));
-
+        for (size_t i = 0; i < N; i++)
+        {
+            pool.push_task(smc_cond_kernel,
+                            n,
+                            i,
+                            std::ref(I),
+                            std::ref(log_w),
+                            std::ref(orders),
+                            std::ref(log_node_scores),
+                            std::ref(log_order_scores),
+                            std::ref(new_node_inds_cond_orders),
+                            std::ref(generator),
+                            std::ref(scoring));
         }
+        pool.wait_for_tasks();
 
-        // for (size_t i = 0; i < N; i++)
+        // int Num_Threads = std::thread::hardware_concurrency();
+        // std::vector<std::thread> threads(Num_Threads);
+        // //std::cout << "num threads" << Num_Threads << std::endl;
+        // for (size_t i = 0; i < Num_Threads; i++)
         // {
-        //     threads[i] = std::thread(smc_cond_kernel,
-        //                              n,
-        //                              i_from,
-        //                              i_to,
-        //                              std::ref(I),
-        //                              std::ref(log_w),
-        //                              std::ref(orders),
-        //                              std::ref(log_node_scores),
-        //                              std::ref(log_order_scores),
-        //                              std::ref(new_node_inds_cond_orders),
-        //                              std::ref(generator),
-        //                              std::ref(scoring));
-        //     // smc_cond_kernel(n,
-        //     //                 i,
-        //     //                 I,
-        //     //                 log_w,
-        //     //                 orders,
-        //     //                 log_node_scores,
-        //     //                 log_order_scores,
-        //     //                 new_node_inds_cond_orders,
-        //     //                 generator,
-        //     //                 scoring);
+        //     int i_from = i * (N / Num_Threads);
+        //     int i_to = (i + 1) * (N / Num_Threads);
+        //     //std::cout << i_from << "-" << i_to << std::endl;
+
+        //     if (i == Num_Threads - 1)
+        //     {
+        //         i_to = N;
+        //     }
+
+        //     pool.push_task(smc_cond_kernel,
+        //                     n,
+        //                     i_from,
+        //                     i_to,
+        //                     std::ref(I),
+        //                     std::ref(log_w),
+        //                     std::ref(orders),
+        //                     std::ref(log_node_scores),
+        //                     std::ref(log_order_scores),
+        //                     std::ref(new_node_inds_cond_orders),
+        //                     std::ref(generator),
+        //                     std::ref(scoring));
+            // threads[i] = std::thread(smc_cond_kernel,
+            //                          n,
+            //                          i_from,
+            //                          i_to,
+            //                          std::ref(I),
+            //                          std::ref(log_w),
+            //                          std::ref(orders),
+            //                          std::ref(log_node_scores),
+            //                          std::ref(log_order_scores),
+            //                          std::ref(new_node_inds_cond_orders),
+            //                          std::ref(generator),
+            //                          std::ref(scoring));
+        //}
+        //pool.wait_for_tasks();
+        // for (size_t i = 0; i < Num_Threads; i++)
+        // {
+        //     threads[i].join();
         // }
 
-        for (size_t i = 0; i < Num_Threads; i++)
-        {
-            threads[i].join();
-        }
+        // smc_cond_kernel(n,
+        //                 0,
+        //                 N,
+        //                 I,
+        //                 log_w,
+        //                 orders,
+        //                 log_node_scores,
+        //                 log_order_scores,
+        //                 new_node_inds_cond_orders,
+        //                 generator,
+        //                 scoring);
+
         //PrintVector(log_w[n]);
         // rescale weights to
         norm_w = dist_from_logprobs(log_w[n]);
@@ -1001,7 +1020,7 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
     return (std::make_tuple(log_w[p - 1], orders[p - 1], log_order_scores[p - 1]));
 }
 
-std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t M, std::size_t N, OrderScoring &scoring, std::default_random_engine &generator)
+std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t M, std::size_t N, OrderScoring &scoring, std::default_random_engine &generator, thread_pool &pool)
 {
     std::cout << "Starting PGibbs" << std::endl;
     std::vector<std::vector<int>> orders(M);
@@ -1033,7 +1052,7 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
         // for(auto& o : orders_cond_traj){
         //     PrintVector(o);
         // }
-        const auto &[smc_cond_log_w, smc_cond_orders, smc_cond_log_scores] = smc_cond(scoring, N, orders_cond_traj, new_node_inds_cond_orders, generator);
+        const auto &[smc_cond_log_w, smc_cond_orders, smc_cond_log_scores] = smc_cond(scoring, N, orders_cond_traj, new_node_inds_cond_orders, generator, pool);
         //std::cout << "Order sampled from conditinal SMC " << std::endl;
 
         //std::cout << "smc_cond_log_scores " << std::endl;

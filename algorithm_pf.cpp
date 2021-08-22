@@ -32,33 +32,10 @@
 //#include "algorithm_pf.hpp"
 #include <RInside.h>
 #include "smc_stuff.cpp"
+#include "thread_pool.hpp"
 
-int main(int argc, char **argv)
-{
-    RInside R(argc, argv);
-    // R["txt"] = "Hello, world!\n"; // assign a char* (string) to 'txt'
+OrderScoring get_score(Rcpp::List ret){
 
-    // R.parseEvalQ("print(txt)");
-
-    --argc;
-    ++argv;
-
-    std::size_t N = 3;
-    if (argc > 0)
-    {
-        N = static_cast<std::size_t>(std::atoi(*argv));
-        --argc;
-        ++argv;
-    }
-
-    //std::string r_code = "source(\"felixtestar.R\"); ret";
-    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); ret";
-    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
-
-    //std::string r_code = "source(\"readtables.R\"); ret";
-
-    Rcpp::List ret = R.parseEval(r_code);
 
     // Read order
     std::vector<int> order = Rcpp::as<std::vector<int>>(ret["order"]);
@@ -146,12 +123,60 @@ int main(int argc, char **argv)
                          scoretable,
                          bannedscore, cache);
 
+    return(scoring);
+
+}
+
+int main(int argc, char **argv)
+{
+    
+    // R["txt"] = "Hello, world!\n"; // assign a char* (string) to 'txt'
+    // R.parseEvalQ("print(txt)");
+    --argc;
+    ++argv;
+
+    std::size_t N = 3;
+    if (argc > 0)
+    {
+        N = static_cast<std::size_t>(std::atoi(*argv));
+        --argc;
+        ++argv;
+    }
+
+        //std::string r_code = "source(\"felixtestar.R\"); ret";
+    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); ret"; // Do this in R instead?
+    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+
+    RInside R(argc, argv);
+    //std::string r_code = "source(\"readtables.R\"); ret";
+    Rcpp::List ret = R.parseEval(r_code);
+    OrderScoring scoring = get_score(ret);
+
     int seed = 2;
     std::srand(seed);
-   
     std::random_device rd;
     std::mt19937 gen(rd());
     std::default_random_engine generator(seed);
+
+    int M = 10000;
+    thread_pool pool;
+    //pool.push_task(task, arg1, arg2);
+    //pool.wait_for_tasks();
+
+    const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator, pool);
+
+    std::cout << "PGibbs log scores " << std::endl;
+    PrintVector(pgibbs_log_scores);
+
+    for (auto & o: pgibbs_orders){
+        PrintVector(o);
+    }
+    int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
+    std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
+    exit(0);
+}
+
 
 
     // auto start = high_resolution_clock::now();
@@ -208,18 +233,3 @@ int main(int argc, char **argv)
     // // member function on the duration object
     // std::cout << duration.count() << " ms." << std::endl;
     // delete norm_w;
-
-    int M = 10000;
-
-    const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator);
-
-    std::cout << "PGibbs log scores " << std::endl;
-    PrintVector(pgibbs_log_scores);
-
-    for (auto & o: pgibbs_orders){
-        PrintVector(o);
-    }
-    int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
-    std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
-    exit(0);
-}
