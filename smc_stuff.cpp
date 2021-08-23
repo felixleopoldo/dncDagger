@@ -829,7 +829,7 @@ void smc_cond_kernel(std::size_t n,
                 // PrintVector(new_node_inds_cond_orders);
                 double log_prop_prob, log_prop_prob2 = order_log_prop_prob(orders[n][0], n, new_node_inds_cond_orders[n - 1], log_order_scores[n - 1][0], scoring);
                 //std::cout << "Log prop prob " << log_prop_prob << std::endl;
-                assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
+                //assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
 
                 if (!std::isfinite(log_prop_prob))
                 {
@@ -935,16 +935,16 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
         for (size_t i = 0; i < N; i++)
         {
             pool.push_task(smc_cond_kernel,
-                            n,
-                            i,
-                            std::ref(I),
-                            std::ref(log_w),
-                            std::ref(orders),
-                            std::ref(log_node_scores),
-                            std::ref(log_order_scores),
-                            std::ref(new_node_inds_cond_orders),
-                            std::ref(generator),
-                            std::ref(scoring));
+                           n,
+                           i,
+                           std::ref(I),
+                           std::ref(log_w),
+                           std::ref(orders),
+                           std::ref(log_node_scores),
+                           std::ref(log_order_scores),
+                           std::ref(new_node_inds_cond_orders),
+                           std::ref(generator),
+                           std::ref(scoring));
         }
         pool.wait_for_tasks();
 
@@ -974,18 +974,18 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
         //                     std::ref(new_node_inds_cond_orders),
         //                     std::ref(generator),
         //                     std::ref(scoring));
-            // threads[i] = std::thread(smc_cond_kernel,
-            //                          n,
-            //                          i_from,
-            //                          i_to,
-            //                          std::ref(I),
-            //                          std::ref(log_w),
-            //                          std::ref(orders),
-            //                          std::ref(log_node_scores),
-            //                          std::ref(log_order_scores),
-            //                          std::ref(new_node_inds_cond_orders),
-            //                          std::ref(generator),
-            //                          std::ref(scoring));
+        // threads[i] = std::thread(smc_cond_kernel,
+        //                          n,
+        //                          i_from,
+        //                          i_to,
+        //                          std::ref(I),
+        //                          std::ref(log_w),
+        //                          std::ref(orders),
+        //                          std::ref(log_node_scores),
+        //                          std::ref(log_order_scores),
+        //                          std::ref(new_node_inds_cond_orders),
+        //                          std::ref(generator),
+        //                          std::ref(scoring));
         //}
         //pool.wait_for_tasks();
         // for (size_t i = 0; i < Num_Threads; i++)
@@ -1074,6 +1074,128 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
     }
 
     return (std::make_pair(orders, log_scores));
+}
+
+OrderScoring get_score(Rcpp::List ret)
+{
+
+    // Read order
+    std::vector<int> order = Rcpp::as<std::vector<int>>(ret["order"]);
+
+    // Read numparents
+    std::vector<int> numparents = Rcpp::as<std::vector<int>>(ret["numparents"]);
+
+    // Read scoretable
+    std::vector<std::vector<std::vector<double>>> scoretable = Rcpp::as<std::vector<std::vector<std::vector<double>>>>(ret["scoretable"]);
+
+    // Read parent table
+    Rcpp::List parenttableR = Rcpp::as<Rcpp::List>(ret["parenttable"]);
+    std::size_t p = parenttableR.size();
+    std::vector<Rcpp::IntegerMatrix> parenttable;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerMatrix m = Rcpp::as<Rcpp::IntegerMatrix>(parenttableR[i]);
+        parenttable.push_back(m);
+    }
+
+    // Read banned score
+    Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
+    //std::vector<Rcpp::NumericMatrix> bannedscore;
+    std::vector<std::vector<std::vector<double>>> bannedscore;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(bannedscoreR[i]);
+        //std::vector<std::vector<double>> mat;
+        std::vector<std::vector<double>> mat(m.rows(), std::vector<double>(m.cols()));
+        for (std::size_t j = 0; j < m.rows(); j++)
+        {
+            for (std::size_t k = 0; k < m.cols(); k++)
+            {
+                mat[j][k] = m(j, k);
+                //NumericVector v = m( _ , j );
+                //std::vector<double> row;
+                //for(auto val: v){
+                //    row.push_back(val);
+                //}
+            }
+        }
+        bannedscore.push_back(mat);
+    }
+
+    // Read rowmaps_backwards
+    Rcpp::List rowmaps_backwardsR = Rcpp::as<Rcpp::List>(ret["rowmaps_backwards"]);
+    std::vector<Rcpp::IntegerVector> rowmaps_backwards;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(rowmaps_backwardsR[i]);
+        rowmaps_backwards.push_back(m);
+    }
+
+    // Read aliases
+    Rcpp::List aliasesR = Rcpp::as<Rcpp::List>(ret["aliases"]);
+    std::vector<std::vector<int>> aliases;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        std::vector<int> m = Rcpp::as<std::vector<int>>(aliasesR[i]);
+        aliases.push_back(m);
+    }
+
+    // Read plus1listsparents
+    Rcpp::List plus1listsparentsR = Rcpp::as<Rcpp::List>(ret["plus1listsparents"]);
+    std::vector<std::vector<int>> plus1listsparents;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(plus1listsparentsR[i]);
+        std::vector<int> tmp;
+        for (auto e : m)
+        {
+            tmp.push_back(e);
+        }
+        plus1listsparents.push_back(tmp);
+    }
+
+    std::vector<int> scorepositions(p);
+    for (int i = 0; i < p; ++i)
+    {
+        scorepositions[i] = i;
+    }
+
+    std::map<cache_keytype3, std::vector<double>> cache;
+    OrderScoring scoring(aliases,
+                         numparents,
+                         rowmaps_backwards,
+                         plus1listsparents,
+                         scoretable,
+                         bannedscore, cache);
+
+    return (scoring);
+}
+
+// [[Rcpp::plugins(cpp17)]]
+
+// [[Rcpp::export]]
+Rcpp::List r_pgibbs(Rcpp::List ret)
+{
+    OrderScoring scoring = get_score(ret);
+
+    int seed = 2;
+    std::srand(seed);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::default_random_engine generator(seed);
+
+    int N = 10;
+    int M = 10;
+    thread_pool pool;
+    //pool.push_task(task, arg1, arg2);
+    //pool.wait_for_tasks();
+
+    const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator, pool);
+
+    Rcpp::List L = Rcpp::List::create(Rcpp::Named("pgibbs_orders") = pgibbs_orders,
+                                      Rcpp::Named("pgibbs_log_scores") = pgibbs_log_scores);
+
+    return (L);
 }
 
 // std::vector<double> orderscorePlus1(std::size_t n,
