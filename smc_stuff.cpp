@@ -1174,7 +1174,7 @@ OrderScoring get_score(Rcpp::List ret)
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]
-Rcpp::List r_pgibbs(Rcpp::List ret)
+Rcpp::List r_pgibbs(Rcpp::List ret, int N, int M)
 {
     OrderScoring scoring = get_score(ret);
 
@@ -1184,8 +1184,6 @@ Rcpp::List r_pgibbs(Rcpp::List ret)
     std::mt19937 gen(rd());
     std::default_random_engine generator(seed);
 
-    int N = 10;
-    int M = 10;
     thread_pool pool;
     //pool.push_task(task, arg1, arg2);
     //pool.wait_for_tasks();

@@ -10,47 +10,17 @@ sumsc <- function(scores) {
 
 #filename <- "myasiandata.csv"
 filename <- "jackdata.csv"
-data <- read.csv("jackdata.csv", check.names = FALSE)
+data <- read.csv(filename, check.names = FALSE)
 #data <- read.csv(filename, check.names = FALSE)[-1,]
-#data <- read.csv("myhepar2data2000.csv")[-1,]
+
 vars = names(data)
-#myscore <- scoreparameters(scoretype = "bdecat", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 #myscore <- scoreparameters(scoretype = "bde", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 myscore <- scoreparameters(scoretype = "bge", data, bdecatpar = list(am = 0.1))
 
 startorder <- seq(dim(data)[2])
-
 startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
-
 scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = FALSE, startspace = startspace)
-scoretable
-vars
-
-#omcmcres <- orderMCMC(myscore, scoreout = TRUE, chainout = TRUE, plus1 = TRUE, MAP = FALSE,
-#                      startorder = startorder, scoretable = scoretable,
-#                      startspace = startspace, iterations = 1000000)
-#omcmcres$maxorder
-#omcmcres$score
-#plot(omcmcres$trace, type="l")
-
-#max(omcmcres$traceadd$orderscores)
-#plot(omcmcres$traceadd$orderscores[600:1000])
-#print(as.integer(omcmcres$maxorder) - 1)
-#print(omcmcres$score)
-
-# omcmc_orderindex <- c()
-# for (v in omcmcres$maxorder) {
-#   omcmc_orderindex <- c(omcmc_orderindex, which(vars == v)[[1]] - 1)
-# }
-# omcmc_orderindex
-# smcorder <- c(32, 48, 37, 50, 8, 7, 27, 55, 52, 28, 66, 53, 25, 33, 11, 56, 12, 69, 31, 13, 49, 62, 6, 38, 30, 21, 46, 34, 24, 58, 2, 67, 20, 65, 63, 60, 40, 57, 36, 61, 64, 5, 18, 44, 35, 14, 9, 1, 4, 0, 39, 29, 17, 59, 3, 22, 54, 43, 45, 68, 10, 26, 47, 42, 16, 19, 51, 15, 41, 23)+1
-
-# vars[smcorder]
-
 res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = FALSE, startorder = startorder, scoretable = scoretable, startspace = startspace)
-res
-
-length(res$ptab)
 
 set.seed(3)
 
@@ -89,7 +59,6 @@ ret$rowmaps_backwards <- lapply(res$rowmaps, function(a) a$backwards - 1)
 ret$plus1listsparents <- lapply(res$plus1lists$parents, function(a) a - 1)
 ret$scoretable <- scoretable$table
 ret$bannedscore <- res$bannedscore
-print(res$bannedscore)
 
 saveRDS(ret, file = paste(filename, "rds", sep = "."))
 
