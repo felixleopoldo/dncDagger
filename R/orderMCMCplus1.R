@@ -13,7 +13,6 @@ orderMCMCplus1 <- function(n, nsmall, startorder, iterations, stepsave, moveprob
   } else { mainnodes <- c(1:matsize) }
 
   currentpermy <- startorder #starting order represented as a permutation
- print("In orderMCMCplus1")
 
   currentorderscores <- orderscorePlus1(matsize, currentpermy[1:nsmall], c(1:nsmall), parenttable, 
   aliases, numparents, rowmaps, plus1lists, scoretable, scoresmatrices, currentpermy) #starting score

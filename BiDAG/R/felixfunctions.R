@@ -319,7 +319,7 @@ orderMCMCbaseFelix <- function(n, nsmall, startorder, iterations, stepsave, move
                                             rowmaps, scoretable, scoresmatrices, currentpermy) #starting score
 
 
-    print(currentorderscores)
+  #print(currentorderscores)
   currenttotallogscore <- sum(currentorderscores$totscores[mainnodes]) #log total score of all DAGs in the starting order
   currentDAG <- samplescoreplus1(matsize, mainnodes, currentorderscores, plus1lists = NULL, scoretable,
                                scoresmatrices, parenttable, numberofparentsvec, aliases) #score of a single DAG sampled from the starting order
@@ -465,8 +465,8 @@ orderMCMCplus1Felix <- function(n, nsmall, startorder, iterations, stepsave, mov
   #n - number of nodes (background included)
   #nsmall - number of nodes excluding background
   #matsize - number of rows/columns in adjacency matrix 
-  print("startorder")
-  print(startorder)
+  # print("startorder")
+  # print(startorder)
   if (!is.null(bgnodes)) {
     mainnodes <- c(1:matsize)[-bgnodes]
   } else { mainnodes <- c(1:matsize) }
@@ -573,23 +573,23 @@ orderMCMCplus1Felix <- function(n, nsmall, startorder, iterations, stepsave, mov
 orderscorePlus1Felix <- function(n, scorenodes, scorepositions, parenttable, aliases, numparents,
                                  rowmaps, plus1lists, scoretable, scoresmatrices, permy) {
   
-  print("n")
-  print(n)
-  print("numparents")
-  print(numparents)
-  # Scorenodes is the order? /Felix
-  print("scorenodes")
-  print(scorenodes)
-  print("aliases")
-  print(aliases)
-  print("parenttable")
-  print(parenttable)
-  print("scoretable")
-  print(scoretable)
+  # print("n")
+  # print(n)
+  # print("numparents")
+  # print(numparents)
+  # # Scorenodes is the order? /Felix
+  # print("scorenodes")
+  # print(scorenodes)
+  # print("aliases")
+  # print(aliases)
+  # print("parenttable")
+  # print(parenttable)
+  #print("scoretable")
+  #print(scoretable)
   
-  print("scorepositions")
-  print(scorepositions)
-  print(as.list(match.call()))
+  # print("scorepositions")
+  # print(scorepositions)
+  #print(as.list(match.call()))
   orderscores <- vector("double", n)
   allowedscorelists <- vector("list", n)
   therows <- vector("integer", n) # what is this? /Felix
@@ -627,10 +627,10 @@ orderscorePlus1Felix <- function(n, scorenodes, scorepositions, parenttable, ali
   scores$allowedlists <- allowedscorelists
   scores$totscores <- orderscores
   
-  print("scores")
-  print(scores)
-  print("therows")
-  print(therows)
+  # print("scores")
+  # print(scores)
+  # print("therows")
+  # print(therows)
   return(scores)
   
   

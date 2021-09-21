@@ -52,9 +52,12 @@ int main(int argc, char **argv)
         ++argv;
     }
 
+    // CAn we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
+    // Can we use the sampled ones as a prior that is approximately the same?
+
     //std::string r_code = "source(\"felixtestar.R\"); ret";
-    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
     //std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
 
     RInside R(argc, argv);
@@ -62,28 +65,49 @@ int main(int argc, char **argv)
     Rcpp::List ret = R.parseEval(r_code);
     OrderScoring scoring = get_score(ret);
 
-    int seed = 2;
+    int seed = 1;
     std::srand(seed);
     std::random_device rd;
     std::mt19937 gen(rd());
     std::default_random_engine generator(seed);
 
-    int M = 10000;
-    thread_pool pool;
-    //pool.push_task(task, arg1, arg2);
-    //pool.wait_for_tasks();
+    std::vector<std::vector<bool>> mats;
+    mats.push_back({1, 1, 1, 1}); // 0
+    mats.push_back({1, 1, 0, 0}); // 1
+    mats.push_back({0, 1, 0, 0});
+    mats.push_back({0, 1, 0, 0}); // 3
+    mats.push_back({0, 1, 0, 1}); // 4
+    mats.push_back({1, 1, 0, 0});
 
-    const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator, pool);
+    std::vector<double> order_scores = {1.0, 2.0, 2.1, 3.0, 2.5, 0.5};
+    std::vector<int> pruned_inds = numbering_seq(mats, order_scores);
+    PrintVector(pruned_inds);
+    sequential_opt(scoring);
 
-    std::cout << "PGibbs log scores " << std::endl;
-    PrintVector(pgibbs_log_scores);
+    // int M = 10000000;
 
-    for (auto &o : pgibbs_orders)
-    {
-        PrintVector(o);
-    }
-    int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
-    std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
+    // const auto &[mh_orders, mh_log_scores] = mh(M, scoring, generator);
+    // int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();
+    // std::cout << "MH max log score " << mh_log_scores[mh_max_score_ind] << std::endl;
+
+    // //PrintVector(mh_orders[mh_max_score_iqqnd]);
+
+    // thread_pool pool;
+    // //pool.push_task(task, arg1, arg2);
+    // //pool.wait_for_tasks();
+
+    // const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator, pool);
+
+    // std::cout << "PGibbs log scores " << std::endl;
+    // PrintVector(pgibbs_log_scores);
+
+    // for (auto &o : pgibbs_orders)
+    // {
+    //     PrintVector(o);
+    // }
+    // int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
+    // std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
+
     exit(0);
 }
 

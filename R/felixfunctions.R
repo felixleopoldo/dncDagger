@@ -178,7 +178,7 @@ orderMCMCmainFelix <- function(param, iterations, stepsave, MAP = TRUE, posterio
  
   startskel <- scoretable$adjacency
   blacklist <- scoretable$blacklist
-  scoretable <- scoretable$tables
+  scoretable <- scoretable$tables # remove the graph with no extra parent. 
 
   blacklistparents <- list()
   for (i in 1:matsize) {

@@ -8,13 +8,17 @@ sumsc <- function(scores) {
   return(log(sum(exp(scores - max(scores)))) + max(scores))
 }
 
-#filename <- "myasiandata.csv"
-filename <- "jackdata.csv"
-data <- read.csv(filename, check.names = FALSE)
-#data <- read.csv(filename, check.names = FALSE)[-1,]
+# September 2 Meeting
+# Score true order
+# Rescale no extra parents from score table
 
-vars = names(data)
+#filename <- "myasiandata.csv"
+#data <- read.csv(filename, check.names = FALSE)[-1,]
 #myscore <- scoreparameters(scoretype = "bde", data, bdecatpar = list(chi = 0.5, edgepf = 2))
+
+filename <- "data/p50n300gaussdata.csv"
+#filename <- "jackdata.csv"
+data <- read.csv(filename, check.names = FALSE)
 myscore <- scoreparameters(scoretype = "bge", data, bdecatpar = list(am = 0.1))
 
 startorder <- seq(dim(data)[2])
@@ -26,18 +30,18 @@ set.seed(3)
 
 order <- startorder #sample(startorder, replace = FALSE)
 
-scores <- orderscorePlus1Felix(
-                              myscore$n,
-                              order,
-                              seq(myscore$nsmall),
-                              res$ptab$parenttable,
-                              res$ptab$aliases,
-                              res$ptab$numparents,
-                              res$rowmaps,
-                              res$plus1lists,
-                              scoretable$table,
-                              res$bannedscore,
-                              order)
+# scores <- orderscorePlus1Felix(
+#                               myscore$n,
+#                               order,
+#                               seq(myscore$nsmall),
+#                               res$ptab$parenttable,
+#                               res$ptab$aliases,
+#                               res$ptab$numparents,
+#                               res$rowmaps,
+#                               res$plus1lists,
+#                               scoretable$table,
+#                               res$bannedscore,
+#                               order)
 
 ret <- list()
 # These and scoretable should be read into c++ in some way.
@@ -60,9 +64,11 @@ ret$plus1listsparents <- lapply(res$plus1lists$parents, function(a) a - 1)
 ret$scoretable <- scoretable$table
 ret$bannedscore <- res$bannedscore
 
+
+
 saveRDS(ret, file = paste(filename, "rds", sep = "."))
 
-ret
+#ret
 #res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = FALSE, startorder = startorder, scoretable=NULL)
 
 #res <- orderMCMC(myscore, scoreout = TRUE, MAP = FALSE)

@@ -59,7 +59,7 @@ orderMCMC<-function(scorepar, MAP=TRUE, plus1=TRUE,chainout=FALSE, scoreout=FALS
                     iterations=NULL, stepsave=NULL, alpha=0.05, cpdag=FALSE, gamma=1,
                     hardlimit=ifelse(plus1,14,20),verbose=FALSE,
                     startspace=NULL, blacklist=NULL,startorder=NULL, scoretable=NULL) {
-                print("HEJ")
+              
   if (is.null(moveprobs)) { 
     prob1<-99
     if(scorepar$nsmall>3){ prob1<-round(6*99*scorepar$nsmall/(scorepar$nsmall^2+10*scorepar$nsmall-24)) }
