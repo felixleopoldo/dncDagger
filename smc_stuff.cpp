@@ -524,7 +524,7 @@ double neig_proportional_proposal(OrderScoring &scoring,
     // Calculate score for node at index first_n_elements. The other nodes have the
     // same score sine those are still befor in the ordering.
     move_element(order, index_of_el_to_insert, first_n_elements);   // put it in the back
-    node_scores[node] = scoring.score_pos(order, first_n_elements); // O(p)? This should also be quite time consuming..
+    node_scores[node] = scoring.score_pos(order, first_n_elements); // O(p)? This should also be quite time consuming.
     order_scores[first_n_elements] = order_score + node_scores[node];
 
     for (int i = first_n_elements; i > 0; --i) // put it in the back instead
@@ -676,7 +676,7 @@ std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in
     //double order_score(input_order_score);
     int node = order[index_of_el_to_insert];
 
-    int order_number = prev_order_number + node;
+    int order_number = prev_order_number + node; // TODO: What is this? Seems strange..
 
     // Calculate score for node at index first_n_elements. The other nodes have the
     // same score sine those are still befor in the ordering.
@@ -692,6 +692,7 @@ std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in
     double max_score = order_score;
     bool optimal_at_front = true;
 
+    //std::cout << p - n << ": " << order_score << ", ";
     for (int i = p - n; i < p - 1; ++i) // put it in the back instead
     {
         int node1 = order[i];
@@ -702,13 +703,15 @@ std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in
         node_scores[node1] = node1_scoretmp;
         node_scores[node2] = node2_scoretmp;
 
+        //std::cout << i + 1 << ": " << order_score << ", ";
         if (order_score > max_score)
         {
-            //std::cout << "Better score at index " << i + 1 << ", " << order_scores[i + 1] << " instead of " << max_score << std::endl;
+            //std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << ". Break." << std::endl;
             optimal_at_front = false;
             break; // Just break the loop if some better osition if found.
         }
     }
+    //std::cout << std::endl;
     //PrintVector(order);
     //PrintVector(order_ret);
 
@@ -774,10 +777,24 @@ void put_nodes_in_front(int n,
                                                                                                                     prev_score,
                                                                                                                     prev_order_number,
                                                                                                                     scoring);
-
-                // auto &[optimal_order, order_score, node_scores, order_number, is_optimal] = tuple;
+                // Pruning step I) Keep only if the new node (before at node_index) is optimal at the front.
                 if (is_optimal == true)
                 {
+                    // Pruning step II) If it is better to move one of the nodes in the ordering to the front.
+                    // Pruning step III) If the top and next top nodes can be interchanged while the score is invariant,
+                    // Current node scores
+                    // node1_score = node_scores[i - 1];
+                    // node2_score = node_scores[i];
+                    // const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, ordering, node_scores); // This should update the orderscore directly maybe.
+                    // if (node1_score == node1_scoretmp && node2_score == node2_scoretmp)
+                    // {
+                    // }
+                    // else
+                    // {
+                    //     // Swap back
+                    //     myswap(i - 1, i, ordering);
+                    // }
+
                     std::tuple<std::vector<int>, double, int, std::vector<double>> tuple = std::make_tuple(optimal_order, order_score, order_number, node_scores);
                     opt_tuples[n].push_back(tuple);
                 }
@@ -796,37 +813,6 @@ std::vector<bool> order_to_boolvec(const std::vector<int> &order, int n)
     }
     return (boolvec);
 }
-
-// std::valarray<int> numbering(int n, std::vector<int> inds, const std::valarray<bool> &mats, std::valarray<int> &vec)
-//     std::valarray<int> numbering(const std::valarray<bool> &mats, int n, std::valarray<int> &vec)
-// {
-//     int N = vec.size();
-//     // Find indices for zeros
-//     std::valarray<bool> one_inds(N);
-//     std::valarray<bool> zero_inds(N);
-
-//     for (size_t i = 0; i < N; i++)
-//     {
-//         one_inds[i] = mats[std::slice(n * N, N, 1)] && true;
-//         zero_inds[i] = mats[std::slice(n * N, N, 1)] && false;
-//     }
-
-//     if (n == vec.size() - 1)
-//     {
-//         vec[one_inds] += zero_inds.sum();
-//         //vec[zero_inds] += 0;
-//     }
-//     else
-//     {
-//         // The indices of the 1's.
-//         std::valarray<int> one_numbers = numbering(mats[std::slice(n * N, N, 1)][one_inds], n + 1, vec[one_inds]);
-//         vec[one_inds] += zero_inds.size() + one_numbers;
-//         // Add the number of zeros to the one inds.
-//         std::valarray<int> zero_numbers = numbering(mats[std::slice(n * N, N, 1)][zero_inds], n + 1, vec[zero_inds]);
-//         vec[zero_inds] += zero_numbers;
-//     }
-//     return (vec);
-// }
 
 std::vector<int> numbering_seq(const std::vector<std::vector<bool>> &mats, const std::vector<double> &order_scores)
 {
@@ -916,14 +902,96 @@ std::vector<int> numbering_seq(const std::vector<std::vector<bool>> &mats, const
     return (samesets);
 }
 
+std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> prune_equal_sets(std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> &tuples, int n)
+{
+    double max_score = -INFINITY;
+    std::vector<int> max_order;
+    std::vector<double> max_nodescores;
+    std::vector<std::vector<bool>> boolmat;
+    std::vector<double> order_scores;
+
+    for (const auto &t : tuples)
+    {
+        const auto &[optimal_order, order_score, order_number, node_scores] = t;
+        std::vector<bool> boolvec = order_to_boolvec(optimal_order, n);
+        boolmat.push_back(std::move(boolvec));
+        order_scores.push_back(order_score);
+    }
+
+    std::vector<int> pruned_inds = numbering_seq(boolmat, order_scores);
+
+    std::vector<double> pruned_scores;
+    std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> pruned_tuples;
+    for (const auto &ind : pruned_inds)
+    {
+        const auto &[optimal_order, order_score, order_number, node_scores] = tuples[ind];
+        if (order_score > max_score)
+        {
+            max_score = order_score;
+            max_order = optimal_order;
+            max_nodescores = node_scores;
+        }
+        pruned_tuples.push_back(tuples[ind]);
+        pruned_scores.push_back(order_score);
+    }
+    std::cout << "number of orders after pruning: " << pruned_tuples.size() << std::endl;
+
+    return (pruned_tuples);
+}
+
+std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> prune_subsample(std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> &tuples)
+{
+    int seed = 1;
+    std::srand(seed);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::default_random_engine generator(seed);
+    std::vector<double> pruned_scores;
+
+    for (const auto &t : tuples)
+    {
+        const auto &[optimal_order, order_score, order_number, node_scores] = t;
+        pruned_scores.push_back(order_score);
+    }
+
+    std::vector<double> *norm_w = dist_from_logprobs(pruned_scores);
+    PrintVector(pruned_scores);
+    std::cout << "Normalized vector of scores: " << std::endl;
+
+    std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
+    PrintVector(*norm_w);
+    std::size_t NN = 100;
+    std::size_t N = std::min(NN, tuples.size());
+    std::vector<int> I(N);
+
+    std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> pruned_tuples;
+    delete norm_w;
+    // Resample particles
+    for (std::size_t i = 0; i < N; i++)
+    {
+        I[i] = distribution(generator);
+        std::cout << I[i] << ", ";
+    }
+    for (const auto &ind : I)
+    {
+        pruned_tuples.push_back(tuples[ind]);
+    }
+
+    std::cout << std::endl;
+    std::cout << pruned_tuples.size() << std::endl;
+
+    return (pruned_tuples);
+}
+
 void sequential_opt(OrderScoring &scoring);
 void sequential_opt(OrderScoring &scoring)
 {
+
     std::size_t p = scoring.numparents.size();
     std::cout << "Starting optimization" << std::endl;
     std::vector<std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>>> opt_tuples(p + 1);
 
-    for (std::size_t n = 1; n <= 8; n++)
+    for (std::size_t n = 1; n <= p; n++)
     {
         std::cout << "\nn=" << n << std::endl;
         // This could be done in parallel.
@@ -938,52 +1006,36 @@ void sequential_opt(OrderScoring &scoring)
         std::vector<std::vector<bool>> boolmat;
         std::vector<double> order_scores;
 
+        opt_tuples[n] = prune_equal_sets(opt_tuples[n], n);
+
         for (const auto &t : opt_tuples[n])
         {
             const auto &[optimal_order, order_score, order_number, node_scores] = t;
-            std::vector<bool> boolvec = order_to_boolvec(optimal_order, n);
-            boolmat.push_back(std::move(boolvec));
-            order_scores.push_back(order_score);
-            //std::vector<int> tmpv(optimal_order.end() - n, optimal_order.end());
-            //PrintVector(tmpv);
-            //std::cout << "score " << order_score << std::endl;
-            // if (order_score > max_score)
-            // {
-            //     max_score = order_score;
-            //     max_order = optimal_order;
-            //     max_nodescores = node_scores;
-            // }
-        }
-        std::cout << "pruning... " << std::endl;
-        std::vector<int> pruned_inds = numbering_seq(boolmat, order_scores);
-        std::cout << "number of orders after pruning: " << pruned_inds.size() << std::endl;
-        std::vector<std::tuple<std::vector<int>, double, int, std::vector<double>>> pruned_tuples;
-        for (const auto &ind : pruned_inds)
-        {
-            const auto &[optimal_order, order_score, order_number, node_scores] = opt_tuples[n][ind];
             if (order_score > max_score)
             {
                 max_score = order_score;
                 max_order = optimal_order;
                 max_nodescores = node_scores;
             }
-            pruned_tuples.push_back(std::move(opt_tuples[n][ind]));
         }
-        opt_tuples[n] = std::move(pruned_tuples);
 
-        std::vector<int> tmpv(max_order.end() - n, max_order.end());
-        std::cout << "max scoring sub order " << std::endl;
-        PrintVector(tmpv);
-        //PrintVector(max_nodescores);
+        // Resample particles instead.
+
+        opt_tuples[n] = prune_subsample(opt_tuples[n]);
+
+        // // Print some statistics //
+        // std::cout << "number of (unordered) orders after sub sampling: " << opt_tuples[n].size() << std::endl;
+
+        // /* Check that scores are correct */
+        // std::vector<int> tmpv(max_order.end() - n, max_order.end());
+        // std::cout << "max scoring sub order " << std::endl;
+        // PrintVector(tmpv);
         // // check correct score
-        std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
-        //PrintVector(*sc);
-
-        double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
-        delete sc;
-        assert(std::abs(max_score - max_score_check) < 0.00001);
-        std::cout << "score: " << max_score << std::endl;
-        //std::cout << max_score_check << std::endl;
+        // std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
+        // double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
+        // delete sc;
+        // assert(std::abs(max_score - max_score_check) < 0.00001);
+        // std::cout << "score: " << max_score << std::endl;
     }
 }
 
@@ -1142,135 +1194,6 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
     //std::cout << "prop prob" << (*neig_dist)[new_node_index] << std::endl;
     return std::log((*neig_dist)[new_node_index]); // NOTE: This can be -Inf sometimes.
 }
-
-// std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
-//                                                                                              const std::vector<std::vector<int>> &cond_orders,
-//                                                                                              const std::vector<int> &new_node_inds_cond_orders,
-//                                                                                              std::default_random_engine &generator);
-// std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<double>> smc_cond(OrderScoring &scoring, std::size_t N,
-//                                                                                              const std::vector<std::vector<int>> &cond_orders,
-//                                                                                              const std::vector<int> &new_node_inds_cond_orders,
-//                                                                                              std::default_random_engine &generator)
-// {
-//     std::size_t p = scoring.numparents.size();
-//     std::cout << "Starting conditional SMC " << std::endl;
-//     std::vector<std::vector<double>> log_w(p, std::vector<double>(N, 0.0));
-//     std::vector<std::vector<std::vector<int>>> orders(p, std::vector<std::vector<int>>(N, std::vector<int>(p)));
-//     std::vector<int> I(N);
-//     int node_index;
-//     double log_prop_prob;
-//     std::vector<std::vector<std::vector<double>>> log_node_scores(p, std::vector<std::vector<double>>(N, std::vector<double>(p, 0.0)));
-//     std::vector<std::vector<double>> log_order_scores(p, std::vector<double>(N));
-//     std::vector<double> *norm_w;
-
-//     for (size_t i = 0; i < N; i++)
-//     {
-//         for (size_t n = 0; n < p; n++)
-//         {
-//             for (size_t m = 0; m < p; m++)
-//             {
-//                 if (i == 0)
-//                 {
-//                     orders[n][i][m] = cond_orders[n][m];
-//                 }
-//                 else
-//                 {
-//                     orders[n][i][m] = m;
-//                 }
-//             }
-//         }
-//     }
-
-//     for (size_t n = 0; n < p; n++)
-//     {
-//         //std::cout << "\n\nn: " << n << " cache hits: " << scoring.cache_hits << " pgibbs order (first " << n + 1 << " elements) " << std::endl;
-//         //PrintVector(orders[n][0]);
-//         // Compute the conditional orders for particle Gibbs.
-//         std::vector<double> *sc = scoring.score(orders[n][0], 0, n + 1); // Score all the nodes in the sub order [0,..,n].
-//         log_node_scores[n][0] = *sc;
-
-//         //std::cout << "Node scores " << std::endl;
-//         //PrintVector(log_node_scores[n][0]);
-//         delete sc;
-//         log_order_scores[n][0] = std::accumulate(log_node_scores[n][0].begin(), log_node_scores[n][0].end(), 0.0); // TODO: this may be too slow.
-
-//         //std::cout << "fixed order score "  << log_order_scores[n][0] << std::endl;
-//         //std::cout << "Order score " << log_order_scores[n][0] << std::endl;
-
-//         if (n == 0)
-//         {
-//             log_w[n][0] = log_order_scores[n][0] - (-std::log(p));
-//         }
-//         else
-//         {
-//             // std::cout << "New node inds" << std::endl;
-//             // PrintVector(new_node_inds_cond_orders);
-//             double log_prop_prob, log_prop_prob2 = order_log_prop_prob(orders[n][0], n, new_node_inds_cond_orders[n - 1], log_order_scores[n - 1][0], scoring);
-//             //std::cout << "Log prop prob " << log_prop_prob << std::endl;
-//             assert(std::exp(log_prop_prob) >= 0 && std::exp(log_prop_prob) <= 1);
-
-//             if (!std::isfinite(log_prop_prob))
-//             {
-//                 log_prop_prob = std::numeric_limits<double>::min();
-//                 //log_w[n][0] =
-//             }
-//             log_w[n][0] = log_order_scores[n][0] - std::log(n + 1) - log_order_scores[n - 1][0] - (log_prop_prob - std::log(p - n));
-//             //std::cout << "w " << log_w[n][0] << std::endl;
-//             //assert(std::isfinite(log_prop_prob2));
-//             // TODO: BUG: Update log node scores!
-//         }
-
-//         // Update the rest of the particles.
-//         for (size_t i = 1; i < N; i++)
-//         {
-//             //std::cout << "\ni: " << i << std::endl;
-//             if (n == 0)
-//             {
-//                 // This is the initialisation
-//                 node_index = rand_int_in_range(n, p - 1); // Draw random node
-
-//                 if (node_index != 0)
-//                 {
-//                     move_element(orders[n][i], node_index, n); // Move to node_index to index n=0
-//                 }
-//                 std::vector<double> *sc = scoring.score(orders[n][i], n, 1); // OK, score only index 0
-//                 log_node_scores[n][i] = *sc;
-//                 delete sc;
-//                 log_order_scores[n][i] = log_node_scores[n][i][orders[n][i][n]]; // std::accumulate(log_node_scores[i].begin(), log_node_scores[i].end(), 0.0)
-//                 log_w[n][i] = log_order_scores[n][i] - (-std::log(p));           // First weight
-//             }
-//             else
-//             {
-//                 node_index = rand_int_in_range(n, p - 1); // Draw one of the remaining nodes
-//                 log_prop_prob = score_sub_order_neigh(scoring,
-//                                                       orders[n - 1][I[i]],
-//                                                       log_node_scores[n - 1][I[i]],
-//                                                       log_order_scores[n - 1][I[i]],
-//                                                       orders[n][i],
-//                                                       log_node_scores[n][i],
-//                                                       log_order_scores[n][i],
-//                                                       n,
-//                                                       node_index,
-//                                                       generator); // Propose from neighborhood.
-
-//                 //std::cout << "order score " << log_order_scores[n][i] << std::endl;
-//                 log_w[n][i] = log_order_scores[n][i] - std::log(n + 1) - log_order_scores[n - 1][I[i]] - (log_prop_prob - std::log(p - n));
-//             }
-//         }
-//         //PrintVector(log_w[n]);
-//         // rescale weights to
-//         norm_w = dist_from_logprobs(log_w[n]);
-//         std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
-//         delete norm_w;
-//         // Resample particles
-//         for (std::size_t i = 0; i < N; i++)
-//         {
-//             I[i] = distribution(generator);
-//         }
-//     }
-
-//     return (std::make_tuple(log_w[p - 1], orders[p - 1], log_order_scores[p - 1]));
-// }
 
 void smc_cond_kernel(std::size_t n,
                      std::size_t i_from,
@@ -1519,11 +1442,11 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
     return (std::make_pair(orders, log_scores));
 }
 
-std::pair<std::vector<std::vector<int>>, std::vector<double>> mh(std::size_t M, OrderScoring &scoring, std::default_random_engine &generator)
+std::pair<std::vector<int>, std::vector<double>> mh(std::size_t M, OrderScoring &scoring, std::default_random_engine &generator)
 {
     std::size_t p = scoring.numparents.size();
     //std::vector<std::vector<int>> orders(M, std::vector<int>(p));
-    std::vector<std::vector<int>> orders(2, std::vector<int>(2));
+    //std::vector<std::vector<int>> orders(2, std::vector<int>(2));
     std::vector<double> log_scores(M);
 
     // Init vector
@@ -1539,6 +1462,8 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> mh(std::size_t M, 
     //std::vector<double> *log_nodes_scores = scoring.score(orders[0], 0, p);
     std::vector<double> *log_nodes_scores = scoring.score(order, 0, p);
     log_scores[0] = std::accumulate(log_nodes_scores->begin(), log_nodes_scores->end(), 0.0);
+    double max_score = -INFINITY;
+    std::vector<int> max_order;
 
     for (std::size_t j = 1; j < M; j++)
     {
@@ -1547,11 +1472,16 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> mh(std::size_t M, 
         //orders[j] = mh_order;
         order = mh_order;
         log_scores[j] = mh_log_score;
+        if (mh_log_score > max_score)
+        {
+            max_score = mh_log_score;
+            max_order = order;
+        }
     }
 
     delete log_nodes_scores;
 
-    return (std::make_pair(orders, log_scores));
+    return (std::make_pair(max_order, log_scores));
 }
 
 OrderScoring get_score(Rcpp::List ret)
@@ -1792,4 +1722,35 @@ Rcpp::List r_mh(Rcpp::List ret, int M, int seed)
 //     //scores$allowedlists < -allowedscorelists
 //     //scores$totscores < -orderscores
 //     return (orderscores);
+// }
+
+// std::valarray<int> numbering(int n, std::vector<int> inds, const std::valarray<bool> &mats, std::valarray<int> &vec)
+//     std::valarray<int> numbering(const std::valarray<bool> &mats, int n, std::valarray<int> &vec)
+// {
+//     int N = vec.size();
+//     // Find indices for zeros
+//     std::valarray<bool> one_inds(N);
+//     std::valarray<bool> zero_inds(N);
+
+//     for (size_t i = 0; i < N; i++)
+//     {
+//         one_inds[i] = mats[std::slice(n * N, N, 1)] && true;
+//         zero_inds[i] = mats[std::slice(n * N, N, 1)] && false;
+//     }
+
+//     if (n == vec.size() - 1)
+//     {
+//         vec[one_inds] += zero_inds.sum();
+//         //vec[zero_inds] += 0;
+//     }
+//     else
+//     {
+//         // The indices of the 1's.
+//         std::valarray<int> one_numbers = numbering(mats[std::slice(n * N, N, 1)][one_inds], n + 1, vec[one_inds]);
+//         vec[one_inds] += zero_inds.size() + one_numbers;
+//         // Add the number of zeros to the one inds.
+//         std::valarray<int> zero_numbers = numbering(mats[std::slice(n * N, N, 1)][zero_inds], n + 1, vec[zero_inds]);
+//         vec[zero_inds] += zero_numbers;
+//     }
+//     return (vec);
 // }

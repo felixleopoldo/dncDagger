@@ -57,8 +57,8 @@ int main(int argc, char **argv)
 
     //std::string r_code = "source(\"felixtestar.R\"); ret";
     //std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
 
     RInside R(argc, argv);
     //std::string r_code = "source(\"readtables.R\"); ret";
@@ -84,13 +84,14 @@ int main(int argc, char **argv)
     PrintVector(pruned_inds);
     sequential_opt(scoring);
 
-    // int M = 10000000;
+    int M = 10000000;
 
-    // const auto &[mh_orders, mh_log_scores] = mh(M, scoring, generator);
-    // int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();
-    // std::cout << "MH max log score " << mh_log_scores[mh_max_score_ind] << std::endl;
-
-    // //PrintVector(mh_orders[mh_max_score_iqqnd]);
+    const auto &[max_order, mh_log_scores] = mh(M, scoring, generator);
+    int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();
+    std::cout << "MH only swap move" << std::endl;
+    std::cout << "max order" << std::endl;
+    PrintVector(max_order);
+    std::cout << "score: " << mh_log_scores[mh_max_score_ind] << std::endl;
 
     // thread_pool pool;
     // //pool.push_task(task, arg1, arg2);

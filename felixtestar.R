@@ -12,14 +12,14 @@ sumsc <- function(scores) {
 # Score true order
 # Rescale no extra parents from score table
 
-#filename <- "myasiandata.csv"
-#data <- read.csv(filename, check.names = FALSE)[-1,]
-#myscore <- scoreparameters(scoretype = "bde", data, bdecatpar = list(chi = 0.5, edgepf = 2))
+filename <- "data/myasiandata.csv"
+data <- read.csv(filename, check.names = FALSE)[-1,]
+myscore <- scoreparameters(scoretype = "bde", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 
-filename <- "data/p50n300gaussdata.csv"
-#filename <- "jackdata.csv"
-data <- read.csv(filename, check.names = FALSE)
-myscore <- scoreparameters(scoretype = "bge", data, bdecatpar = list(am = 0.1))
+# filename <- "data/p50n300gaussdata.csv"
+# #filename <- "jackdata.csv"
+# data <- read.csv(filename, check.names = FALSE)
+# myscore <- scoreparameters(scoretype = "bge", data, bdecatpar = list(am = 0.1))
 
 startorder <- seq(dim(data)[2])
 startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
