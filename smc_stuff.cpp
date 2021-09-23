@@ -1021,21 +1021,21 @@ void sequential_opt(OrderScoring &scoring)
 
         // Resample particles instead.
 
-        opt_tuples[n] = prune_subsample(opt_tuples[n]);
+        //opt_tuples[n] = prune_subsample(opt_tuples[n]);
 
-        // // Print some statistics //
-        // std::cout << "number of (unordered) orders after sub sampling: " << opt_tuples[n].size() << std::endl;
+        // Print some statistics //
+        //std::cout << "number of (unordered) orders after sub sampling: " << opt_tuples[n].size() << std::endl;
 
-        // /* Check that scores are correct */
-        // std::vector<int> tmpv(max_order.end() - n, max_order.end());
-        // std::cout << "max scoring sub order " << std::endl;
-        // PrintVector(tmpv);
-        // // check correct score
-        // std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
-        // double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
-        // delete sc;
-        // assert(std::abs(max_score - max_score_check) < 0.00001);
-        // std::cout << "score: " << max_score << std::endl;
+        /* Check that scores are correct */
+        std::vector<int> tmpv(max_order.end() - n, max_order.end());
+        std::cout << "max scoring sub order " << std::endl;
+        PrintVector(tmpv);
+        // check correct score
+        std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
+        double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
+        delete sc;
+        assert(std::abs(max_score - max_score_check) < 0.00001);
+        std::cout << "score: " << max_score << std::endl;
     }
 }
 
