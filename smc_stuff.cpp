@@ -640,26 +640,6 @@ double max_at_end_proposal(OrderScoring &scoring,
     return log_prob;
 }
 
-// std::tuple<std::vector<int>, double, double> proposal(const OrderScoring &scoring,
-//                                                       std::vector<int> input_order,
-//                                                       std::vector<double> node_scores,
-//                                                       double order_score,
-//                                                       int first_n_elements, int index_of_el_to_insert, std::default_random_engine generator)
-// {
-
-//     std::vector<double> order_scores = score_sub_order_neigh(scoring, input_order, node_scores, order_score, int_)
-//         std::vector<double>
-//             neig_dist = dist_from_logprobs(order_scores);                             // Sample one order in the neighborhood
-//     std::discrete_distribution<int> distribution(neig_dist.begin(), neig_dist.end()); // Create a distribution. O(p+1)
-//     int insert_pos = distribution(generator);                                         // O(N)
-
-//     // move mode to index insert_pos
-//     std::vector<int> ret_order(input_order);
-
-//     move_element(ret_order, index_of_el_to_insert, insert_pos); // Move the element to the selectd position
-//     // TODO: Need to return log_node_scores
-//     return (std::make_tuple(ret_order, std::log(neig_dist[insert_pos]), order_scores[insert_pos]));
-// }
 std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in_front(const std::vector<int> &input_order,
                                                                                        int n,
                                                                                        int index_of_el_to_insert,
@@ -693,7 +673,7 @@ std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in
     bool optimal_at_front = true;
 
     //std::cout << p - n << ": " << order_score << ", ";
-    for (int i = p - n; i < p - 1; ++i) // put it in the back instead
+    for (int i = p - n; i < p - 1; ++i) // put it in the back instead?
     {
         int node1 = order[i];
         int node2 = order[i + 1];
@@ -720,6 +700,94 @@ std::tuple<std::vector<int>, double, std::vector<double>, int, bool> put_node_in
     //PrintVector(order_scores);
     // If not optimal at the front (p-n), nodes_scores is not correct
     return (std::make_tuple(order_ret, max_score, node_scores_ret, order_number, optimal_at_front));
+}
+
+void swap_nodes(const int lower, const int upper, std::vector<int> &order, std::vector<double> &node_scores, double &order_score, OrderScoring &scoring)
+{
+    int node1 = order[lower];
+    int node2 = order[upper];
+    const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(lower, upper, order, node_scores);
+    //std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
+    order_score = order_score - (node_scores[node1] + node_scores[node2]) + (node1_scoretmp + node2_scoretmp);
+    node_scores[node1] = node1_scoretmp;
+    node_scores[node2] = node2_scoretmp;
+}
+
+/**
+ * Moves an unsscored node to the right of the sub order and scores. 
+ * Eg if (1) is the node to score:
+ * [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
+ */
+double insert_and_score_at(std::vector<int> &order,
+                           int from_index,
+                           int to_index,
+                           int n,
+                           std::vector<double> &node_scores,
+                           double &order_score,
+                           OrderScoring &scoring)
+{
+    int p = order.size();
+    int node = order[from_index];
+
+    if (to_index < p - n)
+    {
+        // If the new node is to be put somewhere in the order.
+        // [0,(1),2,3|5,6,4] -> [(1),0,2,3|5,6,4]
+        move_element(order, from_index, to_index);              // put it in the back [0,(1),2,3,|5,6,4] -> [(1),0,2,3,|,5,6,4]
+        node_scores[node] = scoring.score_pos(order, to_index); // O(p)? This should also be quite time consuming..
+        order_score += node_scores[node];
+    }
+
+    if (to_index >= p - n)
+    {
+        // If the new node is to be put on the very left of the sub order
+        // [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
+        move_element(order, from_index, p - n - 1);              // put it in the back [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
+        node_scores[node] = scoring.score_pos(order, p - n - 1); // O(p)? This should also be quite time consuming..
+        order_score += node_scores[node];
+
+        // If the new node is put somewhere in the sub order we wave to shift it in from the left.
+        // [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4] -> [0,2,3,|5,(1),6,4]
+        for (int i = p - n - 1; i < to_index; ++i)
+        {
+            swap_nodes(i, i + 1, order, node_scores, order_score, scoring);
+        }
+    }
+
+    return (order_score);
+}
+
+bool prune_right_type(std::vector<int> &order,
+                      int n,
+                      std::vector<double> &node_scores,
+                      double &order_score,
+                      OrderScoring &scoring)
+{
+    std::size_t p = order.size();
+    for (std::size_t node_index = 0; node_index < p - n; node_index++)
+    {
+        // Go though all of the un used nodes and inject them at second place
+        // of the sub order and at the very front of the order.
+
+        double order_score_bkp = order_score;
+        double score_at_top = insert_and_score_at(order, node_index, 0, n, node_scores, order_score, scoring);
+        move_element(order, 0, node_index);   // move back the node.
+        node_scores[order[node_index]] = 0.0; // reset the node scre at pos 0
+        order_score = order_score_bkp;        // reset order score
+
+        double node_score_bkp = node_scores[order[p - n]];
+        double score_at_pos_2 = insert_and_score_at(order, node_index, p - n, n, node_scores, order_score, scoring);
+        move_element(order, p - n, node_index);     // move back the node.
+        node_scores[order[node_index]] = 0.0;       // reset the node scre at pos 0
+        node_scores[order[p - n]] = node_score_bkp; // reset the node scre at pos p-n
+
+        order_score = order_score_bkp; // reset order score
+        if (score_at_top <= score_at_pos_2 + 0.0000001)
+        {
+            return (true); // Prune
+        }
+    }
+    return (false);
 }
 
 void put_nodes_in_front(int n,
@@ -753,7 +821,11 @@ void put_nodes_in_front(int n,
             std::tuple<std::vector<int>, double, int, std::vector<double>>
                 opt_tuple = std::make_tuple(order, order_score, order_number, node_scores);
             //std::cout << "score " << order_score << std::endl;
-            opt_tuples[n].push_back(opt_tuple);
+
+            if (!prune_right_type(order, n, node_scores, order_score, scoring))
+            {
+                opt_tuples[n].push_back(opt_tuple);
+            }
         }
         //std::cout << "order score " << std::get<double>(opt_tuples[1][0]) << std::endl;
     }
@@ -770,33 +842,27 @@ void put_nodes_in_front(int n,
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
                 // Try to put m to the front
-                const auto &[optimal_order, order_score, node_scores, order_number, is_optimal] = put_node_in_front(prev_order,
-                                                                                                                    n,
-                                                                                                                    node_index,
-                                                                                                                    prev_node_scores,
-                                                                                                                    prev_score,
-                                                                                                                    prev_order_number,
-                                                                                                                    scoring);
+
+                auto [optimal_order, order_score, node_scores, order_number, is_optimal] = put_node_in_front(prev_order,
+                                                                                                             n,
+                                                                                                             node_index,
+                                                                                                             prev_node_scores,
+                                                                                                             prev_score,
+                                                                                                             prev_order_number,
+                                                                                                             scoring);
                 // Pruning step I) Keep only if the new node (before at node_index) is optimal at the front.
+                // Pruning step II) If it is better to move one of the nodes in the ordering to the front.
+                // Pruning step III) If the top and next top nodes can be interchanged while the score is invariant,
                 if (is_optimal == true)
                 {
-                    // Pruning step II) If it is better to move one of the nodes in the ordering to the front.
-                    // Pruning step III) If the top and next top nodes can be interchanged while the score is invariant,
-                    // Current node scores
-                    // node1_score = node_scores[i - 1];
-                    // node2_score = node_scores[i];
-                    // const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, ordering, node_scores); // This should update the orderscore directly maybe.
-                    // if (node1_score == node1_scoretmp && node2_score == node2_scoretmp)
-                    // {
-                    // }
-                    // else
-                    // {
-                    //     // Swap back
-                    //     myswap(i - 1, i, ordering);
-                    // }
-
-                    std::tuple<std::vector<int>, double, int, std::vector<double>> tuple = std::make_tuple(optimal_order, order_score, order_number, node_scores);
-                    opt_tuples[n].push_back(tuple);
+                    if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
+                    {
+                        // Check if it fits better as parent for all others (index 0, or very "left").
+                        //PrintVector(optimal_order);
+                        //std::cout << order_score << std::endl;
+                        std::tuple<std::vector<int>, double, int, std::vector<double>> tuple = std::make_tuple(optimal_order, order_score, order_number, node_scores);
+                        opt_tuples[n].push_back(tuple);
+                    }
                 }
             }
         }
@@ -1021,10 +1087,7 @@ void sequential_opt(OrderScoring &scoring)
 
         // Resample particles instead.
 
-        //opt_tuples[n] = prune_subsample(opt_tuples[n]);
-
         // Print some statistics //
-        //std::cout << "number of (unordered) orders after sub sampling: " << opt_tuples[n].size() << std::endl;
 
         /* Check that scores are correct */
         std::vector<int> tmpv(max_order.end() - n, max_order.end());
@@ -1753,4 +1816,25 @@ Rcpp::List r_mh(Rcpp::List ret, int M, int seed)
 //         vec[zero_inds] += zero_numbers;
 //     }
 //     return (vec);
+// }
+
+// std::tuple<std::vector<int>, double, double> proposal(const OrderScoring &scoring,
+//                                                       std::vector<int> input_order,
+//                                                       std::vector<double> node_scores,
+//                                                       double order_score,
+//                                                       int first_n_elements, int index_of_el_to_insert, std::default_random_engine generator)
+// {
+
+//     std::vector<double> order_scores = score_sub_order_neigh(scoring, input_order, node_scores, order_score, int_)
+//         std::vector<double>
+//             neig_dist = dist_from_logprobs(order_scores);                             // Sample one order in the neighborhood
+//     std::discrete_distribution<int> distribution(neig_dist.begin(), neig_dist.end()); // Create a distribution. O(p+1)
+//     int insert_pos = distribution(generator);                                         // O(N)
+
+//     // move mode to index insert_pos
+//     std::vector<int> ret_order(input_order);
+
+//     move_element(ret_order, index_of_el_to_insert, insert_pos); // Move the element to the selectd position
+//     // TODO: Need to return log_node_scores
+//     return (std::make_tuple(ret_order, std::log(neig_dist[insert_pos]), order_scores[insert_pos]));
 // }
