@@ -108,7 +108,7 @@ orderMCMCmain <- function(param, iterations, stepsave, MAP = TRUE, posterior = 0
     }
 
   } else {
-    print("PLUS1")
+    print("PLUS1=TRUE.")
     parenttable <- ptab$parenttable # basic parenttable without plus1 lists
     aliases <- ptab$aliases #aliases for each node since all nodes in parent tables are done as 1,2,3,4... not real parent names
     numberofparentsvec <- ptab$numberofparentsvec
@@ -138,15 +138,16 @@ orderMCMCmain <- function(param, iterations, stepsave, MAP = TRUE, posterior = 0
 
     #running MCMC scheme   
     if (MAP) {
+      print("MAP=TRUE -> orderMCMCplus1max")
       MCMCresult <- orderMCMCplus1max(n, nsmall, startorder, iterations, stepsave, moveprobs, parenttable,
                                       scoretable, aliases, numparents, rowmaps, plus1lists, maxmatrices, numberofparentsvec,
                                       gamma = gamma, bgnodes = param$bgnodes, matsize = matsize)
 
     } else {
-      print("orderMCMCplus1")
+      print("MAP=FALSE -> orderMCMCplus1")
       MCMCresult <- orderMCMCplus1(n, nsmall, startorder, iterations, stepsave, moveprobs, parenttable,
                                    scoretable, aliases, numparents, rowmaps, plus1lists,
-                                   bannedscore, numberofparentsvec, gamma = gamma,
+                                   bannedscore, numberofparentsvec, gamma = gamma, # only differ in bannedscores/maxmatrices
                                    bgnodes = param$bgnodes, matsize = matsize)
     }
 

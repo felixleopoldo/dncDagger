@@ -54,10 +54,10 @@ int main(int argc, char **argv)
 
     // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
     // Can we use the sampled ones as a prior that is approximately the same?
-    //std::string r_code = "source(\"felixtestar.R\"); ret";
+    std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
     //std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    std::string r_code = "ret <- readRDS('myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+    //std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
 
     RInside R(argc, argv);
     //std::string r_code = "source(\"readtables.R\"); ret";
@@ -79,15 +79,18 @@ int main(int argc, char **argv)
     mats.push_back({1, 1, 0, 0});
 
     std::vector<double> order_scores = {1.0, 2.0, 2.1, 3.0, 2.5, 0.5};
-    std::vector<int> pruned_inds = numbering_seq(mats, order_scores);
+    std::vector<int> pruned_inds = unique_sets(mats, order_scores);
+
     PrintVector(pruned_inds);
+    std::cout << DBL_EPSILON << std::endl;
+
     sequential_opt(scoring);
+    //std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
 
-    // int M = 10000000;
-
+    // int M = 100000000;
     // const auto &[max_order, mh_log_scores] = mh(M, scoring, generator);
     // int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();
-    // std::cout << "MH only swap move" << std::endl;
+    // std::cout << "MH only swap move " << M << " iterations" << std::endl;
     // std::cout << "max order" << std::endl;
     // PrintVector(max_order);
     // std::cout << "score: " << mh_log_scores[mh_max_score_ind] << std::endl;
@@ -107,8 +110,6 @@ int main(int argc, char **argv)
     // }
     // int pgibbs_max_score_ind = std::max_element(pgibbs_log_scores.begin(), pgibbs_log_scores.end()) - pgibbs_log_scores.begin();
     // std::cout << "PGibbs max log score " << pgibbs_log_scores[pgibbs_max_score_ind] << std::endl;
-
-    exit(0);
 }
 
 // auto start = high_resolution_clock::now();

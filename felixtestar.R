@@ -8,45 +8,30 @@ sumsc <- function(scores) {
   return(log(sum(exp(scores - max(scores)))) + max(scores))
 }
 
-# September 2 Meeting
-# Score true order
-# Rescale no extra parents from score table
+# filename <- "data/myasiandata.csv"
+# data <- read.csv(filename, check.names = FALSE)[-1,]
+# myscore <- scoreparameters(scoretype = "bdecat", data, bdecatpar = list(chi = 0.5, edgepf = 2))
 
-filename <- "data/myasiandata.csv"
-data <- read.csv(filename, check.names = FALSE)[-1,]
-myscore <- scoreparameters(scoretype = "bde", data, bdecatpar = list(chi = 0.5, edgepf = 2))
+filename <- "data/p20n300gaussdata.csv"
+#filename <- "data/p50n300gaussdata.csv"
+#filename <- "data/jackdata.csv"
+data <- read.csv(filename, check.names = FALSE)
+myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
 
-# filename <- "data/p50n300gaussdata.csv"
-# #filename <- "jackdata.csv"
-# data <- read.csv(filename, check.names = FALSE)
-# myscore <- scoreparameters(scoretype = "bge", data, bdecatpar = list(am = 0.1))
-
+MAP=TRUE
 startorder <- seq(dim(data)[2])
 startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
-scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = FALSE, startspace = startspace)
-res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = FALSE, startorder = startorder, scoretable = scoretable, startspace = startspace)
+scoretable <- getScoreTable(myscore, scoreout = TRUE, MAP = MAP, startspace = startspace)
+
+res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = MAP, startorder = startorder, scoretable = scoretable, startspace = startspace)
 
 set.seed(3)
 
 order <- startorder #sample(startorder, replace = FALSE)
 
-# scores <- orderscorePlus1Felix(
-#                               myscore$n,
-#                               order,
-#                               seq(myscore$nsmall),
-#                               res$ptab$parenttable,
-#                               res$ptab$aliases,
-#                               res$ptab$numparents,
-#                               res$rowmaps,
-#                               res$plus1lists,
-#                               scoretable$table,
-#                               res$bannedscore,
-#                               order)
-
 ret <- list()
 # These and scoretable should be read into c++ in some way.
 
-ret$order <- order - 1 # fix indexing 
 ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
   df <- data.frame(a)
   df[is.na(df)] <- 0
@@ -63,11 +48,46 @@ ret$rowmaps_backwards <- lapply(res$rowmaps, function(a) a$backwards - 1)
 ret$plus1listsparents <- lapply(res$plus1lists$parents, function(a) a - 1)
 ret$scoretable <- scoretable$table
 ret$bannedscore <- res$bannedscore
-
+ret$MAP <- MAP
 
 
 saveRDS(ret, file = paste(filename, "rds", sep = "."))
 
+#Check scores for some ordering. And compare to C++ node scores.
+order <- 1+c(19,14,18,12,17,8,16,7,9,15,10,11,5,1,6,3,13,4,2,0)
+
+
+if(MAP==FALSE){
+  scores <- orderscorePlus1(
+                            myscore$n,
+                            order,
+                            seq(myscore$nsmall),
+                            res$ptab$parenttable,
+                            res$ptab$aliases,
+                            res$ptab$numparents,
+                            res$rowmaps,
+                            res$plus1lists,
+                            scoretable$table,
+                            res$bannedscore,
+                            order)
+} else {
+tmp <-list()
+tmp$maxmatrix <- res$bannedscore
+scores <- orderscorePlus1max(
+                          myscore$n,
+                          order,
+                          seq(myscore$nsmall),
+                          res$ptab$parenttable,
+                          res$ptab$aliases,
+                          res$ptab$numparents,
+                          res$plus1lists, # OBS! Tho order is changedhere compared to orderscorePlus1
+                          res$rowmaps, # OBS! Tho order is changedhere compared to orderscorePlus1
+                          scoretable$table,
+                          tmp,
+                          order)
+}
+
+#-436.407,-412.631,-377.402,-252.436,-426.504,-411.064,-306.037,-427.981,-226.323,-408.531,-331.536,-224.603,-373.228,-299.423,-234.915,-322.707,-300.573,-222.472,-251.861,-167.25,
 #ret
 #res <- orderMCMCFelix(myscore, scoreout = TRUE, MAP = FALSE, startorder = startorder, scoretable=NULL)
 

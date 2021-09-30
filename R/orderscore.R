@@ -36,7 +36,10 @@ orderscoreBase <- function(n, scorenodes, scorepositions, parenttable, aliases, 
 # scores a single order base version (plus1 neighbourhood)
 
 orderscorePlus1 <- function(n, scorenodes, scorepositions, parenttable, aliases, numparents,
-                          rowmaps, plus1lists, scoretable, scoresmatrices, permy) {
+                            rowmaps, plus1lists, 
+                            scoretable, 
+                            scoresmatrices, 
+                            permy) {
 
   orderscores <- vector("double", n)
   allowedscorelists <- vector("list", n)

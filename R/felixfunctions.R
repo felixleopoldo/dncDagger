@@ -57,6 +57,9 @@ source("R/usrscorefns.R")
 source("R/spacefns.R")
 library("pcalg")
 
+
+# This should use MAP !
+# This is a rip off from orderMCMCmain.R , I think...
 getScoreTable <- function(param, iterations, stepsave, MAP = TRUE, posterior = 0.5,
                         startorder = c(1:n), moveprobs, plus1 = FALSE, chainout = TRUE,
                         scoreout = FALSE, startspace = NULL, blacklist = NULL, gamma = 1, verbose = FALSE, alpha = NULL,
@@ -133,9 +136,12 @@ getScoreTable <- function(param, iterations, stepsave, MAP = TRUE, posterior = 0
   rowmaps <- parentsmapping(parenttable, numberofparentsvec, n, updatenodes)
 
 
-  # THois is where score tables are obtained! /Felix
+  # This is where score tables are obtained! /Felix
+  # Should also take care of MAP=TRUE.
   scoretable <- scorepossibleparents.PLUS1(parenttable, plus1lists, n, param, updatenodes,
                                            rowmaps, numparents, numberofparentsvec)
+  
+
 
   res <- list()
   res$tables <- scoretable
@@ -209,11 +215,23 @@ orderMCMCmainFelix <- function(param, iterations, stepsave, MAP = TRUE, posterio
   plus1lists <- PLUS1(matsize, aliases, updatenodes, blacklistparents)
   rowmaps <- parentsmapping(parenttable, numberofparentsvec, n, updatenodes)
 
+  # posetparenttable <- poset(parenttable, numberofparentsvec, rowmaps, n, updatenodes)
+  
+  # bannedscore <- poset.scores(posetparenttable, scoretable, ptab$numberofparentsvec, rowmaps,
+  #                             n, plus1lists = plus1lists, ptab$numparents, updatenodes)
+  
+  ########### Adding this ################
   posetparenttable <- poset(parenttable, numberofparentsvec, rowmaps, n, updatenodes)
-  
-  bannedscore <- poset.scores(posetparenttable, scoretable, ptab$numberofparentsvec, rowmaps,
-                              n, plus1lists = plus1lists, ptab$numparents, updatenodes)
-  
+
+  if (MAP == TRUE) {
+    maxmatrices <- posetscoremax(posetparenttable, scoretable, numberofparentsvec,
+                              rowmaps, n, plus1lists = plus1lists, updatenodes)
+  } else {
+    bannedscore <- poset.scores(posetparenttable, scoretable, ptab$numberofparentsvec, rowmaps,
+                            n, plus1lists = plus1lists, ptab$numparents, updatenodes)
+  }
+  ##############################
+
 
   if (verbose) {
     cat(paste("score tables calculated, MCMC plus1 starts"), "\n")
@@ -221,7 +239,12 @@ orderMCMCmainFelix <- function(param, iterations, stepsave, MAP = TRUE, posterio
   }
 
   ret <- list()
-  ret$bannedscore <- bannedscore
+  if (MAP == TRUE) {
+   ret$bannedscore <- maxmatrices$maxmatrix
+  } else {
+    ret$bannedscore <- bannedscore
+  }
+
   ret$plus1lists <- plus1lists
   ret$rowmaps <- rowmaps
   ret$ptab <- ptab
@@ -234,50 +257,50 @@ orderMCMCmainFelix <- function(param, iterations, stepsave, MAP = TRUE, posterio
 
 }
 
-#scores a single order base version (plus1 neighbourhood)
-# This should be ported to 
-orderscorePlus1Felix <- function(n, scorenodes, scorepositions, parenttable, aliases, numparents,
-                                 rowmaps, plus1lists, scoretable, scoresmatrices, permy) {
+# #scores a single order base version (plus1 neighbourhood)
+# # This should be ported to 
+# orderscorePlus1Felix <- function(n, scorenodes, scorepositions, parenttable, aliases, numparents,
+#                                  rowmaps, plus1lists, scoretable, scoresmatrices, permy) {
  
-  orderscores <- vector("double", n)
-  allowedscorelists <- vector("list", n)
-  therows <- vector("integer", n) # what is this? / Felix
-  k <- 1
-  ## Seems lite there are 8 order scores. What does that mean? / Felix
-  for (i in scorenodes) {
-    position <- scorepositions[k] 
+#   orderscores <- vector("double", n)
+#   allowedscorelists <- vector("list", n)
+#   therows <- vector("integer", n) # what is this? / Felix
+#   k <- 1
+#   ## Seems lite there are 8 order scores. What does that mean? / Felix
+#   for (i in scorenodes) {
+#     position <- scorepositions[k] 
 
-    if (position == n) {
-      #no parents allowed, i.e. only first row, only first list
-      orderscores[i] <- scoretable[[i]][[1]][1, 1]
-      allowedscorelists[[i]] <- c(1)
-      therows[i] <- c(2 ^ numparents[i])
-    }
+#     if (position == n) {
+#       #no parents allowed, i.e. only first row, only first list
+#       orderscores[i] <- scoretable[[i]][[1]][1, 1]
+#       allowedscorelists[[i]] <- c(1)
+#       therows[i] <- c(2 ^ numparents[i])
+#     }
 
-    else {
-      bannednodes <- permy[1:position]
-      allowednodes <- permy[(position + 1):n]
-      bannedpool <- which(aliases[[i]] %in% bannednodes)
+#     else {
+#       bannednodes <- permy[1:position]
+#       allowednodes <- permy[(position + 1):n]
+#       bannedpool <- which(aliases[[i]] %in% bannednodes)
 
-      if (numparents[i] == 0 || length(bannedpool) == 0) {
-        #all parents allowed
-        therows[i] <- c(1)
-      }
-      else {
-        therows[i] <- rowmaps[[i]]$backwards[sum(2 ^ bannedpool) / 2 + 1] # why +1 ?
-      }
+#       if (numparents[i] == 0 || length(bannedpool) == 0) {
+#         #all parents allowed
+#         therows[i] <- c(1)
+#       }
+#       else {
+#         therows[i] <- rowmaps[[i]]$backwards[sum(2 ^ bannedpool) / 2 + 1] # why +1 ?
+#       }
 
-      allowedscorelists[[i]] <- c(1, which(plus1lists$parents[[i]] %in% allowednodes) + 1) # why +1 ?
-      scoresvec <- scoresmatrices[[i]][therows[i], allowedscorelists[[i]]]
-      maxallowed <- max(scoresvec)
-      orderscores[i] <- maxallowed + log(sum(exp(scoresvec - maxallowed)))
-    }
-    k <- k + 1
-  }
-  scores <- list()
-  scores$therow <- therows
+#       allowedscorelists[[i]] <- c(1, which(plus1lists$parents[[i]] %in% allowednodes) + 1) # why +1 ?
+#       scoresvec <- scoresmatrices[[i]][therows[i], allowedscorelists[[i]]]
+#       maxallowed <- max(scoresvec)
+#       orderscores[i] <- maxallowed + log(sum(exp(scoresvec - maxallowed)))
+#     }
+#     k <- k + 1
+#   }
+#   scores <- list()
+#   scores$therow <- therows
 
-  scores$allowedlists <- allowedscorelists
-  scores$totscores <- orderscores
-  return(scores)
-}
+#   scores$allowedlists <- allowedscorelists
+#   scores$totscores <- orderscores
+#   return(scores)
+# }

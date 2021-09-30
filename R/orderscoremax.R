@@ -35,8 +35,11 @@ orderscoreBasemax<-function(n,scorenodes,scorepositions,parenttable,aliases,nump
 
 #returns BGe/BDe logscore of an order (maximum version, plus1 neighbourhood)
 
-orderscorePlus1max<-function(n,scorenodes,scorepositions,parenttable,aliases,numparents,plus1lists,rowmaps,scoretable,
-                               maxmatrices,permy,verbose=FALSE) {
+orderscorePlus1max<-function(n,scorenodes,scorepositions,parenttable,aliases,numparents,
+                            plus1lists,rowmaps,
+                            scoretable,
+                            maxmatrices,
+                            permy,verbose=FALSE) {
 #score nodes should be in the right order
   orderscores<-vector("double",n)
   allowedscorelists<-vector("list",n)
