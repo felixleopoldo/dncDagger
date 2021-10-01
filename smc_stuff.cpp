@@ -817,9 +817,40 @@ bool prune_right_type(std::vector<int> &order,
         node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
 
         order_score = order_score_bkp; // reset order score
-        if (score_at_top < score_at_pos_2 + 0.0000001)
+        if (score_at_top < score_at_pos_2)
         {
+            //std::cout << "Prune since " << score_at_top << " and " << score_at_pos_2 << std::endl;
             return (true); // Prune
+        }
+        if (std::abs(score_at_top - score_at_pos_2) < 0.0000001)
+        {
+            //std::cout << "Equal score at top as injected and " << std::endl;
+            // Check if pos 1 and pos 2 in the suborder can be exchanged.
+            double node_score_top = node_scores[order[p - n]];
+            insert_and_score_at(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
+            double score_at_new_top = node_scores[order[p - n - 1]];
+            //std::cout << "before swap" << std::endl;
+            //std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
+            //std::cout << scoring.score_pos(order, p - n) << std::endl;
+
+            const auto &[node_score_top_swap, score_at_new_top_swap] = scoring.swap_nodes(p - n - 1, p - n, order, node_scores); // This should update the orderscore directly maybe.
+            //std::cout << "after swap" << std::endl;
+            //std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
+            //std::cout << scoring.score_pos(order, p - n) << std::endl;
+
+            move_element(order, p - n, node_index);     // move back the node.
+            node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
+            node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
+            order_score = order_score_bkp;
+            if (std::abs(node_score_top - node_score_top_swap) < 0.0000001 && std::abs(score_at_new_top - score_at_new_top_swap) < 0.0000001)
+            {
+                std::cout << "Equal if top and new to is swapped." << std::endl;
+                if (order[node_index] > order[p - n])
+                {
+                    // If the injected one (index p-n) has higher node number, Prune.
+                    return (true);
+                }
+            }
         }
     }
     return (false);
@@ -1139,6 +1170,12 @@ void sequential_opt(OrderScoring &scoring)
         for (const auto &t : opt_tuples[n])
         {
             const auto &[optimal_order, order_score, order_number, node_scores] = t;
+            if (n < 3)
+            {
+                std::vector<int> tmpv(optimal_order.end() - n, optimal_order.end());
+                PrintVector(tmpv);
+                std::cout << "score: " << order_score << std::endl;
+            }
             if (order_score > max_score)
             {
                 max_score = order_score;
@@ -1155,7 +1192,7 @@ void sequential_opt(OrderScoring &scoring)
         PrintVector(tmpv);
         // check correct score
         std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
-        PrintVector(*sc);
+        //PrintVector(*sc);
         double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
         delete sc;
         assert(std::abs(max_score - max_score_check) < 0.00001);

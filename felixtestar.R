@@ -8,15 +8,15 @@ sumsc <- function(scores) {
   return(log(sum(exp(scores - max(scores)))) + max(scores))
 }
 
-# filename <- "data/myasiandata.csv"
-# data <- read.csv(filename, check.names = FALSE)[-1,]
-# myscore <- scoreparameters(scoretype = "bdecat", data, bdecatpar = list(chi = 0.5, edgepf = 2))
+filename <- "data/myasiandata.csv"
+data <- read.csv(filename, check.names = FALSE)[-1,]
+myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
 
-filename <- "data/p20n300gaussdata.csv"
-#filename <- "data/p50n300gaussdata.csv"
-#filename <- "data/jackdata.csv"
-data <- read.csv(filename, check.names = FALSE)
-myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
+#filename <- "data/p20n300gaussdata.csv"
+# #filename <- "data/p50n300gaussdata.csv"
+# #filename <- "data/jackdata.csv"
+#data <- read.csv(filename, check.names = FALSE)
+#1myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
 
 MAP=TRUE
 startorder <- seq(dim(data)[2])
@@ -30,8 +30,6 @@ set.seed(3)
 order <- startorder #sample(startorder, replace = FALSE)
 
 ret <- list()
-# These and scoretable should be read into c++ in some way.
-
 ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
   df <- data.frame(a)
   df[is.na(df)] <- 0
@@ -50,13 +48,10 @@ ret$scoretable <- scoretable$table
 ret$bannedscore <- res$bannedscore
 ret$MAP <- MAP
 
-
 saveRDS(ret, file = paste(filename, "rds", sep = "."))
 
 #Check scores for some ordering. And compare to C++ node scores.
-order <- 1+c(19,14,18,12,17,8,16,7,9,15,10,11,5,1,6,3,13,4,2,0)
-
-
+#order <- 1+c(19,14,18,12,17,8,16,7,9,15,10,11,5,1,6,3,13,4,2,0)
 if(MAP==FALSE){
   scores <- orderscorePlus1(
                             myscore$n,

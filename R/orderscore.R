@@ -40,7 +40,6 @@ orderscorePlus1 <- function(n, scorenodes, scorepositions, parenttable, aliases,
                             scoretable, 
                             scoresmatrices, 
                             permy) {
-
   orderscores <- vector("double", n)
   allowedscorelists <- vector("list", n)
   therows <- vector("integer", n)
