@@ -22,13 +22,13 @@ startspace <- definestartspace(alpha = NULL, myscore, cpdag = TRUE, algo = "pc")
 
 set.seed(1)
 # This has a different start space probably...
-#startorder <- seq(dim(data)[2])
-startorder <- c(19,14,18,12,17,8,16,7,9,15,10,11,5,1,6,3,13,4,2,0)+1
+startorder <- seq(dim(data)[2])
+#startorder <- c(19,14,18,12,17,8,16,7,9,15,10,11,5,1,6,3,13,4,2,0)+1
 omcmcres <- orderMCMC(myscore, scoreout = TRUE, chainout = TRUE, plus1 = TRUE, MAP = TRUE,
                       startorder = startorder, 
 #                      scoretable= scoretable,
                         startspace = startspace,
-                        iterations = 1000)
+                        iterations = 1000000)
 # 18 19 17 15 10 14  8 11  5 12 16  7  9  1  6  3  2 13  4  0
 # -6416.047
 # after 10 min

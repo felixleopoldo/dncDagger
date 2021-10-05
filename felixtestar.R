@@ -1,5 +1,6 @@
 rm(list = ls())
 library("Rcpp")
+
 library("Jmisc")
 sourceAll(path = "R")
 sourceCpp("src/cppfns.cpp")
@@ -8,15 +9,16 @@ sumsc <- function(scores) {
   return(log(sum(exp(scores - max(scores)))) + max(scores))
 }
 
-filename <- "data/myasiandata.csv"
-data <- read.csv(filename, check.names = FALSE)[-1,]
-myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
+# filename <- "data/myasiandata.csv"
+# data <- read.csv(filename, check.names = FALSE)[-1,]
+# myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
 
 #filename <- "data/p20n300gaussdata.csv"
+filename <- "data/myvstructdata.csv"
 # #filename <- "data/p50n300gaussdata.csv"
 # #filename <- "data/jackdata.csv"
-#data <- read.csv(filename, check.names = FALSE)
-#1myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
+data <- read.csv(filename, check.names = FALSE)
+myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
 
 MAP=TRUE
 startorder <- seq(dim(data)[2])
