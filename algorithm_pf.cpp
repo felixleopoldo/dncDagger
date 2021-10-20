@@ -55,8 +55,8 @@ int main(int argc, char **argv)
     // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
     // Can we use the sampled ones as a prior that is approximately the same?
     //std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
-    std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    //std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
     //std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
     //std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
     //std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
@@ -85,8 +85,8 @@ int main(int argc, char **argv)
     
     // PrintVector(pruned_inds);
     // std::cout << DBL_EPSILON << std::endl
-    //sequential_opt_left_type(scoring);
-    sequential_opt(scoring);
+    sequential_opt_left_type(scoring);
+    //sequential_opt(scoring);
     //std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
 
     // int M = 100000000;

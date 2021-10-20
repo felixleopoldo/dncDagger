@@ -11,6 +11,8 @@ typedef std::tuple<std::vector<int>, int, int> cache_keytype;
 typedef std::pair<std::vector<int>, std::set<int>> cache_keytype2;
 typedef std::pair<std::vector<int>, int> cache_keytype3;
 
+double EPSILON = 0.00000001;
+
 bool approximatelyEqual(float a, float b, float epsilon)
 {
     return fabs(a - b) <= ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
@@ -71,26 +73,24 @@ std::size_t whichPart(std::size_t m, std::size_t size, std::size_t n)
 }
 
 template <typename T>
-void PrintVector(std::vector<T> &arr)
+void PrintVector(std::vector<T> &arr, int from = -1, int to = -1)
 {
-    copy(arr.begin(), arr.end(), std::ostream_iterator<T>(std::cout, ","));
+    if (from == -1)
+    {
+        copy(arr.begin(), arr.end(), std::ostream_iterator<T>(std::cout, ","));
+    }
+    else
+    {
+        copy(arr.begin() + from, arr.begin() + to, std::ostream_iterator<T>(std::cout, ","));
+    }
     std::cout << std::endl;
 }
 
 template <typename T>
-void PrintVector(const std::vector<T> &arr)
+void PrintVector(const std::vector<T> &arr, int from = -1, int to = -1)
 {
-    copy(arr.begin(), arr.end(),
-         std::ostream_iterator<T>(std::cout, ","));
-    std::cout << std::endl;
-}
-
-template <typename T>
-void PrintVector(const std::valarray<T> &arr)
-{
-    std::for_each(std::begin(arr), std::end(arr), [](T c)
-                  { std::cout << c << ','; });
-    std::cout << std::endl;
+    const std::vector<T> vec(arr);
+    PrintVector(vec, from, to);
 }
 
 class OrderScoring
@@ -141,93 +141,96 @@ public:
         int node_b = ordering[nodeb_index];
         double nodea_score = 0.0; // just to initialize
         double nodeb_score = 0.0; // just to initialize
-        // Computing score for nodea, which is moved up
-        // If b is a potential parent for a, we have to recompute the scores since b is now banned.
-        if (std::find(potential_parents[node_a].begin(), potential_parents[node_a].end(), node_b) != potential_parents[node_a].end())
+
+        if (MAP == true)
         {
+
             myswap(nodea_index, nodeb_index, ordering);
             nodea_score = score_pos(ordering, nodeb_index);
-            myswap(nodea_index, nodeb_index, ordering);
-        }
-        else
-        { // Since b is not a potential parent of a, f_bar_z is not altered.
-            // Check if b was a plus1 parent for a
-            std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_a].begin(), potential_plus1_parents[node_a].end(), node_b);
-            if (itr != potential_plus1_parents[node_a].end())
-            {
-                // Subtract the bs plus1 score contibution.
-
-                myswap(nodea_index, nodeb_index, ordering);
-                int f_bar_z = get_f_bar_z(nodeb_index, ordering); // ok?
-                // find the correct index j and take it.
-                int plus1_parents_index = std::distance(potential_plus1_parents[node_a].begin(), itr);
-                double nodeb_as_plus1_score = scoresmatrices[node_a][f_bar_z][plus1_parents_index + 1];
-                myswap(nodea_index, nodeb_index, ordering);
-
-                // Sice there new additin is so small I get precision error, sice we get log(1-0.99999999999999) = -inf
-                double max = std::max(node_scores[node_a], nodeb_as_plus1_score); // I should use order_scores not node scores here. Or something. This is not right at least.
-                //std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
-                if (std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0.000001)
-                { // 0.000001 is arbitrary
-                    // OK
-                    //std::cout << "NO RECOMPUTE order score for node" << std::endl;
-                    nodea_score = std::log(std::exp(node_scores[node_a] - max) - std::exp(nodeb_as_plus1_score - max)) + max; // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
-                }
-                else
-                {
-                    // round off error. Recompute.
-                    //std::cout << "RECOMPUTE order score for node" << std::endl;
-                    myswap(nodea_index, nodeb_index, ordering);
-                    nodea_score = score_pos(ordering, nodeb_index);
-                    myswap(nodea_index, nodeb_index, ordering);
-                }
-
-                //std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
-                //assert(std::abs(nodea_score-true_score) < 0.001);
-            }
-        }
-
-        // // Computing score for node_b, which is moved down
-        if (std::find(potential_parents[node_b].begin(), potential_parents[node_b].end(), node_a) != potential_parents[node_b].end())
-        {
-            myswap(nodea_index, nodeb_index, ordering);
             nodeb_score = score_pos(ordering, nodea_index);
-            myswap(nodea_index, nodeb_index, ordering);
+            return (std::make_tuple(nodea_score, nodeb_score));
         }
         else
         {
-            std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_b].begin(),
-                                                       potential_plus1_parents[node_b].end(),
-                                                       node_a);
-            if (itr != potential_plus1_parents[node_b].cend())
+
+            // Computing score for nodea, which is moved up
+            // If b is a potential parent for a, we have to recompute the scores since b is now banned.
+            if (std::find(potential_parents[node_a].begin(), potential_parents[node_a].end(), node_b) != potential_parents[node_a].end())
             {
-                int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since no parents is the first
-                //std::swap(ordering[nodea_index], ordering[nodeb_index]);
                 myswap(nodea_index, nodeb_index, ordering);
-                int f_bar_z = get_f_bar_z(nodea_index, ordering);
-                double nodea_as_plus1_score = scoresmatrices[node_b][f_bar_z][plus1_parents_index + 1];
-                //std::swap(ordering[nodea_index], ordering[nodeb_index]); // Swap back.
+                nodea_score = score_pos(ordering, nodeb_index);
                 myswap(nodea_index, nodeb_index, ordering);
-                double max = std::max(node_scores[node_b], nodea_as_plus1_score);
-
-                // Check that
-                //if (std::abs(nodea_as_plus1_score - node_scores[node_b]) > 0.000001)
-                //{ // -10 is arbitrary
-                nodeb_score = std::log(std::exp(node_scores[node_b] - max) + std::exp(nodea_as_plus1_score - max)) + max;
-                //}
-                // else
-                // {
-                //     std::swap(ordering[nodea_index], ordering[nodeb_index]);
-                //     nodeb_score = score_pos(ordering, nodea_index);
-                //     std::swap(ordering[nodea_index], ordering[nodeb_index]);
-                // }
             }
+            else
+            { // Since b is not a potential parent of a, f_bar_z is not altered.
+                // Check if b was a plus1 parent for a
+                std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_a].begin(), potential_plus1_parents[node_a].end(), node_b);
+                if (itr != potential_plus1_parents[node_a].end())
+                {
+                    // Subtract the bs plus1 score contibution.
+
+                    myswap(nodea_index, nodeb_index, ordering);
+                    int f_bar_z = get_f_bar_z(nodeb_index, ordering); // ok?
+                    // find the correct index j and take it.
+                    int plus1_parents_index = std::distance(potential_plus1_parents[node_a].begin(), itr);
+                    double nodeb_as_plus1_score = scoresmatrices[node_a][f_bar_z][plus1_parents_index + 1];
+                    myswap(nodea_index, nodeb_index, ordering);
+
+                    // Sice there new additin is so small I get precision error, sice we get log(1-0.99999999999999) = -inf
+                    double max = std::max(node_scores[node_a], nodeb_as_plus1_score); // I should use order_scores not node scores here. Or something. This is not right at least.
+                    //std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
+                    if (std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0.000001)
+                    { // 0.000001 is arbitrary
+                        // OK
+                        //std::cout << "NO RECOMPUTE order score for node" << std::endl;
+                        nodea_score = std::log(std::exp(node_scores[node_a] - max) - std::exp(nodeb_as_plus1_score - max)) + max; // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
+                    }
+                    else
+                    {
+                        // round off error. Recompute.
+                        //std::cout << "RECOMPUTE order score for node" << std::endl;
+                        myswap(nodea_index, nodeb_index, ordering);
+                        nodea_score = score_pos(ordering, nodeb_index);
+                        myswap(nodea_index, nodeb_index, ordering);
+                    }
+
+                    //std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
+                    //assert(std::abs(nodea_score-true_score) < 0.001);
+                }
+            }
+
+            // // Computing score for node_b, which is moved down
+            if (std::find(potential_parents[node_b].begin(), potential_parents[node_b].end(), node_a) != potential_parents[node_b].end())
+            {
+                myswap(nodea_index, nodeb_index, ordering);
+                nodeb_score = score_pos(ordering, nodea_index);
+                myswap(nodea_index, nodeb_index, ordering);
+            }
+            else
+            {
+                std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_b].begin(),
+                                                           potential_plus1_parents[node_b].end(),
+                                                           node_a);
+                if (itr != potential_plus1_parents[node_b].cend())
+                {
+                    int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since no parents is the first
+                    //std::swap(ordering[nodea_index], ordering[nodeb_index]);
+                    myswap(nodea_index, nodeb_index, ordering);
+                    int f_bar_z = get_f_bar_z(nodea_index, ordering);
+                    double nodea_as_plus1_score = scoresmatrices[node_b][f_bar_z][plus1_parents_index + 1];
+                    //std::swap(ordering[nodea_index], ordering[nodeb_index]); // Swap back.
+                    myswap(nodea_index, nodeb_index, ordering);
+                    double max = std::max(node_scores[node_b], nodea_as_plus1_score);
+
+                    nodeb_score = std::log(std::exp(node_scores[node_b] - max) + std::exp(nodea_as_plus1_score - max)) + max;
+                }
+            }
+
+            //std::swap(ordering[nodea_index], ordering[nodeb_index]); // last swap
+            myswap(nodea_index, nodeb_index, ordering);
+
+            return (std::make_tuple(nodea_score, nodeb_score));
         }
-
-        //std::swap(ordering[nodea_index], ordering[nodeb_index]); // last swap
-        myswap(nodea_index, nodeb_index, ordering);
-
-        return (std::make_tuple(nodea_score, nodeb_score));
     }
 
     /**
@@ -759,10 +762,10 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
 
     // Calculate score for node at index first_n_elements. The other nodes have the
     // same score sine those are still befor in the ordering.
-    move_element(order, index_of_el_to_insert, n-1); // put it in the back
+    move_element(order, index_of_el_to_insert, n - 1); // put it in the back
     std::vector<int> order_ret(order);
 
-    double new_node_score = scoring.score_pos(order, n-1); // O(p)? This should also be quite time consuming..
+    double new_node_score = scoring.score_pos(order, n - 1); // O(p)? This should also be quite time consuming..
 
     node_scores[node] = new_node_score;
 
@@ -771,7 +774,7 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
     bool optimal_at_back = true;
 
     //std::cout << p - n << ": " << order_score << ", ";
-    for (int i = n - 1-1; i >= 0; --i) // put it in the back instead?
+    for (int i = n - 1 - 1; i >= 0; --i) // put it in the back instead?
     {
         int node1 = order[i];
         int node2 = order[i + 1];
@@ -782,9 +785,9 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
         node_scores[node2] = node2_scoretmp;
 
         //std::cout << i + 1 << ": " << order_score << ", ";
-        if (order_score > max_score)
+        if (definitelyGreaterThan(order_score, max_score, EPSILON))
         {
-            //std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << ". Break." << std::endl;
+            //std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << " (" << max_score <<"). Break." << std::endl;
             optimal_at_back = false;
             break; // Just break the loop if some better osition if found.
         }
@@ -816,13 +819,13 @@ void swap_nodes(const int lower, const int upper, std::vector<int> &order, std::
  * Eg if (1) is the node to score:
  * [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
  */
-double insert_new_and_score_at(std::vector<int> &order,
-                               int from_index,
-                               int to_index,
-                               int n,
-                               std::vector<double> &node_scores,
-                               double &order_score,
-                               OrderScoring &scoring)
+double insert_new_and_score_at_right_type(std::vector<int> &order,
+                                          int from_index,
+                                          int to_index,
+                                          int n,
+                                          std::vector<double> &node_scores,
+                                          double &order_score,
+                                          OrderScoring &scoring)
 {
     int p = order.size();
     int node = order[from_index];
@@ -869,31 +872,31 @@ bool prune_right_type(std::vector<int> &order,
         int inject_node = order[node_index];
 
         double order_score_bkp = order_score;
-        double score_at_top = insert_new_and_score_at(order, node_index, 0, n, node_scores, order_score, scoring);
+        double score_at_top = insert_new_and_score_at_right_type(order, node_index, 0, n, node_scores, order_score, scoring);
         move_element(order, 0, node_index);   // move back the node.
         node_scores[order[node_index]] = 0.0; // reset the node score at pos 0
         order_score = order_score_bkp;        // reset order score
 
         double node_score_bkp = node_scores[order[p - n]];
-        double score_at_pos_2 = insert_new_and_score_at(order, node_index, p - n, n, node_scores, order_score, scoring);
+        double score_at_pos_2 = insert_new_and_score_at_right_type(order, node_index, p - n, n, node_scores, order_score, scoring);
         move_element(order, p - n, node_index);     // move back the node.
         node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
         node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
 
-        order_score = order_score_bkp;                                // reset order score
-        if (definitelyLessThan(score_at_top, score_at_pos_2, 0.0001)) // score_at_top < score_at_pos_2)
+        order_score = order_score_bkp;                                 // reset order score
+        if (definitelyLessThan(score_at_top, score_at_pos_2, EPSILON)) // score_at_top < score_at_pos_2)
         {
             //std::cout << "Prune since " << score_at_top << " and " << score_at_pos_2 << std::endl;
             return (true); // Prune
         }
-        if (approximatelyEqual(score_at_top, score_at_pos_2, 0.0001))
+        if (approximatelyEqual(score_at_top, score_at_pos_2, EPSILON))
         {
             //std::cout << "Equal score at top as injected and " << std::endl;
             // Check if pos 1 and pos 2 in the suborder can be exchanged.
             //[1,2,x,3|y,3,5] -> score y
             double node_score_top = node_scores[order[p - n]];
             //[1,2,x,3|y,3,5] -> [1,2,3|x,y,3,5] -> score x
-            insert_new_and_score_at(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
+            insert_new_and_score_at_right_type(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
             double score_at_new_top = node_scores[order[p - n - 1]];
             double order_score1 = order_score;
             //std::cout << "before swap" << std::endl;
@@ -911,7 +914,7 @@ bool prune_right_type(std::vector<int> &order,
             node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
             node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
             order_score = order_score_bkp;
-            if (approximatelyEqual(node_score_top, node_score_top_swap, 0.0001) && approximatelyEqual(score_at_new_top, score_at_new_top_swap, 0.0001))
+            if (approximatelyEqual(node_score_top, node_score_top_swap, EPSILON) && approximatelyEqual(score_at_new_top, score_at_new_top_swap, EPSILON))
             {
                 if (order[node_index] > order[p - n])
                 {
@@ -922,6 +925,72 @@ bool prune_right_type(std::vector<int> &order,
             }
         }
     }
+    return (false);
+}
+
+bool prune_left_type(std::vector<int> &order,
+                     int n,
+                     std::vector<double> &node_scores,
+                     double &order_score,
+                     OrderScoring &scoring)
+{
+    std::size_t p = order.size();
+    std::cout << "Order considered for pruning" << std::endl << std::endl;
+    PrintVector(order, 0, n);
+    std::cout << std::endl;
+    for (std::size_t node_index = n; node_index < p; node_index++)
+    {
+        // Go through all of the unused nodes and inject them at the back and second back
+        double order_score_bkp = order_score; 
+        int back_node = order[n - 1]; // [1,2,x|a,b,y,c]
+        double back_node_score_bkp = node_scores[back_node];
+
+        //[1,2,x|a,b,y,c] -> [1,2,x,y|a,b,c]
+        int inject_node = order[node_index];
+        move_element(order, node_index, n); // [1,2,x,y|a,b,c]
+        node_scores[inject_node] = scoring.score_pos(order, n);
+        double inject_node_score = node_scores[inject_node];
+        order_score += inject_node_score;
+
+        double order_score_inject_top = order_score;
+        std::cout << "inject " << inject_node << " at the back. " << std::endl;
+        PrintVector(order, 0, n + 1);
+        std::cout << "score: " << order_score_inject_top << std::endl;
+
+        // Swap positions
+        // [1,2,x,y|a,b,c] -> [1,2,y,x|a,b,c]
+        std::cout << "swap the back" << std::endl;
+        myswap(n - 1, n, order); //[1,2,y,x|a,b,c]
+        double inject_node_score_swapped = scoring.score_pos(order, n - 1);
+        double node_score_swapped = scoring.score_pos(order, n); // O(p)? This should also be quite time consuming..
+        node_scores[inject_node] = inject_node_score_swapped;
+        node_scores[back_node] = node_score_swapped;
+
+        // std::cout << back_node << " score before swap: " << back_node_score_bkp << std::endl;
+        // std::cout << back_node << " score after swap: " << node_score_swapped << std::endl;
+        // std::cout << inject_node << " score before swap: " << inject_node_score << std::endl;
+        // std::cout << inject_node << " score after swap: " << inject_node_score_swapped << std::endl;
+        double order_score_swapped = order_score - (inject_node_score + back_node_score_bkp) + (inject_node_score_swapped + node_score_swapped);
+        // swap_nodes(n-1, n, order, node_scores, order_score, scoring); 
+        // double order_score_swap = order_score;
+
+        PrintVector(order, 0, n+1);
+        std::cout << "score: " << order_score_swapped << std::endl;
+        // Restore as before swapping
+        order_score = order_score_bkp;
+        node_scores[inject_node] = 0.0;
+        node_scores[back_node] = back_node_score_bkp;
+
+        move_element(order, n - 1, node_index);
+
+        if (definitelyGreaterThan(order_score_swapped, order_score_inject_top, EPSILON))
+        {
+            std::cout << "*** Prune ***"  << std::endl << std::endl << std::endl;
+            return (true);
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "*** NO Prune ***"  << std::endl << std::endl << std::endl;
     return (false);
 }
 
@@ -1053,7 +1122,7 @@ void put_nodes_in_back(int n,
             // take one of the orders.
             const auto &[prev_order, prev_score, prev_node_scores] = opt_tuples[n - 1][i];
             //PrintVector(prev_order);
-            for (size_t node_index = n-1; node_index < p; node_index++)
+            for (size_t node_index = n - 1; node_index < p; node_index++)
             {
                 // Try to put m to the back
                 auto [optimal_order, order_score, node_scores, is_optimal] = put_node_in_back(prev_order,
@@ -1081,7 +1150,7 @@ void put_nodes_in_back(int n,
     }
 }
 
-std::vector<bool> order_to_boolvec(const std::vector<int> &order, int n, bool right_type)
+std::vector<bool> order_to_boolvec(const std::vector<int> &order, size_t n, bool right_type)
 {
     std::vector<bool> boolvec(order.size(), false);
     std::size_t p = order.size();
@@ -1232,7 +1301,7 @@ std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_equ
 }
 
 std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_gaps(std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> &tuples,
-                                                                                  int n,
+                                                                                  int n, bool right_type,
                                                                                   OrderScoring &scoring)
 {
     std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> pruned_tuples;
@@ -1241,9 +1310,19 @@ std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_gap
     {
         auto &[optimal_order, order_score, node_scores] = t;
 
-        if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
+        if (right_type)
         {
-            pruned_tuples.push_back(t);
+            if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
+            {
+                pruned_tuples.push_back(t);
+            }
+        }
+        else
+        {
+            if (!prune_left_type(optimal_order, n, node_scores, order_score, scoring))
+            {
+                pruned_tuples.push_back(t);
+            }
         }
     }
     return (pruned_tuples);
@@ -1304,7 +1383,7 @@ void sequential_opt_left_type(OrderScoring &scoring)
     {
         std::cout << "\nn=" << n << std::endl;
         // This could be done in parallel.
-        std::cout << "Add new nodes in the front " << std::endl;
+        std::cout << "Add new nodes in the back " << std::endl;
         put_nodes_in_back(n, opt_tuples, scoring);
         // Prune opt_tuples. For all elements with the same set of nodes, keep only one with
         // the highest score.
@@ -1314,19 +1393,21 @@ void sequential_opt_left_type(OrderScoring &scoring)
         std::vector<double> max_nodescores;
         std::vector<std::vector<bool>> boolmat;
         std::vector<double> order_scores;
-
+        
         std::cout << "Prune equal sets " << std::endl;
         opt_tuples[n] = prune_equal_sets(opt_tuples[n], n, false);
         std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
 
-        // std::cout << "Prune gaps " << std::endl;
-        // opt_tuples[n] = prune_gaps_right_type(opt_tuples[n], n, scoring, true);
-        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        std::cout << "Prune gaps " << std::endl;
+        opt_tuples[n] = prune_gaps(opt_tuples[n], n, false, scoring);
+        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+
+        
 
         for (const auto &t : opt_tuples[n])
         {
             const auto &[optimal_order, order_score, node_scores] = t;
-            if (n < 3)
+            if (n < 9)
             {
                 std::vector<int> tmpv(optimal_order.begin(), optimal_order.begin() + n);
                 PrintVector(tmpv);
@@ -1346,14 +1427,14 @@ void sequential_opt_left_type(OrderScoring &scoring)
         std::vector<int> tmpv(max_order.begin(), max_order.begin() + n);
         std::cout << "max scoring sub order " << std::endl;
         PrintVector(tmpv);
+        //PrintVector(max_nodescores);
         // check correct score
         std::vector<double> *sc = scoring.score(max_order, 0, n); // Take only the last n elements in the vector
-        PrintVector(*sc);
+        //PrintVector(*sc);
         double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
         delete sc;
-        std::cout << "score: " << max_score << "should be " << max_score_check<< std::endl;
-        assert(std::abs(max_score - max_score_check) < 0.00001);
-        
+        std::cout << "score: " << max_score << " should be " << max_score_check << std::endl;
+        assert(std::abs(max_score - max_score_check) < EPSILON);
     }
 }
 
@@ -1385,7 +1466,7 @@ void sequential_opt(OrderScoring &scoring)
         std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
 
         std::cout << "Prune gaps " << std::endl;
-        opt_tuples[n] = prune_gaps(opt_tuples[n], n, scoring);
+        opt_tuples[n] = prune_gaps(opt_tuples[n], n, true, scoring);
         std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
 
         for (const auto &t : opt_tuples[n])
@@ -1416,7 +1497,7 @@ void sequential_opt(OrderScoring &scoring)
         //PrintVector(*sc);
         double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
         delete sc;
-        assert(std::abs(max_score - max_score_check) < 0.00001);
+        assert(std::abs(max_score - max_score_check) < EPSILON);
         std::cout << "score: " << max_score << std::endl;
     }
 }
