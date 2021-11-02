@@ -13,8 +13,9 @@ sumsc <- function(scores) {
 # data <- read.csv(filename, check.names = FALSE)[-1,]
 # myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
 
+filename <- "data/avneigs8p30n300.csv"
 #filename <- "data/p20n300gaussdata.csv"
-filename <- "data/myvstructdata.csv"
+#filename <- "data/myvstructdata.csv"
 # #filename <- "data/p50n300gaussdata.csv"
 # #filename <- "data/jackdata.csv"
 data <- read.csv(filename, check.names = FALSE)

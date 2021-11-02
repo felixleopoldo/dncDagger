@@ -11,7 +11,7 @@ typedef std::tuple<std::vector<int>, int, int> cache_keytype;
 typedef std::pair<std::vector<int>, std::set<int>> cache_keytype2;
 typedef std::pair<std::vector<int>, int> cache_keytype3;
 
-double EPSILON = 0.00000001;
+double EPSILON = 0.0001;
 
 bool approximatelyEqual(float a, float b, float epsilon)
 {
@@ -36,6 +36,23 @@ bool definitelyLessThan(float a, float b, float epsilon)
 int rand_int_in_range(const std::size_t &from, const std::size_t &to)
 {
     return (from + (std::rand() % (to - from + 1)));
+}
+
+// CPP program To calculate The Value Of nCr
+int fact(int n);
+
+int nCr(int n, int r)
+{
+    return fact(n) / (fact(r) * fact(n - r));
+}
+
+// Returns factorial of n
+int fact(int n)
+{
+    int res = 1;
+    for (int i = 2; i <= n; i++)
+        res = res * i;
+    return res;
 }
 
 template <typename T>
@@ -129,9 +146,10 @@ public:
 
     /**
      * Re-calculation scores after swapping up node_a so that (node_a, node_b) --> (node_b, node_a).
-     * 
+     *
      * Order of node1 is lower than node2.
-     * 
+     *
+     * Returns: (nodea_score, nodeb_score)
      */
     std::tuple<double, double> swap_nodes(int nodea_index, int nodeb_index,
                                           std::vector<int> &ordering,
@@ -178,24 +196,24 @@ public:
 
                     // Sice there new additin is so small I get precision error, sice we get log(1-0.99999999999999) = -inf
                     double max = std::max(node_scores[node_a], nodeb_as_plus1_score); // I should use order_scores not node scores here. Or something. This is not right at least.
-                    //std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
+                    // std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
                     if (std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0.000001)
                     { // 0.000001 is arbitrary
                         // OK
-                        //std::cout << "NO RECOMPUTE order score for node" << std::endl;
+                        // std::cout << "NO RECOMPUTE order score for node" << std::endl;
                         nodea_score = std::log(std::exp(node_scores[node_a] - max) - std::exp(nodeb_as_plus1_score - max)) + max; // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
                     }
                     else
                     {
                         // round off error. Recompute.
-                        //std::cout << "RECOMPUTE order score for node" << std::endl;
+                        // std::cout << "RECOMPUTE order score for node" << std::endl;
                         myswap(nodea_index, nodeb_index, ordering);
                         nodea_score = score_pos(ordering, nodeb_index);
                         myswap(nodea_index, nodeb_index, ordering);
                     }
 
-                    //std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
-                    //assert(std::abs(nodea_score-true_score) < 0.001);
+                    // std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
+                    // assert(std::abs(nodea_score-true_score) < 0.001);
                 }
             }
 
@@ -214,11 +232,11 @@ public:
                 if (itr != potential_plus1_parents[node_b].cend())
                 {
                     int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since no parents is the first
-                    //std::swap(ordering[nodea_index], ordering[nodeb_index]);
+                    // std::swap(ordering[nodea_index], ordering[nodeb_index]);
                     myswap(nodea_index, nodeb_index, ordering);
                     int f_bar_z = get_f_bar_z(nodea_index, ordering);
                     double nodea_as_plus1_score = scoresmatrices[node_b][f_bar_z][plus1_parents_index + 1];
-                    //std::swap(ordering[nodea_index], ordering[nodeb_index]); // Swap back.
+                    // std::swap(ordering[nodea_index], ordering[nodeb_index]); // Swap back.
                     myswap(nodea_index, nodeb_index, ordering);
                     double max = std::max(node_scores[node_b], nodea_as_plus1_score);
 
@@ -226,7 +244,7 @@ public:
                 }
             }
 
-            //std::swap(ordering[nodea_index], ordering[nodeb_index]); // last swap
+            // std::swap(ordering[nodea_index], ordering[nodeb_index]); // last swap
             myswap(nodea_index, nodeb_index, ordering);
 
             return (std::make_tuple(nodea_score, nodeb_score));
@@ -234,27 +252,27 @@ public:
     }
 
     /**
-    * Score elements in scorenodes from scorepositions and n_elemens on.
-    */
+     * Score elements in scorenodes from scorepositions and n_elemens on.
+     */
     // If in cache
-    //PrintVector(ordering);
-    //std::vector<int> nodeskey(ordering.begin() + from_orderpos, ordering.begin() + from_orderpos + n_elements);
+    // PrintVector(ordering);
+    // std::vector<int> nodeskey(ordering.begin() + from_orderpos, ordering.begin() + from_orderpos + n_elements);
 
-    //PrintVector(nodeskey);
+    // PrintVector(nodeskey);
 
-    //if(ordering.begin()+1+from_orderpos + n_elements == ordering.end() +1 ){
-    //    std::cout << "end" << std::endl;
-    //} else {
+    // if(ordering.begin()+1+from_orderpos + n_elements == ordering.end() +1 ){
+    //     std::cout << "end" << std::endl;
+    // } else {
 
-    //std::set<int> restkey(ordering.begin() + from_orderpos + n_elements, ordering.end());
-    //std::set<vector> restkey(ordering.begin() + from_orderpos + n_elements, ordering.end());
-    //std::vector<int> tmp(restkey.begin(), restkey.end());
-    //PrintVector(tmp);
+    // std::set<int> restkey(ordering.begin() + from_orderpos + n_elements, ordering.end());
+    // std::set<vector> restkey(ordering.begin() + from_orderpos + n_elements, ordering.end());
+    // std::vector<int> tmp(restkey.begin(), restkey.end());
+    // PrintVector(tmp);
 
     //}
 
-    ///std::cout << std::endl;
-    //cache_keytype2 mykey = std::make_pair(nodeskey, restkey);
+    /// std::cout << std::endl;
+    // cache_keytype2 mykey = std::make_pair(nodeskey, restkey);
 
     // std::vector<int> nodeskey3(ordering.begin() + from_orderpos, ordering.end());
     // cache_keytype3 mykey = std::make_pair(nodeskey3, n_elements);
@@ -265,10 +283,10 @@ public:
     // }
 
     // cache should be the actual nodes in a list and the rst of the nodes in a set.
-    //cache_keytype suborder = std::make_tuple(ordering, from_orderpos, n_elements);
-    //if (cache.count(suborder))
+    // cache_keytype suborder = std::make_tuple(ordering, from_orderpos, n_elements);
+    // if (cache.count(suborder))
     //{
-    //std::cout << "cache hit" << std::endl;
+    // std::cout << "cache hit" << std::endl;
     //    return (cache[suborder]);
     //}
     std::vector<double> *score(const std::vector<int> &ordering, const std::size_t &from_orderpos, const std::size_t &n_elements) const
@@ -285,8 +303,8 @@ public:
             {
                 // no parents allowed, i.e.only first row, only first list
                 (*orderscores)[node] = scoretable[node][0][0]; // orderscores[node] <- scoretable [[node]][[1]][1, 1]
-                //active_plus1_parents_indices[node].assign({0});           // active_plus1_parents_indices [[node]] <- c(1)
-                //f_bar_z[node] = std::pow(2, potential_parents[node].size()); // f_bar_z[node] <- c(2 ^ numparents[node])
+                // active_plus1_parents_indices[node].assign({0});           // active_plus1_parents_indices [[node]] <- c(1)
+                // f_bar_z[node] = std::pow(2, potential_parents[node].size()); // f_bar_z[node] <- c(2 ^ numparents[node])
             }
             else
             {
@@ -383,12 +401,12 @@ public:
         // potential_parents has the banned nodes for node.
         // bannednodes is a filtered version of potential_parents, removing the nodes after in the ordering.
         // it only purose is to compute f_bar_z[node], i.e. f(Z)
-        //std::set<int> bannednodes(ordering.begin(), ordering.begin() + position + 1);
+        // std::set<int> bannednodes(ordering.begin(), ordering.begin() + position + 1);
         std::vector<int> parent_indices_banned_by_ordering; // Index in the banned_parents[node] vector.
         for (std::size_t j = 0; j < potential_parents[node].size(); j++)
         {
             if (std::find(ordering.begin(), ordering.begin() + position + 1, potential_parents[node][j]) != ordering.begin() + position + 1)
-            //if (bannednodes.find( potential_parents[node][j]) != bannednodes.end())
+            // if (bannednodes.find( potential_parents[node][j]) != bannednodes.end())
             {
                 parent_indices_banned_by_ordering.push_back(j); // This has inly ints. It for computing f(Z)
             }
@@ -396,7 +414,7 @@ public:
 
         // Compute f(Z) (the labelling), where Z is the parents of node, accoring toe the paper.
         // I.e. f_bar_z[node] = f(Pa(node))
-        //if (numparents[node] == 0 || active_potential_parents_indices.size() == 0)
+        // if (numparents[node] == 0 || active_potential_parents_indices.size() == 0)
         if (potential_parents[node].size() == 0 || parent_indices_banned_by_ordering.size() == 0)
         {
             f_bar_z = 0; // all parents allowed f(null) = 0
@@ -434,26 +452,26 @@ std::pair<std::vector<int>, double> mh_swap_move(std::vector<int> &ordering,
     const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i - 1, i, ordering, node_scores); // This should update the orderscore directly maybe.
     double prop_order_score = cur_order_score - (node_scores[node1] + node_scores[node2]) + (node1_scoretmp + node2_scoretmp);
 
-    //std::cout << prop_order_score << std::endl;
-    //std::cout << cur_order_score << std::endl;
+    // std::cout << prop_order_score << std::endl;
+    // std::cout << cur_order_score << std::endl;
 
     double ratio = std::exp(prop_order_score - cur_order_score);
     double alpha = std::min(1.0, ratio);
     double a = (float)std::rand() / RAND_MAX;
 
-    //std::cout << "rand number: " << a << std::endl;
-    //std::cout << "accept prob: " << alpha << std::endl;
+    // std::cout << "rand number: " << a << std::endl;
+    // std::cout << "accept prob: " << alpha << std::endl;
     if (a < alpha)
     {
-        //std::cout << "Accept" << std::endl;
+        // std::cout << "Accept" << std::endl;
         node_scores[node1] = node1_scoretmp;
         node_scores[node2] = node2_scoretmp;
         return (std::make_pair(ordering, prop_order_score));
     }
     else
     {
-        //std::cout << "Reject" << std::endl;
-        // swap back
+        // std::cout << "Reject" << std::endl;
+        //  swap back
         myswap(i - 1, i, ordering);
         return (std::make_pair(ordering, cur_order_score));
     }
@@ -477,7 +495,7 @@ inline std::vector<double> *dist_from_logprobs(const std::vector<double> &log_pr
     std::size_t n = log_probs.size();
     double max = *std::max_element(log_probs.begin(), log_probs.end());
     std::vector<double> probs_rescaled(n);
-    //std::vector<double> *probs_rescaled = new std::vector<double>(n);
+    // std::vector<double> *probs_rescaled = new std::vector<double>(n);
     std::vector<double> *norm_prob = new std::vector<double>(n);
     double sum_exp = 0.0;
     for (std::size_t i = 0; i != n; ++i)
@@ -492,7 +510,7 @@ inline std::vector<double> *dist_from_logprobs(const std::vector<double> &log_pr
     }
 
     return (norm_prob);
-    //return (probs_rescaled);
+    // return (probs_rescaled);
 }
 
 /**
@@ -522,9 +540,9 @@ double random_parent_init(OrderScoring &scoring,
 }
 
 /**
- * Proposal which adds a new node to an exisitng ordering at a certain position 
- * with probability proportional to the new order. I.e. Score all orderings 
- * with the new node in any position then draw one of those orderings with 
+ * Proposal which adds a new node to an exisitng ordering at a certain position
+ * with probability proportional to the new order. I.e. Score all orderings
+ * with the new node in any position then draw one of those orderings with
  * corresonding relative probability.
  */
 
@@ -686,15 +704,15 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_fron
 
                                                                                   OrderScoring &scoring)
 {
-    //std::cout << "n=" << n << std::endl;
-    // Try to p std::vector<double> order_scores(first_n_elements + 1);
+    // std::cout << "n=" << n << std::endl;
+    //  Try to p std::vector<double> order_scores(first_n_elements + 1);
     std::vector<double> node_scores(input_node_scores);
     std::vector<int> order(input_order);
     int p = order.size();
-    //double order_score(input_order_score);
+    // double order_score(input_order_score);
     int node = order[index_of_el_to_insert];
 
-    //int order_number = prev_order_number + node; // TODO: What is this? Seems strange..
+    // int order_number = prev_order_number + node; // TODO: What is this? Seems strange..
 
     // Calculate score for node at index first_n_elements. The other nodes have the
     // same score sine those are still befor in the ordering.
@@ -710,33 +728,33 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_fron
     double max_score = order_score;
     bool optimal_at_front = true;
 
-    //std::cout << p - n << ": " << order_score << ", ";
+    // std::cout << p - n << ": " << order_score << ", ";
     for (int i = p - n; i < p - 1; ++i) // put it in the back instead?
     {
         int node1 = order[i];
         int node2 = order[i + 1];
         const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i, i + 1, order, node_scores); // This should update the order score directly maybe.
-        //std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
+        // std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
         order_score = order_score - (node_scores[node1] + node_scores[node2]) + (node1_scoretmp + node2_scoretmp);
         node_scores[node1] = node1_scoretmp;
         node_scores[node2] = node2_scoretmp;
 
-        //std::cout << i + 1 << ": " << order_score << ", ";
+        // std::cout << i + 1 << ": " << order_score << ", ";
         if (order_score > max_score)
         {
-            //std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << ". Break." << std::endl;
+            // std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << ". Break." << std::endl;
             optimal_at_front = false;
             break; // Just break the loop if some better osition if found.
         }
     }
-    //std::cout << std::endl;
-    //PrintVector(order);
-    //PrintVector(order_ret);
+    // std::cout << std::endl;
+    // PrintVector(order);
+    // PrintVector(order_ret);
 
     std::vector<double> node_scores_ret(input_node_scores);
     node_scores_ret[node] = new_node_score;
-    //PrintVector(order_scores);
-    // If not optimal at the front (p-n), nodes_scores is not correct
+    // PrintVector(order_scores);
+    //  If not optimal at the front (p-n), nodes_scores is not correct
     return (std::make_tuple(order_ret, max_score, node_scores_ret, optimal_at_front));
 }
 
@@ -750,15 +768,15 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
                                                                                  const double &input_order_score,
                                                                                  OrderScoring &scoring)
 {
-    //std::cout << "n=" << n << std::endl;
-    // Try to p std::vector<double> order_scores(first_n_elements + 1);
+    // std::cout << "n=" << n << std::endl;
+    //  Try to p std::vector<double> order_scores(first_n_elements + 1);
     std::vector<double> node_scores(input_node_scores);
     std::vector<int> order(input_order);
     int p = order.size();
-    //double order_score(input_order_score);
+    // double order_score(input_order_score);
     int node = order[index_of_el_to_insert];
 
-    //int order_number = prev_order_number + node; // TODO: What is this? Seems strange..
+    // int order_number = prev_order_number + node; // TODO: What is this? Seems strange..
 
     // Calculate score for node at index first_n_elements. The other nodes have the
     // same score sine those are still befor in the ordering.
@@ -773,33 +791,33 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
     double max_score = order_score;
     bool optimal_at_back = true;
 
-    //std::cout << p - n << ": " << order_score << ", ";
+    // std::cout << p - n << ": " << order_score << ", ";
     for (int i = n - 1 - 1; i >= 0; --i) // put it in the back instead?
     {
         int node1 = order[i];
         int node2 = order[i + 1];
         const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(i, i + 1, order, node_scores); // This should update the order score directly maybe.
-        //std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
+        // std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
         order_score = order_score - (node_scores[node1] + node_scores[node2]) + (node1_scoretmp + node2_scoretmp);
         node_scores[node1] = node1_scoretmp;
         node_scores[node2] = node2_scoretmp;
 
-        //std::cout << i + 1 << ": " << order_score << ", ";
+        // std::cout << i + 1 << ": " << order_score << ", ";
         if (definitelyGreaterThan(order_score, max_score, EPSILON))
         {
-            //std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << " (" << max_score <<"). Break." << std::endl;
+            // std::cout << "Better score at pos " << i + 1 << ", (" << order_score << ") instead of pos " << p - n << " (" << max_score <<"). Break." << std::endl;
             optimal_at_back = false;
             break; // Just break the loop if some better osition if found.
         }
     }
-    //std::cout << std::endl;
-    //PrintVector(order);
-    //PrintVector(order_ret);
+    // std::cout << std::endl;
+    // PrintVector(order);
+    // PrintVector(order_ret);
 
     std::vector<double> node_scores_ret(input_node_scores);
     node_scores_ret[node] = new_node_score;
-    //PrintVector(order_scores);
-    // If not optimal at the front (p-n), nodes_scores is not correct
+    // PrintVector(order_scores);
+    //  If not optimal at the front (p-n), nodes_scores is not correct
     return (std::make_tuple(order_ret, max_score, node_scores_ret, optimal_at_back));
 }
 
@@ -808,14 +826,14 @@ void swap_nodes(const int lower, const int upper, std::vector<int> &order, std::
     int node1 = order[lower];
     int node2 = order[upper];
     const auto &[node1_scoretmp, node2_scoretmp] = scoring.swap_nodes(lower, upper, order, node_scores);
-    //std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
+    // std::cout << node2_scoretmp << ", " << node1_scoretmp << std::endl;
     order_score = order_score - (node_scores[node1] + node_scores[node2]) + (node1_scoretmp + node2_scoretmp);
     node_scores[node1] = node1_scoretmp;
     node_scores[node2] = node2_scoretmp;
 }
 
 /**
- * Moves an unsscored node to the right of the sub order and scores. 
+ * Moves an unsscored node to the right of the sub order and scores.
  * Eg if (1) is the node to score:
  * [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
  */
@@ -858,72 +876,163 @@ double insert_new_and_score_at_right_type(std::vector<int> &order,
     return (order_score);
 }
 
+/**
+ *
+ * Particle struct may be
+ *
+ */
+class Particle
+{
+public:
+    std::vector<int> order;
+    size_t n;
+    std::vector<double> node_scores;
+    double order_score;
+    int possible_next_node;
+};
+
 bool prune_right_type(std::vector<int> &order,
-                      int n,
+                      size_t n,
                       std::vector<double> &node_scores,
                       double &order_score,
+                      const std::vector<double> &top_scores,
                       OrderScoring &scoring)
 {
     std::size_t p = order.size();
+    // std::vector<int> tmpv(order.end() - n, order.end());
+    // PrintVector(tmpv);
     for (std::size_t node_index = 0; node_index < p - n; node_index++)
     {
-        // Go though all of the un used nodes and inject them at second place
+        // Go though all of the un used nodes and inject them at second place (pos k)
         // of the sub order and at the very front of the order.
-        int inject_node = order[node_index];
+        int x = order[node_index];
 
-        double order_score_bkp = order_score;
-        double score_at_top = insert_new_and_score_at_right_type(order, node_index, 0, n, node_scores, order_score, scoring);
-        move_element(order, 0, node_index);   // move back the node.
-        node_scores[order[node_index]] = 0.0; // reset the node score at pos 0
-        order_score = order_score_bkp;        // reset order score
-
-        double node_score_bkp = node_scores[order[p - n]];
-        double score_at_pos_2 = insert_new_and_score_at_right_type(order, node_index, p - n, n, node_scores, order_score, scoring);
-        move_element(order, p - n, node_index);     // move back the node.
-        node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
-        node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
-
-        order_score = order_score_bkp;                                 // reset order score
-        if (definitelyLessThan(score_at_top, score_at_pos_2, EPSILON)) // score_at_top < score_at_pos_2)
+        double order_score_bkp(order_score); // O(p)
+        std::vector<double> node_scores_bkp(node_scores);
+        std::vector<int> order_bkp(order);
+        // Let say we have the sub order ([1,2,3,x],4,5), so 4 is the top.
+        // Order score when x at very left (x,[1,2,3],4,5)
+        double score_at_top = order_score + top_scores[x];
+        /**
+         *
+         *
+         *
+         *
+         *
+         */
+        // Score order when x is inserted everywhere.
+        std::vector<double> injected_order_scores;
+        insert_new_and_score_at_right_type(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
+        injected_order_scores.push_back(order_score);
+        // PrintVector(injected_order_scores);
+        for (size_t i = 0; i < n; i++)
         {
-            //std::cout << "Prune since " << score_at_top << " and " << score_at_pos_2 << std::endl;
-            return (true); // Prune
-        }
-        if (approximatelyEqual(score_at_top, score_at_pos_2, EPSILON))
-        {
-            //std::cout << "Equal score at top as injected and " << std::endl;
-            // Check if pos 1 and pos 2 in the suborder can be exchanged.
-            //[1,2,x,3|y,3,5] -> score y
-            double node_score_top = node_scores[order[p - n]];
-            //[1,2,x,3|y,3,5] -> [1,2,3|x,y,3,5] -> score x
-            insert_new_and_score_at_right_type(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
-            double score_at_new_top = node_scores[order[p - n - 1]];
-            double order_score1 = order_score;
-            //std::cout << "before swap" << std::endl;
-            //std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
-            //std::cout << scoring.score_pos(order, p - n) << std::endl;
-            // [1,2,3|x,y,3,5] -> [1,2,3|y,x,3,5] -> score x and y
-            const auto &[node_score_top_swap, score_at_new_top_swap] = scoring.swap_nodes(p - n - 1, p - n, order, node_scores); // This should update the orderscore directly maybe.
+            // compute order score when x is inserted at pos p-n-1,...,p-1 called 0,...,n.
+            swap_nodes(p - n - 1 + i, p - n + i, order, node_scores, order_score, scoring);
+            injected_order_scores.push_back(order_score);
 
-            double order_score2 = order_score;
-            //std::cout << "after swap" << std::endl;
-            //std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
-            //std::cout << scoring.score_pos(order, p - n) << std::endl;
-
-            move_element(order, p - n, node_index);     // move back the node.
-            node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
-            node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
-            order_score = order_score_bkp;
-            if (approximatelyEqual(node_score_top, node_score_top_swap, EPSILON) && approximatelyEqual(score_at_new_top, score_at_new_top_swap, EPSILON))
+            if (definitelyLessThan(score_at_top, order_score, EPSILON)) // score_at_top < score_at_pos_2)
             {
-                if (order[node_index] > order[p - n])
+                return (true); // Prune
+            }
+            if (i == 0)
+            {
+                // scoring ([1,2,3],4,x,5)
+                if (approximatelyEqual(score_at_top, order_score, EPSILON))
                 {
-                    std::cout << "Top an new top can be swapped and maintain score. " << std::endl;
-                    // If the injected one (index p-n) has higher node number, Prune.
-                    return (true);
+                    // if s(x,[1,2,3],4,5) == s([1,2,3],4,x,5)
+                    // then check if s([1,2,3],x,4,5) == s([1,2,3],4,x,5)
+                    // if so, prune if x > 4.
+                    if (approximatelyEqual(injected_order_scores[0], injected_order_scores[1], EPSILON))
+                    {
+                        if (order[p - n + i - 1] > order[p - n + i])
+                        {
+                            return (true);
+                        }
+                    }
                 }
             }
         }
+        order_score = order_score_bkp;
+        node_scores = node_scores_bkp;
+        order = order_bkp;
+
+        if (approximatelyEqual(injected_order_scores[0], score_at_top, EPSILON))
+        {
+            // Check if fits best at 0. If not, prune. Othewise, only that particle should be stored for
+            // next round in some way.
+
+            double maxrest = *std::max_element(injected_order_scores.begin() + 1, injected_order_scores.end());
+            // std::cout << injected_order_scores[0] - maxrest << std::endl;
+            if (definitelyLessThan(injected_order_scores[0], maxrest, EPSILON))
+            {
+                // std::cout << " EQUAL TOPS. Prune. " << std::endl;
+                return (true);
+            }
+            else
+            {
+                // std::cout << " EQUAL TOPS. Should be restricted in some way so that next node is " << x << ". " << std::endl;
+            }
+        }
+
+        /***
+         *
+         *
+         *
+         *
+         *
+         */
+
+        // // Make score with x at pos 2 i.e.
+        // //  ([1,2,3],4,x,5)
+        // double node_score_bkp = node_scores[order[p - n]];
+        // double score_at_pos_2 = insert_new_and_score_at_right_type(order, node_index, p - n, n, node_scores, order_score, scoring);
+        // move_element(order, p - n, node_index);     // move back the node.
+        // node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
+        // node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
+
+        // order_score = order_score_bkp;                                 // reset order score
+        // if (definitelyLessThan(score_at_top, score_at_pos_2, EPSILON)) // score_at_top < score_at_pos_2)
+        // {
+        //     // std::cout << "Prune since " << score_at_top << " and " << score_at_pos_2 << std::endl;
+        //     return (true); // Prune
+        // }
+        // if (approximatelyEqual(score_at_top, score_at_pos_2, EPSILON))
+        // {
+        //     // std::cout << "Equal score at top as injected and " << std::endl;
+        //     //  Check if pos 1 and pos 2 in the suborder can be exchanged.
+        //     //([1,2,x,3],y,3,5) -> score y
+        //     double node_score_top = node_scores[order[p - n]];
+        //     //([1,2,x,3],y,3,5) -> ([1,2,3],x,y,3,5) -> score x
+        //     insert_new_and_score_at_right_type(order, node_index, p - n - 1, n, node_scores, order_score, scoring);
+        //     double score_at_new_top = node_scores[order[p - n - 1]];
+        //     double order_score1 = order_score;
+        //     // std::cout << "before swap" << std::endl;
+        //     // std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
+        //     // std::cout << scoring.score_pos(order, p - n) << std::endl;
+        //     //  [1,2,3|x,y,3,5] -> [1,2,3|y,x,3,5] -> score x and y
+        //     const auto &[score_at_new_top_swap, node_score_top_swap] = scoring.swap_nodes(p - n - 1, p - n, order, node_scores); // This should update the orderscore directly maybe.
+
+        //     double order_score2 = order_score;
+        //     // std::cout << "after swap" << std::endl;
+        //     // std::cout << scoring.score_pos(order, p - n - 1) << std::endl;
+        //     // std::cout << scoring.score_pos(order, p - n) << std::endl;
+
+        //     move_element(order, p - n, node_index);     // move back the node.
+        //     node_scores[order[node_index]] = 0.0;       // reset the node score at pos 0
+        //     node_scores[order[p - n]] = node_score_bkp; // reset the node score at pos p-n
+        //     order_score = order_score_bkp;
+        //     if (approximatelyEqual(node_score_top, node_score_top_swap, EPSILON) && approximatelyEqual(score_at_new_top, score_at_new_top_swap, EPSILON))
+        //     {
+        //         // std::cout << "Top an new top equal. " << std::endl;
+        //         if (order[node_index] > order[p - n])
+        //         {
+        //             // If the injected one (index p-n) has higher node number, Prune.
+        //             // std::cout << "Top an new top can be swapped and maintain score. " << std::endl;
+        //             return (true);
+        //         }
+        //     }
+        // }
     }
     return (false);
 }
@@ -935,13 +1044,14 @@ bool prune_left_type(std::vector<int> &order,
                      OrderScoring &scoring)
 {
     std::size_t p = order.size();
-    std::cout << "Order considered for pruning" << std::endl << std::endl;
-    PrintVector(order, 0, n);
-    std::cout << std::endl;
+    // std::cout << "Order considered for pruning" << std::endl
+    //           << std::endl;
+    // PrintVector(order, 0, n);
+    // std::cout << std::endl;
     for (std::size_t node_index = n; node_index < p; node_index++)
     {
         // Go through all of the unused nodes and inject them at the back and second back
-        double order_score_bkp = order_score; 
+        double order_score_bkp = order_score;
         int back_node = order[n - 1]; // [1,2,x|a,b,y,c]
         double back_node_score_bkp = node_scores[back_node];
 
@@ -953,13 +1063,13 @@ bool prune_left_type(std::vector<int> &order,
         order_score += inject_node_score;
 
         double order_score_inject_top = order_score;
-        std::cout << "inject " << inject_node << " at the back. " << std::endl;
-        PrintVector(order, 0, n + 1);
-        std::cout << "score: " << order_score_inject_top << std::endl;
+        // std::cout << "inject " << inject_node << " at the back. " << std::endl;
+        // PrintVector(order, 0, n + 1);
+        // std::cout << "score: " << order_score_inject_top << std::endl;
 
         // Swap positions
         // [1,2,x,y|a,b,c] -> [1,2,y,x|a,b,c]
-        std::cout << "swap the back" << std::endl;
+        // std::cout << "swap the back" << std::endl;
         myswap(n - 1, n, order); //[1,2,y,x|a,b,c]
         double inject_node_score_swapped = scoring.score_pos(order, n - 1);
         double node_score_swapped = scoring.score_pos(order, n); // O(p)? This should also be quite time consuming..
@@ -971,11 +1081,11 @@ bool prune_left_type(std::vector<int> &order,
         // std::cout << inject_node << " score before swap: " << inject_node_score << std::endl;
         // std::cout << inject_node << " score after swap: " << inject_node_score_swapped << std::endl;
         double order_score_swapped = order_score - (inject_node_score + back_node_score_bkp) + (inject_node_score_swapped + node_score_swapped);
-        // swap_nodes(n-1, n, order, node_scores, order_score, scoring); 
+        // swap_nodes(n-1, n, order, node_scores, order_score, scoring);
         // double order_score_swap = order_score;
 
-        PrintVector(order, 0, n+1);
-        std::cout << "score: " << order_score_swapped << std::endl;
+        // PrintVector(order, 0, n + 1);
+        // std::cout << "score: " << order_score_swapped << std::endl;
         // Restore as before swapping
         order_score = order_score_bkp;
         node_scores[inject_node] = 0.0;
@@ -985,19 +1095,24 @@ bool prune_left_type(std::vector<int> &order,
 
         if (definitelyGreaterThan(order_score_swapped, order_score_inject_top, EPSILON))
         {
-            std::cout << "*** Prune ***"  << std::endl << std::endl << std::endl;
+            // std::cout << "*** Prune ***" << std::endl
+            //           << std::endl
+            //           << std::endl;
             return (true);
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
     }
-    std::cout << "*** NO Prune ***"  << std::endl << std::endl << std::endl;
+    // std::cout << "*** NO Prune ***" << std::endl
+    //           << std::endl
+    //           << std::endl;
     return (false);
 }
 
-void put_nodes_in_front(int n,
-                        std::vector<std::vector<std::tuple<std::vector<int>, double, std::vector<double>>>> &opt_tuples,
-                        OrderScoring &scoring)
+std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> put_nodes_in_front(int n,
+                                                                                          std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> &prev_tuples,
+                                                                                          OrderScoring &scoring)
 {
+    std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> opt_tuples;
     // Go through all orders with n-1 nodes. For each order, try to add the remaining nodes
     // at the front.
     std::size_t p = scoring.numparents.size();
@@ -1014,63 +1129,54 @@ void put_nodes_in_front(int n,
             }
             myswap(node, p - 1, order);
             // score nodes
-            //PrintVector(order);
+            // PrintVector(order);
             std::vector<double> *sc = scoring.score(order, p - 1, 1); // OK, score only index p-1.
             std::vector<double> node_scores = *sc;
-            //PrintVector(node_scores);
+            // PrintVector(node_scores);
             delete sc;
             // score order
             double order_score = node_scores[node];
-            //int order_number = node;
+            // int order_number = node;
             std::tuple<std::vector<int>, double, std::vector<double>>
                 opt_tuple = std::make_tuple(order, order_score, node_scores);
-            //std::cout << "score " << order_score << std::endl;
-
-            //if (!prune_right_type(order, n, node_scores, order_score, scoring))
-            {
-                opt_tuples[n].push_back(opt_tuple);
-            }
+            // std::cout << "score " << order_score << std::endl;
+            opt_tuples.push_back(opt_tuple);
         }
-        //std::cout << "order score " << std::get<double>(opt_tuples[1][0]) << std::endl;
+        // std::cout << "order score " << std::get<double>(opt_tuples[1][0]) << std::endl;
     }
     else
     {
-        //std::cout << "n=" << n << std::endl;
-        //std::cout << "orders " << opt_tuples[n - 1].size() << std::endl;
-        for (size_t i = 0; i < opt_tuples[n - 1].size(); i++)
+        // std::cout << "n=" << n << std::endl;
+        // std::cout << "orders " << opt_tuples[n - 1].size() << std::endl;
+        for (size_t i = 0; i < prev_tuples.size(); i++)
         {
-            //std::cout << "particle (order) " << i << " out of " << opt_tuples[n - 1].size() << std::endl;
-            // take one of the orders.
-            const auto &[prev_order, prev_score, prev_node_scores] = opt_tuples[n - 1][i];
-            //PrintVector(prev_order);
+            // std::cout << "particle (order) " << i << " out of " << opt_tuples[n - 1].size() << std::endl;
+            //  take one of the orders.
+            const auto &[prev_order, prev_score, prev_node_scores] = prev_tuples[i];
+            // PrintVector(prev_order);
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
                 // Try to put m to the front
-
                 auto [optimal_order, order_score, node_scores, is_optimal] = put_node_in_front(prev_order,
                                                                                                n,
                                                                                                node_index,
                                                                                                prev_node_scores,
                                                                                                prev_score,
-
                                                                                                scoring);
                 // Pruning step I) Keep only if the new node (before at node_index) is optimal at the front.
-                // Pruning step II) If it is better to move one of the nodes in the ordering to the front.
-                // Pruning step III) If the top and next top nodes can be interchanged while the score is invariant,
                 if (is_optimal == true)
                 {
-                    //if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
                     {
-                        // Check if it fits better as parent for all others (index 0, or very "left").
-                        //PrintVector(optimal_order);
-                        //std::cout << order_score << std::endl;
+                        // PrintVector(optimal_order);
+                        // std::cout << order_score << std::endl;
                         std::tuple<std::vector<int>, double, std::vector<double>> tuple = std::make_tuple(optimal_order, order_score, node_scores);
-                        opt_tuples[n].push_back(tuple);
+                        opt_tuples.push_back(tuple);
                     }
                 }
             }
         }
     }
+    return (opt_tuples);
 }
 
 void put_nodes_in_back(int n,
@@ -1093,35 +1199,35 @@ void put_nodes_in_back(int n,
             }
             myswap(node, 0, order);
             // score nodes
-            //PrintVector(order);
+            // PrintVector(order);
             std::vector<double> *sc = scoring.score(order, 0, 1); // OK, score only index 0.
             std::vector<double> node_scores = *sc;
-            //PrintVector(node_scores);
+            // PrintVector(node_scores);
             delete sc;
             // score order
             double order_score = node_scores[node];
-            //int order_number = node;
+            // int order_number = node;
             std::tuple<std::vector<int>, double, std::vector<double>>
                 opt_tuple = std::make_tuple(order, order_score, node_scores);
-            //std::cout << "score " << order_score << std::endl;
+            // std::cout << "score " << order_score << std::endl;
 
-            //if (!prune_right_type(order, n, node_scores, order_score, scoring))
+            // if (!prune_right_type(order, n, node_scores, order_score, scoring))
             {
                 opt_tuples[n].push_back(opt_tuple);
             }
         }
-        //std::cout << "order score " << std::get<double>(opt_tuples[1][0]) << std::endl;
+        // std::cout << "order score " << std::get<double>(opt_tuples[1][0]) << std::endl;
     }
     else
     {
-        //std::cout << "n=" << n << std::endl;
-        //std::cout << "orders " << opt_tuples[n - 1].size() << std::endl;
+        // std::cout << "n=" << n << std::endl;
+        // std::cout << "orders " << opt_tuples[n - 1].size() << std::endl;
         for (size_t i = 0; i < opt_tuples[n - 1].size(); i++)
         {
-            //std::cout << "particle (order) " << i << " out of " << opt_tuples[n - 1].size() << std::endl;
-            // take one of the orders.
+            // std::cout << "particle (order) " << i << " out of " << opt_tuples[n - 1].size() << std::endl;
+            //  take one of the orders.
             const auto &[prev_order, prev_score, prev_node_scores] = opt_tuples[n - 1][i];
-            //PrintVector(prev_order);
+            // PrintVector(prev_order);
             for (size_t node_index = n - 1; node_index < p; node_index++)
             {
                 // Try to put m to the back
@@ -1136,11 +1242,11 @@ void put_nodes_in_back(int n,
                 // Pruning step III) If the top and next top nodes can be interchanged while the score is invariant,
                 if (is_optimal == true)
                 {
-                    //if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
+                    // if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
                     {
                         // Check if it fits better as parent for all others (index 0, or very "left").
-                        //PrintVector(optimal_order);
-                        //std::cout << order_score << std::endl;
+                        // PrintVector(optimal_order);
+                        // std::cout << order_score << std::endl;
                         std::tuple<std::vector<int>, double, std::vector<double>> tuple = std::make_tuple(optimal_order, order_score, node_scores);
                         opt_tuples[n].push_back(tuple);
                     }
@@ -1173,12 +1279,12 @@ std::vector<bool> order_to_boolvec(const std::vector<int> &order, size_t n, bool
 }
 
 /**
- * Row matrix of bool vectors, representing sets or forderings, and selects the 
+ * Row matrix of bool vectors, representing sets or forderings, and selects the
  * indices with highest scores.
- * 
+ *
  * It does is coulmb by columns and adding the indices corresonding to zeros
  * and ones respectively as arrays. in the next itetration, column n+1 these indices are used.
- * 
+ *
  */
 std::vector<int> unique_sets(const std::vector<std::vector<bool>> &mats, const std::vector<double> &order_scores)
 {
@@ -1223,14 +1329,14 @@ std::vector<int> unique_sets(const std::vector<std::vector<bool>> &mats, const s
             if (zeros.size() > 1)
             {
 
-                //PrintVector(zeros);
-                // Get the max scoring index
+                // PrintVector(zeros);
+                //  Get the max scoring index
                 double maxscore = -INFINITY;
                 int max_ind = -1;
                 std::vector<int>::iterator i;
                 for (i = zeros.begin() + 1; i != zeros.end(); ++i)
                 {
-                    //std::cout << "row " << *i << " score " << order_scores[*i] << std::endl;
+                    // std::cout << "row " << *i << " score " << order_scores[*i] << std::endl;
                     if (order_scores[*i] > maxscore)
                     {
                         maxscore = order_scores[*i];
@@ -1242,14 +1348,14 @@ std::vector<int> unique_sets(const std::vector<std::vector<bool>> &mats, const s
 
             if (ones.size() > 1)
             {
-                //PrintVector(ones);
-                // Get the max scoring index
+                // PrintVector(ones);
+                //  Get the max scoring index
                 double maxscore = -INFINITY;
                 int max_ind = -1;
                 std::vector<int>::iterator i;
                 for (i = ones.begin() + 1; i != ones.end(); ++i)
                 {
-                    //std::cout << "row " << *i << " score " << order_scores[*i] << std::endl;
+                    // std::cout << "row " << *i << " score " << order_scores[*i] << std::endl;
                     if (order_scores[*i] > maxscore)
                     {
                         maxscore = order_scores[*i];
@@ -1277,7 +1383,7 @@ std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_equ
     std::vector<std::vector<bool>> boolmat;
     std::vector<double> order_scores;
 
-    //std::cout << "Creating boolmatrix" << std::endl;
+    // std::cout << "Creating boolmatrix" << std::endl;
     for (const auto &t : tuples)
     {
         const auto &[optimal_order, order_score, node_scores] = t;
@@ -1286,7 +1392,7 @@ std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_equ
         order_scores.push_back(order_score);
     }
 
-    //std::cout << "Get indices of unique maximal scoring sets" << std::endl;
+    // std::cout << "Get indices of unique maximal scoring sets" << std::endl;
     std::vector<int> pruned_inds = unique_sets(boolmat, order_scores);
 
     std::vector<double> pruned_scores;
@@ -1300,19 +1406,79 @@ std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_equ
     return (pruned_tuples);
 }
 
-std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_gaps(std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> &tuples,
-                                                                                  int n, bool right_type,
-                                                                                  OrderScoring &scoring)
+std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_numorder(std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> &tuples,
+                                                                                      int n, bool right_type,
+                                                                                      OrderScoring &scoring)
 {
     std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> pruned_tuples;
-    int i = 0;
+    int p = scoring.numparents.size();
     for (auto &t : tuples)
     {
         auto &[optimal_order, order_score, node_scores] = t;
 
         if (right_type)
         {
-            if (!prune_right_type(optimal_order, n, node_scores, order_score, scoring))
+            double node1_score = node_scores[optimal_order[p - n]];
+            double node2_score = node_scores[optimal_order[p - n + 1]];
+
+            const auto &[node2_score_swap, node1_score_swap] = scoring.swap_nodes(p - n, p - n + 1, optimal_order, node_scores); // This should update the orderscore directly maybe.
+            myswap(p - n, p - n + 1, optimal_order);                                                                             // swap back
+
+            if (approximatelyEqual(node1_score, node1_score_swap, EPSILON) && approximatelyEqual(node2_score, node2_score_swap, EPSILON))
+            {
+                if (optimal_order[p - n] > optimal_order[p - n + 1])
+                {
+                    pruned_tuples.push_back(t);
+                }
+                else
+                {
+                    // std::cout << "prune order " << std::endl;
+                }
+            }
+            else
+            {
+                pruned_tuples.push_back(t);
+            }
+        }
+        else
+        {
+            {
+                pruned_tuples.push_back(t);
+            }
+        }
+    }
+    return (pruned_tuples);
+}
+
+std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> prune_gaps(std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> &tuples,
+                                                                                  int n, bool right_type,
+                                                                                  OrderScoring &scoring)
+{
+    std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> pruned_tuples;
+    // Compute s(x|h) for all x.
+
+    size_t p = scoring.numparents.size();
+    std::vector<double> top_scores(p);
+    std::vector<int> order_tmp(p);
+    for (size_t i = 0; i < p; i++)
+    {
+        order_tmp[i] = i;
+    }
+
+    for (size_t i = 0; i < p; i++)
+    {
+        move_element(order_tmp, i, 0);
+        top_scores[i] = scoring.score_pos(order_tmp, 0);
+        move_element(order_tmp, 0, i);
+    }
+
+    for (auto &t : tuples)
+    {
+        auto &[optimal_order, order_score, node_scores] = t;
+
+        if (right_type)
+        {
+            if (!prune_right_type(optimal_order, n, node_scores, order_score, top_scores, scoring))
             {
                 pruned_tuples.push_back(t);
             }
@@ -1381,33 +1547,32 @@ void sequential_opt_left_type(OrderScoring &scoring)
 
     for (std::size_t n = 1; n <= p; n++)
     {
-        std::cout << "\nn=" << n << std::endl;
-        // This could be done in parallel.
-        std::cout << "Add new nodes in the back " << std::endl;
+        // std::cout << "\nn=" << n << std::endl;
+        //  This could be done in parallel.
+        // std::cout << "Add new nodes in the back " << std::endl;
         put_nodes_in_back(n, opt_tuples, scoring);
         // Prune opt_tuples. For all elements with the same set of nodes, keep only one with
         // the highest score.
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        size_t orders1 = opt_tuples[n].size();
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
         double max_score = -INFINITY;
         std::vector<int> max_order;
         std::vector<double> max_nodescores;
         std::vector<std::vector<bool>> boolmat;
         std::vector<double> order_scores;
-        
-        std::cout << "Prune equal sets " << std::endl;
+
+        // std::cout << "Prune equal sets " << std::endl;
         opt_tuples[n] = prune_equal_sets(opt_tuples[n], n, false);
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
-
-        std::cout << "Prune gaps " << std::endl;
-        opt_tuples[n] = prune_gaps(opt_tuples[n], n, false, scoring);
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
-
-        
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        size_t orders2 = opt_tuples[n].size();
+        // std::cout << "Prune gaps " << std::endl;
+        // opt_tuples[n] = prune_gaps(opt_tuples[n], n, false, scoring);
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
 
         for (const auto &t : opt_tuples[n])
         {
             const auto &[optimal_order, order_score, node_scores] = t;
-            if (n < 9)
+            if (n < 1)
             {
                 std::vector<int> tmpv(optimal_order.begin(), optimal_order.begin() + n);
                 PrintVector(tmpv);
@@ -1425,16 +1590,17 @@ void sequential_opt_left_type(OrderScoring &scoring)
 
         /* Check that scores are correct */
         std::vector<int> tmpv(max_order.begin(), max_order.begin() + n);
-        std::cout << "max scoring sub order " << std::endl;
-        PrintVector(tmpv);
-        //PrintVector(max_nodescores);
+        // std::cout << "max scoring sub order " << std::endl;
+        // PrintVector(tmpv);
+        // PrintVector(max_nodescores);
         // check correct score
         std::vector<double> *sc = scoring.score(max_order, 0, n); // Take only the last n elements in the vector
-        //PrintVector(*sc);
+        // PrintVector(*sc);
         double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
         delete sc;
-        std::cout << "score: " << max_score << " should be " << max_score_check << std::endl;
+        // std::cout << "score: " << max_score << " should be " << max_score_check << std::endl;
         assert(std::abs(max_score - max_score_check) < EPSILON);
+        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << max_score << " \\\\" << std::endl;
     }
 }
 
@@ -1444,35 +1610,47 @@ void sequential_opt(OrderScoring &scoring)
 
     std::size_t p = scoring.numparents.size();
     std::cout << "Starting optimization" << std::endl;
-    std::vector<std::vector<std::tuple<std::vector<int>, double, std::vector<double>>>> opt_tuples(p + 1);
+    std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> opt_tuples;
+    std::vector<std::tuple<std::vector<int>, double, std::vector<double>>> opt_tuples_prev;
 
     for (std::size_t n = 1; n <= p; n++)
     {
-        std::cout << "\nn=" << n << std::endl;
-        // This could be done in parallel.
-        std::cout << "Add new nodes in the front " << std::endl;
-        put_nodes_in_front(n, opt_tuples, scoring);
+        // std::cout << "\nn=" << n << std::endl;
+        //  This could be done in parallel.
+        // std::cout << "Add new nodes in the front " << std::endl;
+        opt_tuples = put_nodes_in_front(n, opt_tuples_prev, scoring);
         // Prune opt_tuples. For all elements with the same set of nodes, keep only one with
         // the highest score.
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        double orders1 = opt_tuples.size();
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
         double max_score = -INFINITY;
         std::vector<int> max_order;
         std::vector<double> max_nodescores;
         std::vector<std::vector<bool>> boolmat;
         std::vector<double> order_scores;
 
-        std::cout << "Prune equal sets " << std::endl;
-        opt_tuples[n] = prune_equal_sets(opt_tuples[n], n, true);
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        double orders0 = 0;
+        // if (n > 1)
+        // {
+        //     //std::cout << "Prune equal sets " << std::endl;
+        //     opt_tuples[n] = prune_numorder(opt_tuples[n], n, true, scoring);
+        //     std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        //     orders0 = opt_tuples[n].size();
+        // }
+        // std::cout << "Prune equal sets " << std::endl;
+        opt_tuples = prune_equal_sets(opt_tuples, n, true);
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        double orders2 = opt_tuples.size();
 
-        std::cout << "Prune gaps " << std::endl;
-        opt_tuples[n] = prune_gaps(opt_tuples[n], n, true, scoring);
-        std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        // std::cout << "Prune gaps " << std::endl;
+        opt_tuples = prune_gaps(opt_tuples, n, true, scoring);
+        // std::cout << "# orders: " << opt_tuples[n].size() << std::endl;
+        double orders3 = opt_tuples.size();
 
-        for (const auto &t : opt_tuples[n])
+        for (const auto &t : opt_tuples)
         {
             const auto &[optimal_order, order_score, node_scores] = t;
-            if (n < 3)
+            if (n < 1)
             {
                 std::vector<int> tmpv(optimal_order.end() - n, optimal_order.end());
                 PrintVector(tmpv);
@@ -1490,15 +1668,17 @@ void sequential_opt(OrderScoring &scoring)
 
         /* Check that scores are correct */
         std::vector<int> tmpv(max_order.end() - n, max_order.end());
-        std::cout << "max scoring sub order " << std::endl;
-        PrintVector(tmpv);
-        // check correct score
+        // std::cout << "max scoring sub order " << std::endl;
+        // PrintVector(tmpv);
+        //  check correct score
         std::vector<double> *sc = scoring.score(max_order, p - n, n); // Take only the last n elements in the vector
-        //PrintVector(*sc);
+        // PrintVector(*sc);
         double max_score_check = std::accumulate(sc->begin(), sc->end(), 0.0);
         delete sc;
         assert(std::abs(max_score - max_score_check) < EPSILON);
-        std::cout << "score: " << max_score << std::endl;
+        // std::cout << "score: " << max_score << std::endl;
+        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_score << " \\\\" << std::endl;
+        opt_tuples_prev = std::move(opt_tuples);
     }
 }
 
@@ -1534,10 +1714,10 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
 
     for (size_t n = 0; n < p; n++)
     {
-        //std::cout << "\n\nn: " << n << " cache hits: " << scoring.cache_hits << std::endl;
+        // std::cout << "\n\nn: " << n << " cache hits: " << scoring.cache_hits << std::endl;
         for (size_t i = 0; i < N; i++)
         {
-            //std::cout << "\ni: " << i << std::endl;
+            // std::cout << "\ni: " << i << std::endl;
             if (n == 0)
             {
                 double log_initprop_prob = random_parent_init(scoring,
@@ -1595,7 +1775,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<int>> backward_order_sampl
 }
 
 /**
- * 
+ *
  * Calculates the log proposal probabilities of the orders in asequence efficiently.
  */
 std::vector<double> orders_log_prop_probs(const std::vector<std::vector<int>> &orders, std::vector<int> &new_node_inds_cond_orders, OrderScoring &scoring);
@@ -1614,7 +1794,7 @@ std::vector<double> orders_log_prop_probs(const std::vector<std::vector<int>> &o
 // }
 
 /**
- * 
+ *
  * Calculates the log proposal probability of an order.
  * The strategy is to place the new node in every position and calculate the order scores.
  * Since th node scores depends on the psostion also these as to be calculated.
@@ -1628,8 +1808,8 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
     int node = order[new_node_index];
     move_element(order, new_node_index, prev_order_length); // Move the element to the back at first. maybe one step left
 
-    //for node at index first_n_elements. The other nodes have the
-    // same score since those are still before in the ordering.
+    // for node at index first_n_elements. The other nodes have the
+    //  same score since those are still before in the ordering.
     std::vector<double> order_scores(prev_order_length + 1);
     std::vector<double> node_scores(input_order.size());
 
@@ -1649,12 +1829,12 @@ double order_log_prop_prob(const std::vector<int> &input_order, int prev_order_l
 
     // Sample the new ordering from the order_scores distribution, where the index
     // specifies the position were node is inserted.
-    //std::cout << "Scores to be dist" << std::endl;
-    //PrintVector(order_scores);
-    //std::cout << "Score for index "<< new_node_index <<": " << order_scores[new_node_index] << std::endl;
+    // std::cout << "Scores to be dist" << std::endl;
+    // PrintVector(order_scores);
+    // std::cout << "Score for index "<< new_node_index <<": " << order_scores[new_node_index] << std::endl;
     std::vector<double> *neig_dist = dist_from_logprobs(order_scores); // TODO: dont need dist, just logs
-    //PrintVector(*neig_dist);
-    //std::cout << "prop prob" << (*neig_dist)[new_node_index] << std::endl;
+    // PrintVector(*neig_dist);
+    // std::cout << "prop prob" << (*neig_dist)[new_node_index] << std::endl;
     return std::log((*neig_dist)[new_node_index]); // NOTE: This can be -Inf sometimes.
 }
 
@@ -1763,7 +1943,7 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
                                                                                              thread_pool &pool)
 {
     std::size_t p = scoring.numparents.size();
-    //std::cout << "Starting conditional SMC " << std::endl;
+    // std::cout << "Starting conditional SMC " << std::endl;
     std::vector<std::vector<double>> log_w(p, std::vector<double>(N, 0.0));
     std::vector<std::vector<std::vector<int>>> orders(p, std::vector<std::vector<int>>(N, std::vector<int>(p)));
     std::vector<int> I(N);
@@ -1798,13 +1978,13 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
         unsigned int maxthreads = N;
         std::size_t Num_Threads = std::min(std::thread::hardware_concurrency(), maxthreads);
         std::vector<std::thread> threads(Num_Threads);
-        //std::cout << "num threads" << Num_Threads << std::endl;
+        // std::cout << "num threads" << Num_Threads << std::endl;
 
         for (size_t i = 0; i < Num_Threads; i++)
         {
             int i_from = i * (N / Num_Threads);
             int i_to = (i + 1) * (N / Num_Threads);
-            //std::cout << i_from << "-" << i_to << std::endl;
+            // std::cout << i_from << "-" << i_to << std::endl;
 
             if (i == Num_Threads - 1)
             {
@@ -1830,8 +2010,8 @@ std::tuple<std::vector<double>, std::vector<std::vector<int>>, std::vector<doubl
             threads[i].join();
         }
 
-        //PrintVector(log_w[n]);
-        // rescale weights to
+        // PrintVector(log_w[n]);
+        //  rescale weights to
         norm_w = dist_from_logprobs(log_w[n]);
         std::discrete_distribution<int> distribution(norm_w->begin(), norm_w->end());
         delete norm_w;
@@ -1863,7 +2043,7 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
     delete norm_w;
     orders[0] = smc_orders[sampled_index];
     log_scores[0] = smc_log_scores[sampled_index];
-    //orders[0] = [6, 7, 0, 5, 1, 3, 4, 2]
+    // orders[0] = [6, 7, 0, 5, 1, 3, 4, 2]
 
     std::cout << "Order sampled from SMC " << std::endl;
     PrintVector(orders[0]);
@@ -1908,21 +2088,21 @@ std::pair<std::vector<std::vector<int>>, std::vector<double>> pgibbs(std::size_t
 std::pair<std::vector<int>, std::vector<double>> mh(std::size_t M, OrderScoring &scoring, std::default_random_engine &generator)
 {
     std::size_t p = scoring.numparents.size();
-    //std::vector<std::vector<int>> orders(M, std::vector<int>(p));
-    //std::vector<std::vector<int>> orders(2, std::vector<int>(2));
+    // std::vector<std::vector<int>> orders(M, std::vector<int>(p));
+    // std::vector<std::vector<int>> orders(2, std::vector<int>(2));
     std::vector<double> log_scores(M);
 
     // Init vector
 
     std::vector<int> order = std::vector<int>(p);
-    //orders[0] = std::vector<int>(p);
+    // orders[0] = std::vector<int>(p);
     for (std::size_t i = 0; i < p; i++)
     {
-        //orders[0][i] = i;
+        // orders[0][i] = i;
         order[i] = i;
     }
 
-    //std::vector<double> *log_nodes_scores = scoring.score(orders[0], 0, p);
+    // std::vector<double> *log_nodes_scores = scoring.score(orders[0], 0, p);
     std::vector<double> *log_nodes_scores = scoring.score(order, 0, p);
     log_scores[0] = std::accumulate(log_nodes_scores->begin(), log_nodes_scores->end(), 0.0);
     double max_score = -INFINITY;
@@ -1930,9 +2110,9 @@ std::pair<std::vector<int>, std::vector<double>> mh(std::size_t M, OrderScoring 
 
     for (std::size_t j = 1; j < M; j++)
     {
-        //const auto &[mh_order, mh_log_score] = mh_swap_move(orders[j - 1], *log_nodes_scores, log_scores[j - 1], scoring);
+        // const auto &[mh_order, mh_log_score] = mh_swap_move(orders[j - 1], *log_nodes_scores, log_scores[j - 1], scoring);
         const auto &[mh_order, mh_log_score] = mh_swap_move(order, *log_nodes_scores, log_scores[j - 1], scoring);
-        //orders[j] = mh_order;
+        // orders[j] = mh_order;
         order = mh_order;
         log_scores[j] = mh_log_score;
         if (mh_log_score > max_score)
@@ -1972,23 +2152,23 @@ OrderScoring get_score(Rcpp::List ret)
 
     // Read banned score
     Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
-    //std::vector<Rcpp::NumericMatrix> bannedscore;
+    // std::vector<Rcpp::NumericMatrix> bannedscore;
     std::vector<std::vector<std::vector<double>>> bannedscore;
     for (std::size_t i = 0; i < p; i++)
     {
         Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(bannedscoreR[i]);
-        //std::vector<std::vector<double>> mat;
+        // std::vector<std::vector<double>> mat;
         std::vector<std::vector<double>> mat(m.rows(), std::vector<double>(m.cols()));
         for (int j = 0; j < m.rows(); j++)
         {
             for (int k = 0; k < m.cols(); k++)
             {
                 mat[j][k] = m(j, k);
-                //NumericVector v = m( _ , j );
-                //std::vector<double> row;
-                //for(auto val: v){
-                //    row.push_back(val);
-                //}
+                // NumericVector v = m( _ , j );
+                // std::vector<double> row;
+                // for(auto val: v){
+                //     row.push_back(val);
+                // }
             }
         }
         bannedscore.push_back(mat);
@@ -2057,8 +2237,8 @@ Rcpp::List r_pgibbs(Rcpp::List ret, int N, int M, int seed)
     std::default_random_engine generator(seed);
 
     thread_pool pool;
-    //pool.push_task(task, arg1, arg2);
-    //pool.wait_for_tasks();
+    // pool.push_task(task, arg1, arg2);
+    // pool.wait_for_tasks();
 
     const auto &[pgibbs_orders, pgibbs_log_scores] = pgibbs(M, N, scoring, generator, pool);
 

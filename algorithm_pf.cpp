@@ -35,6 +35,8 @@
 #include "smc_stuff.cpp"
 #include "thread_pool.hpp"
 #include <experimental/any>
+#include <chrono>
+using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
@@ -54,15 +56,16 @@ int main(int argc, char **argv)
 
     // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
     // Can we use the sampled ones as a prior that is approximately the same?
-    //std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
-    //std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
+    // std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
+    // std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
+    //   std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    //   std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //   std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+    //  std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
 
     RInside R(argc, argv);
-    //std::string r_code = "source(\"readtables.R\"); ret";
+    // std::string r_code = "source(\"readtables.R\"); ret";
     Rcpp::List ret = R.parseEval(r_code);
     OrderScoring scoring = get_score(ret);
 
@@ -82,13 +85,15 @@ int main(int argc, char **argv)
 
     // std::vector<double> order_scores = {1.0, 2.0, 2.1, 3.0, 2.5, 0.5};
     // std::vector<int> pruned_inds = unique_sets(mats, order_scores);
-    
+    auto start = high_resolution_clock::now();
     // PrintVector(pruned_inds);
     // std::cout << DBL_EPSILON << std::endl
-    sequential_opt_left_type(scoring);
-    //sequential_opt(scoring);
-    //std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
-
+    // sequential_opt_left_type(scoring);
+    sequential_opt(scoring);
+    // std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+    std::cout << "Execution time: " << duration.count() << std::endl;
     // int M = 100000000;
     // const auto &[max_order, mh_log_scores] = mh(M, scoring, generator);
     // int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();
