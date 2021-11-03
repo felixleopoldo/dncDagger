@@ -32,7 +32,7 @@
 //#include "algorithm_pf.hpp"
 #include <RInside.h>
 #include <Rcpp.h>
-#include "smc_stuff.cpp"
+#include "seq_opt.cpp"
 #include "thread_pool.hpp"
 #include <experimental/any>
 #include <chrono>
@@ -69,11 +69,11 @@ int main(int argc, char **argv)
     Rcpp::List ret = R.parseEval(r_code);
     OrderScoring scoring = get_score(ret);
 
-    int seed = 1;
-    std::srand(seed);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::default_random_engine generator(seed);
+    // int seed = 1;
+    // std::srand(seed);
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::default_random_engine generator(seed);
 
     // std::vector<std::vector<bool>> mats;
     // mats.push_back({1, 1, 1, 1}); // 0
