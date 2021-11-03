@@ -593,10 +593,10 @@ std::tuple<std::vector<int>, double, std::vector<double>, bool> put_node_in_back
  * Eg if x is the node to score:
  * ([0,x,2,3],5,6,4) -> ([0,2,3],x,5,6,4)
  */
-void insert_new_and_score_at(RightOrder &ro,
-                             int from_index,
-                             int to_index,
-                             OrderScoring &scoring)
+void make_visible(RightOrder &ro,
+                  int from_index,
+                  int to_index,
+                  OrderScoring &scoring)
 {
     int p = ro.order.size();
     int node = ro.order[from_index];
@@ -647,7 +647,7 @@ bool has_gap(RightOrder &ro,
 
         // Score order when x is inserted everywhere.
         std::vector<double> injected_order_scores;
-        insert_new_and_score_at(ro, node_index, p - n - 1, scoring);
+        make_visible(ro, node_index, p - n - 1, scoring);
         injected_order_scores.push_back(ro.order_score);
         for (size_t i = 0; i < n; i++)
         {
