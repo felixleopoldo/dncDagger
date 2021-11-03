@@ -57,12 +57,12 @@ int main(int argc, char **argv)
     // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
     // Can we use the sampled ones as a prior that is approximately the same?
     // std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
-    // std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
-    //   std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //   std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //   std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
-    //  std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
+    std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    // std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
+    //    std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    //    std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //    std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+    //   std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
 
     RInside R(argc, argv);
     // std::string r_code = "source(\"readtables.R\"); ret";
