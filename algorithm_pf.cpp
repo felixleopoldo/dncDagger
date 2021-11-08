@@ -36,7 +36,99 @@
 #include "thread_pool.hpp"
 #include <experimental/any>
 #include <chrono>
+
+//#include "OrderScoring.cpp"
 using namespace std::chrono;
+
+OrderScoring get_score(Rcpp::List ret)
+{
+
+    // Read MAP flag
+    bool MAP = Rcpp::as<bool>(ret["MAP"]);
+    std::cout << MAP << std::endl;
+
+    // Read numparents
+    std::vector<int> numparents = Rcpp::as<std::vector<int>>(ret["numparents"]);
+
+    // Read scoretable
+    std::vector<std::vector<std::vector<double>>> scoretable = Rcpp::as<std::vector<std::vector<std::vector<double>>>>(ret["scoretable"]);
+
+    // Read parent table
+    Rcpp::List parenttableR = Rcpp::as<Rcpp::List>(ret["parenttable"]);
+    std::size_t p = parenttableR.size();
+    std::vector<Rcpp::IntegerMatrix> parenttable;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerMatrix m = Rcpp::as<Rcpp::IntegerMatrix>(parenttableR[i]);
+        parenttable.push_back(m);
+    }
+
+    // Read banned score
+    Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
+    std::vector<std::vector<std::vector<double>>> bannedscore;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(bannedscoreR[i]);
+        std::vector<std::vector<double>> mat(m.rows(), std::vector<double>(m.cols()));
+        for (int j = 0; j < m.rows(); j++)
+        {
+            for (int k = 0; k < m.cols(); k++)
+            {
+                mat[j][k] = m(j, k);
+            }
+        }
+        bannedscore.push_back(mat);
+    }
+
+    // Read rowmaps_backwards
+    Rcpp::List rowmaps_backwardsR = Rcpp::as<Rcpp::List>(ret["rowmaps_backwards"]);
+    std::vector<Rcpp::IntegerVector> rowmaps_backwards;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(rowmaps_backwardsR[i]);
+        rowmaps_backwards.push_back(m);
+    }
+
+    // Read aliases
+    Rcpp::List aliasesR = Rcpp::as<Rcpp::List>(ret["aliases"]);
+    std::vector<std::vector<int>> aliases;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        std::vector<int> m = Rcpp::as<std::vector<int>>(aliasesR[i]);
+        aliases.push_back(m);
+    }
+
+    // Read plus1listsparents
+    Rcpp::List plus1listsparentsR = Rcpp::as<Rcpp::List>(ret["plus1listsparents"]);
+    std::vector<std::vector<int>> plus1listsparents;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(plus1listsparentsR[i]);
+        std::vector<int> tmp;
+        for (auto e : m)
+        {
+            tmp.push_back(e);
+        }
+        plus1listsparents.push_back(tmp);
+    }
+
+    std::vector<int> scorepositions(p);
+    for (std::size_t i = 0; i < p; ++i)
+    {
+        scorepositions[i] = i;
+    }
+
+    // std::map<cache_keytype3, std::vector<double>> cache;
+    OrderScoring scoring(aliases,
+                         numparents,
+                         rowmaps_backwards,
+                         plus1listsparents,
+                         scoretable,
+                         bannedscore,
+                         MAP);
+
+    return (scoring);
+}
 
 int main(int argc, char **argv)
 {
@@ -59,9 +151,9 @@ int main(int argc, char **argv)
     // std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
     std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
     // std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
-    //    std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //    std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //    std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
+    //  std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    //      std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
+    //      std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
     //   std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
 
     RInside R(argc, argv);

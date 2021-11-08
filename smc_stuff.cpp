@@ -13,6 +13,28 @@ using namespace std::chrono;
 
 double EPSILON = 0.00001;
 
+inline std::vector<double> *dist_from_logprobs(const std::vector<double> &log_probs)
+{
+    std::size_t n = log_probs.size();
+    double max = *std::max_element(log_probs.begin(), log_probs.end());
+    std::vector<double> probs_rescaled(n);
+    // std::vector<double> *probs_rescaled = new std::vector<double>(n);
+    std::vector<double> *norm_prob = new std::vector<double>(n);
+    double sum_exp = 0.0;
+    for (std::size_t i = 0; i != n; ++i)
+    {
+        (probs_rescaled)[i] = std::exp(log_probs[i] - max);
+        sum_exp += (probs_rescaled)[i];
+    }
+
+    for (std::size_t i = 0; i != n; ++i)
+    {
+        (*norm_prob)[i] = probs_rescaled[i] / sum_exp;
+    }
+
+    return (norm_prob);
+}
+
 std::pair<std::vector<int>, double> mh_swap_move(std::vector<int> &ordering,
                                                  std::vector<double> &node_scores,
                                                  const double &order_score,
