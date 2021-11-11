@@ -11,7 +11,7 @@
 
 using namespace std::chrono;
 
-double EPSILON = 0.00001;
+double EPSILON = 0.0000001;
 
 // // Function to find the nCr
 // void printNcR(int n, int r)
@@ -178,7 +178,41 @@ public:
                            n(n)
     {
     }
+
+    size_t front() const
+    {
+        return order[order.size() - n];
+    }
 };
+
+std::ostream &operator<<(std::ostream &os, const RightOrder &ro)
+{
+    size_t p = ro.order.size();
+
+    if (ro.n != p)
+    {
+        os << "([...],";
+    }
+    else
+    {
+        os << "(";
+    }
+
+    for (size_t i = p - ro.n; i < p; i++)
+    {
+        if (i != p - 1)
+        {
+            os << ro.order[i] << ", ";
+        }
+        else
+        {
+            os << ro.order[i];
+        }
+    }
+
+    os << ")";
+    return os;
+}
 
 class OrderScoring
 {
@@ -186,14 +220,14 @@ private:
     std::vector<std::vector<int>> potential_parents;
     std::vector<Rcpp::IntegerVector> rowmaps_backwards;
     std::vector<std::vector<int>> potential_plus1_parents;
-    std::vector<std::vector<std::vector<double>>> scoretable;
-    std::vector<std::vector<std::vector<double>>> scoresmatrices;
+
     bool MAP;
 
 public:
     std::vector<int> numparents;
-    // std::map<cache_keytype3, std::vector<double>> cache;
-    // int cache_hits;
+    std::vector<std::vector<std::vector<double>>> scoretable;
+    std::vector<std::vector<std::vector<double>>> scoresmatrices;
+
     OrderScoring(
         std::vector<std::vector<int>> potential_parents,
         std::vector<int> numparents,
@@ -201,17 +235,13 @@ public:
         std::vector<std::vector<int>> potential_plus1_parents,
         std::vector<std::vector<std::vector<double>>> scoretable,
         std::vector<std::vector<std::vector<double>>> scoresmatrices,
-        bool MAP
-        // std::map<cache_keytype3, std::vector<double>> cache
-        ) : potential_parents(potential_parents),
-            rowmaps_backwards(rowmaps_backwards),
-            potential_plus1_parents(potential_plus1_parents),
-            scoretable(scoretable),
-            scoresmatrices(scoresmatrices),
-            MAP(MAP),
-            numparents(numparents)
-    // cache(cache),
-    // cache_hits(0)
+        bool MAP) : potential_parents(potential_parents),
+                    rowmaps_backwards(rowmaps_backwards),
+                    potential_plus1_parents(potential_plus1_parents),
+                    scoretable(scoretable),
+                    scoresmatrices(scoresmatrices),
+                    MAP(MAP),
+                    numparents(numparents)
     {
     }
 
@@ -484,6 +514,7 @@ inline void move_element(std::vector<int> &v, const std::size_t &index_from, con
 }
 
 bool optimal_front(const RightOrder &ro,
+                   const std::vector<double> &top_scores,
                    OrderScoring &scoring)
 {
     RightOrder ro_tmp(ro);
@@ -493,16 +524,40 @@ bool optimal_front(const RightOrder &ro,
     {
         swap_nodes(i, i + 1, ro_tmp, scoring);
         // std::cout << ". ";
-        //  if (definitelyGreaterThan(ro_tmp.order_score, ro.order_score, EPSILON)) // this implies worse performance..
-        if (ro_tmp.order_score > ro.order_score)
+        if (definitelyGreaterThan(ro_tmp.order_score, ro.order_score, EPSILON)) // this implies worse performance..
+        // if (ro_tmp.order_score > ro.order_score)
         {
             // std::cout << std::endl;
             return (false);
         }
     }
+
+    // size_t x = ro.order[p - ro.n];
+    // if (approximatelyEqual(top_scores[x], ro.node_scores[x], EPSILON))
+    // {
+    //     std::cout << x << " indep of rest in " << ro << std::endl;
+    // }
     // std::cout << std::endl;
     //  Maybe just swap back instead of copying ro.
     return (true);
+}
+
+bool independent_front(const RightOrder &ro,
+                       const std::vector<double> &top_scores,
+                       OrderScoring &scoring)
+{
+
+    int p = ro.order.size();
+
+    size_t x = ro.order[p - ro.n];
+    if (approximatelyEqual(top_scores[x], ro.node_scores[x], EPSILON))
+    {
+        // std::cout << x << " indep of rest" << std::endl;
+        return (true);
+    }
+    // std::cout << std::endl;
+    //  Maybe just swap back instead of copying ro.
+    return (false);
 }
 
 /**
@@ -583,46 +638,29 @@ bool has_gap(RightOrder &ro,
 
             if (definitelyLessThan(score_at_very_top, ro.order_score, EPSILON))
             {
-                if (i != 0)
+                if (i == 0)
                 {
+                    // Maybe this shold be in the for loop above??
+                    // scoring ([1,2,3],4,x,5)
+                    if (approximatelyEqual(score_at_very_top, injected_order_scores[1], EPSILON))
+                    {
+                        // if s(x,[1,2,3],4,5) == s([1,2,3],4,x,5)
+                        // then check if s([1,2,3],x,4,5) == s([1,2,3],4,x,5)
+                        // if so, prune if x > 4.
+                        if (approximatelyEqual(injected_order_scores[0], injected_order_scores[1], EPSILON))
+                        {
+                            if (ro.order[new_top] < ro.order[top])
+                            {
+                                return (true);
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                }
-
-                return (true); // Prune
-            }
-        }
-
-        // Maybe this shold be in the for loop above??
-        // scoring ([1,2,3],4,x,5)
-        if (approximatelyEqual(score_at_very_top, injected_order_scores[1], EPSILON))
-        {
-            // if s(x,[1,2,3],4,5) == s([1,2,3],4,x,5)
-            // then check if s([1,2,3],x,4,5) == s([1,2,3],4,x,5)
-            // if so, prune if x > 4.
-            if (approximatelyEqual(injected_order_scores[0], injected_order_scores[1], EPSILON))
-            {
-                if (ro.order[new_top] < ro.order[top])
-                {
-                    return (true);
+                    return (true); // Prune
                 }
             }
-        }
-
-        // Check if x is x is independent of the hidden nodes. If so see if it is optimal at front.
-        // If there are several such nodes x, take the one with higest (or lowest) values.
-        // This should be the only possible node to add (in the next step).
-        if (approximatelyEqual(score_at_very_top, injected_order_scores[0], EPSILON) &&
-            definitelyGreaterThan(score_at_very_top, *std::max_element(injected_order_scores.begin() + 1, injected_order_scores.end()),
-                                  EPSILON))
-        {
-            indep_nodes.push_back(x);
-            // std::cout << x << " indep of hidden and best at front." << std::endl;
-        }
-        if (indep_nodes.size() > 0)
-        {
-            PrintVector(indep_nodes);
         }
 
         ro = ro_bkp;
@@ -833,52 +871,45 @@ bool equal_and_unordered_top(RightOrder &ro, OrderScoring &scoring)
     return (false);
 }
 
-std::vector<RightOrder> prune_gaps(std::vector<RightOrder> &orders,
-                                   int n,
-                                   bool right_type,
-                                   OrderScoring &scoring)
+std::vector<RightOrder> prune_indep_front(std::vector<RightOrder> &potential_orders,
+                                          std::vector<double> &top_scores,
+                                          OrderScoring &scoring)
 {
-    std::vector<RightOrder> kept_ros;
-
-    // Compute s(x|h) for all x.
-    size_t p = scoring.numparents.size();
-    std::vector<double> top_scores(p);
-    std::vector<int> order_tmp(p);
-
-    for (size_t i = 0; i < p; i++)
+    // get all vectors with inpenendent front.
+    // keep the one with lowest index
+    size_t max_indep_node = 0;
+    bool has_indep_node = false;
+    size_t max_indep_ind = 0;
+    size_t jj = 0;
+    for (RightOrder &ro : potential_orders)
     {
-        order_tmp[i] = i;
-    }
-
-    for (size_t i = 0; i < p; i++)
-    {
-        move_element(order_tmp, i, 0);
-        top_scores[i] = scoring.score_pos(order_tmp, 0);
-        move_element(order_tmp, 0, i);
-    }
-
-    for (RightOrder &ro : orders)
-    {
-        if (right_type)
+        if (independent_front(ro, top_scores, scoring))
         {
-            if (!has_gap(ro, top_scores, scoring))
+            // std::cout << ro.front() << " indep of hidden nodes in " << ro << std::endl;
+            if (ro.front() >= max_indep_node)
             {
-                kept_ros.push_back(ro);
+                // std::cout << ro.front() << " >= " << max_indep_node << std::endl;
+                has_indep_node = true;
+                max_indep_node = ro.front();
+                max_indep_ind = jj;
             }
         }
-        // else
-        // {
-        //     if (!prune_left_type(optimal_order, n, node_scores, order_score, scoring))
-        //     {
-        //         pruned_tuples.push_back(t);
-        //     }
-        // }
+        jj++;
     }
-    return (kept_ros);
+
+    if (!has_indep_node)
+    {
+        return (potential_orders);
+    }
+    else
+    {
+        std::vector<RightOrder> ret = {potential_orders[max_indep_ind]};
+        return (ret);
+    }
 }
 
-void sequential_opt(OrderScoring &scoring);
-void sequential_opt(OrderScoring &scoring)
+std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring);
+std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
 {
     std::size_t p = scoring.numparents.size();
     std::cout << "Starting optimization" << std::endl;
@@ -903,18 +934,23 @@ void sequential_opt(OrderScoring &scoring)
         move_element(order_tmp, 0, i);
     }
 
-    int orders1, orders2, orders3 = 0;
+    size_t orders1 = 0;
+    size_t orders2 = 0;
+    size_t orders3 = 0;
     /**
      * Start build and prune
      */
     for (std::size_t n = 1; n <= p; n++)
     {
+
         if (n == 1)
         {
+            std::vector<RightOrder> potential_orders;
+            // std::cout << "Adding nodes to empty order" << std::endl;
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
                 RightOrder ro = init_right_order(node_index, scoring);
-                if (!optimal_front(ro, scoring))
+                if (!optimal_front(ro, top_scores, scoring))
                 {
                     continue;
                 }
@@ -924,33 +960,46 @@ void sequential_opt(OrderScoring &scoring)
                 {
                     continue;
                 }
-                ++orders2;
-                orders3 = orders2;
 
-                right_orders.push_back(std::move(ro));
+                potential_orders.push_back(std::move(ro));
             }
+
+            potential_orders = prune_indep_front(potential_orders, top_scores, scoring);
+            right_orders = potential_orders;
+            orders2 = right_orders.size();
+            orders3 = orders2;
         }
         else
         {
             for (RightOrder &prev_order : right_orders_prev)
             {
+                // std::cout << std::endl;
+                // std::cout << "### Adding nodes to order " << prev_order << std::endl;
+                // std::cout << std::endl;
+
+                std::vector<RightOrder> potential_orders;
                 for (size_t node_index = 0; node_index <= p - n; node_index++)
                 {
                     RightOrder ro = add_node_in_front(prev_order, node_index, scoring);
-                    if (!optimal_front(ro, scoring))
-                    // if (has_gap(ro, top_scores, scoring))
+                    if (!optimal_front(ro, top_scores, scoring))
                     {
                         continue;
                     }
+
                     if (equal_and_unordered_top(ro, scoring))
                     {
                         continue;
                     }
-                    right_orders.push_back(std::move(ro));
+                    potential_orders.push_back(std::move(ro));
                 }
+                // std::cout << "#potential orders" << potential_orders.size() << std::endl;
+                potential_orders = prune_indep_front(potential_orders, top_scores, scoring);
+                right_orders.insert(right_orders.end(), potential_orders.begin(), potential_orders.end());
             }
+
             orders1 = right_orders.size();
-            //  std::cout << "Prune equal sets  << std::endl;
+
+            // std::cout << "Prune equal sets: #" << orders1 << std::endl;
             right_orders = prune_equal_sets(right_orders, true);
             orders2 = right_orders.size();
 
@@ -958,7 +1007,6 @@ void sequential_opt(OrderScoring &scoring)
             std::vector<RightOrder> right_orders_tmp;
             for (RightOrder &ro : right_orders)
             {
-                // if (!optimal_front(ro, scoring))
                 if (has_gap(ro, top_scores, scoring))
                 {
                     continue;
@@ -970,34 +1018,147 @@ void sequential_opt(OrderScoring &scoring)
             // std::cout << "# orders: " << orders3 << std::endl;
         }
 
-        RightOrder max_ro = right_orders[0];
-        for (const RightOrder &opt_order : right_orders)
-        {
-            if (n <= 0)
-            {
-                std::vector<int> tmpv(opt_order.order.end() - n, opt_order.order.end());
-                PrintVector(tmpv);
-                std::cout << "score: " << opt_order.order_score << std::endl;
-            }
-            if (opt_order.order_score > max_ro.order_score)
-            {
-                max_ro = opt_order;
-            }
-        }
+        // std::cout << "orders of size " << n << std::endl;
+        // for (const RightOrder &opt_order : right_orders)
+        // {
+        //     if (n <= 3 || n >= 18)
+        //     {
+        //         std::cout << opt_order << ": " << opt_order.order_score << std::endl;
+        //         // std::cout << "score: " << opt_order.order_score << std::endl;
+        //     }
+        // }
 
         // Print some statistics //
         /* Check that scores are correct */
-        // std::vector<int> tmpv(max_ro.order.end() - n, max_ro.order.end());
-        //  std::cout << "max scoring sub order " << std::endl;
-        //  PrintVector(tmpv);
-        //  std::cout << "score: " << max_ro.order_score << std::endl;
-        //    check correct score
-        std::vector<double> sc = scoring.score(max_ro.order, p - n, n); // Take only the last n elements in the vector
+
+        auto max_ro = std::max_element(right_orders.begin(),
+                                       right_orders.end(),
+                                       [](const RightOrder &a, const RightOrder &b)
+                                       { return a.order_score < b.order_score; });
+
+        // std::cout << "max scoring sub order " << std::endl;
+        // std::cout << *max_ro << std::endl;
+        //   std::cout << "score: " << max_ro->order_score << std::endl;
+        //       check correct score
+        std::vector<double> sc = scoring.score(max_ro->order, p - n, n); // Take only the last n elements in the vector
         // PrintVector(sc);
         double max_score_check = std::accumulate(sc.begin(), sc.end(), 0.0);
-        assert(std::abs(max_ro.order_score - max_score_check) < EPSILON);
+        assert(std::abs(max_ro->order_score - max_score_check) < EPSILON);
 
-        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro.order_score << " \\\\" << std::endl;
+        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
         right_orders_prev = std::move(right_orders);
     }
+
+    auto max_ro = std::max_element(right_orders_prev.begin(),
+                                   right_orders_prev.end(),
+                                   [](const RightOrder &a, const RightOrder &b)
+                                   { return a.order_score < b.order_score; });
+
+    std::cout << "MAX order " << *max_ro << std::endl;
+
+    return (std::make_pair(max_ro->order, max_ro->order_score));
+}
+
+OrderScoring get_score(Rcpp::List ret)
+{
+
+    // Read MAP flag
+    bool MAP = Rcpp::as<int>(ret["MAP"]);
+    std::cout << "MAP:" << MAP << std::endl;
+
+    // Read numparents
+    std::vector<int> numparents = Rcpp::as<std::vector<int>>(ret["numparents"]);
+
+    // Read scoretable
+    std::vector<std::vector<std::vector<double>>> scoretable = Rcpp::as<std::vector<std::vector<std::vector<double>>>>(ret["scoretable"]);
+
+    // Read parent table
+    Rcpp::List parenttableR = Rcpp::as<Rcpp::List>(ret["parenttable"]);
+    std::size_t p = parenttableR.size();
+    std::vector<Rcpp::IntegerMatrix> parenttable;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerMatrix m = Rcpp::as<Rcpp::IntegerMatrix>(parenttableR[i]);
+        parenttable.push_back(m);
+    }
+
+    // Read banned score
+    Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
+    std::vector<std::vector<std::vector<double>>> bannedscore;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(bannedscoreR[i]);
+        std::vector<std::vector<double>> mat(m.rows(), std::vector<double>(m.cols()));
+        for (int j = 0; j < m.rows(); j++)
+        {
+            for (int k = 0; k < m.cols(); k++)
+            {
+                mat[j][k] = m(j, k);
+            }
+        }
+        bannedscore.push_back(mat);
+    }
+
+    // Read rowmaps_backwards
+    Rcpp::List rowmaps_backwardsR = Rcpp::as<Rcpp::List>(ret["rowmaps_backwards"]);
+    std::vector<Rcpp::IntegerVector> rowmaps_backwards;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(rowmaps_backwardsR[i]);
+        rowmaps_backwards.push_back(m);
+    }
+
+    // Read aliases
+    Rcpp::List aliasesR = Rcpp::as<Rcpp::List>(ret["aliases"]);
+    std::vector<std::vector<int>> aliases;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        std::vector<int> m = Rcpp::as<std::vector<int>>(aliasesR[i]);
+        aliases.push_back(m);
+    }
+
+    // Read plus1listsparents
+    Rcpp::List plus1listsparentsR = Rcpp::as<Rcpp::List>(ret["plus1listsparents"]);
+    std::vector<std::vector<int>> plus1listsparents;
+    for (std::size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(plus1listsparentsR[i]);
+        std::vector<int> tmp;
+        for (auto e : m)
+        {
+            tmp.push_back(e);
+        }
+        plus1listsparents.push_back(tmp);
+    }
+
+    std::vector<int> scorepositions(p);
+    for (std::size_t i = 0; i < p; ++i)
+    {
+        scorepositions[i] = i;
+    }
+
+    OrderScoring scoring(aliases,
+                         numparents,
+                         rowmaps_backwards,
+                         plus1listsparents,
+                         scoretable,
+                         bannedscore,
+                         MAP);
+
+    return (scoring);
+}
+
+// [[Rcpp::plugins(cpp17)]]
+
+// [[Rcpp::export]]
+Rcpp::List r_sequential_opt(Rcpp::List ret)
+{
+    OrderScoring scoring = get_score(ret);
+
+    const auto &[order, log_score] = sequential_opt(scoring);
+
+    Rcpp::List L = Rcpp::List::create(Rcpp::Named("order") = order,
+                                      Rcpp::Named("log_score") = log_score);
+
+    return (L);
 }
