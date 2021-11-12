@@ -1,6 +1,7 @@
 library("Rcpp")
 library("Jmisc")
 library("pcalg")
+library("ggplot2")
 #sourceAll(path = "R")
 source("helper_functions.R")
 # This function generates Gaussian data from a DAG
@@ -42,22 +43,20 @@ sourceCpp("seq_opt.cpp", verbose=TRUE)
 
 seed <- 1
 set.seed(seed)
-seeds <- rep(4)
 
-reps <- 5
-n <- 20
-ns <- c(10, 20, 30)
-d <- 2
-ds <- c(2, 4, 8)
+reps <- 40
+ns <- seq(10, 25)
+ds <- c(1, 1.5, 2)
 lb <- 0.1
 ub <- 1
-N <- 100
-timing <- list()
+N <- 200
+
+timing <- data.frame(matrix(ncol = 4, nrow = 0))
+x <- c("n", "d", "rep", "totaltime")
+colnames(timing) <- x
 
 for (n in ns){
-    timing[[n]] <- list()
     for (d in ds){
-        timing[[n]][d] <- list(c())
         adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
         weight_mat <- adjmat
         colnames(weight_mat) <- seq(n)
@@ -68,22 +67,22 @@ for (n in ns){
             print(paste("n: ",n, "d: ", d, "i: ",i))
             data <- rmvDAG(trueDAGedges, N)
             colnames(data) <- seq(n)
-            write.table(data, file = paste("data/",i,".csv", sep=""), row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
+            #filename <- paste("data/n=",n,"d=",d,"i=",i,".csv", sep="")
+            filename <- paste("data/simdata.csv", sep="")
+            write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
             start <- proc.time()[1]
-            ret <- get_scores(paste("data/",i,".csv", sep=""))
+            ret <- get_scores(filename)
             res <- r_sequential_opt(ret)
             totaltime <- proc.time()[1] - start
-            timing[[n]][[d]] <- c(timing[[n]][[d]], as.numeric(totaltime))
+            df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)))
+            timing <- rbind(timing, df)
+            write.csv(timing, file = "data/times.csv", row.names = FALSE)            
         }
     }
 }
+print(timing)
 
-for (n in ns){
-    for (d in ds){
-        print(paste("n: ",n, "d: ", d))
-        print(timing[[n]][[d]])
-        print(paste("median: ", median(timing[[n]][[d]]), "mean: ", mean(timing[[n]][[d]]),"std: ", sd(timing[[n]][[d]])))
-    }
-}
 
-saveRDS(timings, file="timings.rds")
+ggplot(timing, aes(x=as.factor(n), y=totaltime, col=as.factor(d))) + geom_boxplot()
+#write.table(timing, file = "timings.csv", row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
+
