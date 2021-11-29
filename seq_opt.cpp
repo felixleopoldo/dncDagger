@@ -167,8 +167,9 @@ public:
     double order_score;
     std::vector<double> node_scores;
     size_t n;
-    int possible_next_node = -1;
-
+    std::vector<double> inserted_max_order_scores;
+    std::vector<double> new_top_scores;
+    std::vector<size_t> best_insert_pos;
     RightOrder(std::vector<int> &order,
                double order_score,
                std::vector<double> &node_scores,
@@ -177,11 +178,19 @@ public:
                            node_scores(node_scores),
                            n(n)
     {
+        inserted_max_order_scores = std::vector<double>(order.size());
+        new_top_scores = std::vector<double>(order.size());
+        best_insert_pos = std::vector<size_t>(order.size());
     }
 
-    size_t front() const
+    int front() const
     {
         return order[order.size() - n];
+    }
+
+    size_t front_ind() const
+    {
+        return order.size() - n;
     }
 };
 
@@ -238,10 +247,10 @@ public:
         bool MAP) : potential_parents(potential_parents),
                     rowmaps_backwards(rowmaps_backwards),
                     potential_plus1_parents(potential_plus1_parents),
-                    scoretable(scoretable),
-                    scoresmatrices(scoresmatrices),
                     MAP(MAP),
-                    numparents(numparents)
+                    numparents(numparents),
+                    scoretable(scoretable),
+                    scoresmatrices(scoresmatrices)
     {
     }
 
@@ -514,20 +523,35 @@ inline void move_element(std::vector<int> &v, const std::size_t &index_from, con
 }
 
 bool optimal_front(const RightOrder &ro,
-                   const std::vector<double> &top_scores,
+                   size_t new_node,
+                   OrderScoring &scoring)
+{
+
+    // std::cout << ro.inserted_max_order_scores[new_node] << " > " << ro.new_top_scores[new_node] << "?" << std::endl;
+    if (definitelyGreaterThan(ro.inserted_max_order_scores[new_node], ro.new_top_scores[new_node], EPSILON))
+    {
+        // std::cout << "YES, so " << new_node << " not optimal at top " << std::endl;
+        return (false);
+    }
+    // std::cout << "NO, so " << new_node << "  optimal at top " << std::endl;
+    return (true);
+}
+
+bool optimal_front(const RightOrder &ro,
                    OrderScoring &scoring)
 {
     RightOrder ro_tmp(ro);
     int p = ro.order.size();
 
-    for (int i = p - ro.n; i < p - 1; ++i)
+    for (int i = ro.front_ind(); i < p - 1; ++i)
     {
         swap_nodes(i, i + 1, ro_tmp, scoring);
-        // std::cout << ". ";
+        // std::cout << ro_tmp << std::endl;
+        // std::cout << ro_tmp.order_score << " > " << ro.order_score << "?" << std::endl;
         if (definitelyGreaterThan(ro_tmp.order_score, ro.order_score, EPSILON)) // this implies worse performance..
         // if (ro_tmp.order_score > ro.order_score)
         {
-            // std::cout << std::endl;
+            // std::cout << "YES, so " << ro.front() << " not optimal at top " << std::endl;
             return (false);
         }
     }
@@ -546,24 +570,16 @@ bool independent_front(const RightOrder &ro,
                        const std::vector<double> &top_scores,
                        OrderScoring &scoring)
 {
-
-    int p = ro.order.size();
-
-    size_t x = ro.order[p - ro.n];
-    if (approximatelyEqual(top_scores[x], ro.node_scores[x], EPSILON))
-    {
-        // std::cout << x << " indep of rest" << std::endl;
-        return (true);
-    }
-    // std::cout << std::endl;
-    //  Maybe just swap back instead of copying ro.
-    return (false);
+    size_t x = ro.front();
+    return (approximatelyEqual(top_scores[x], ro.node_scores[x], EPSILON));
 }
 
 /**
  * Moves an unsscored node to the right of the sub order and scores.
  * Eg if x is the node to score:
  * ([0,x,2,3],5,6,4) -> ([0,2,3],x,5,6,4)
+ *
+ * NOTE: It's not really visible since n does note change..
  */
 void make_visible(int from_index,
                   int to_index,
@@ -598,6 +614,113 @@ void make_visible(int from_index,
             swap_nodes(i, i + 1, ro, scoring);
         }
     }
+    ro.n++;
+}
+double max_inserted_score(const RightOrder &ro,
+                          size_t node_ind,
+                          OrderScoring &scoring)
+{
+
+    // std::cout << ro.inserted_max_order_scores[new_node] << " > " << ro.new_top_scores[new_node] << "?" << std::endl;
+
+    RightOrder ro_tmp(ro);
+    make_visible(node_ind, ro.front_ind() - 1, ro_tmp, scoring);
+    double maxsc = ro_tmp.order_score;
+    for (size_t i = ro_tmp.front_ind(); i < ro.order.size() - 1; i++)
+    {
+        swap_nodes(i, i + 1, ro_tmp, scoring);
+
+        if (definitelyGreaterThan(ro_tmp.order_score, maxsc, EPSILON))
+        {
+            // std::cout << "YES, so " << new_node << " not optimal at top " << std::endl;
+            maxsc = ro_tmp.order_score;
+        }
+    }
+    // std::cout << "NO, so " << new_node << "  optimal at top " << std::endl;
+    return (maxsc);
+}
+
+bool equal_and_unordered_top(RightOrder &ro, int new_front, OrderScoring &scoring)
+{
+    size_t p = ro.order.size();
+
+    if (ro.best_insert_pos[new_front] == ro.front_ind())
+    {
+        // If new_node is best inserted as the second top ([..i..],a,b,c) before, and best pos for i is s([...],a,i,b,c)
+        if (approximatelyEqual(ro.new_top_scores[new_front], ro.inserted_max_order_scores[new_front], EPSILON))
+        {
+            // Compare  ([...], i,a,b,c) to ([...], a,i,b,c)
+            if (new_front > ro.front())
+            {
+                // If new_node can be added as new front and has higher value, prune.
+                return (true);
+            }
+        }
+    }
+    return (false);
+}
+
+bool equal_and_unordered_top(RightOrder &ro, OrderScoring &scoring)
+{
+    int p = scoring.numparents.size();
+    int n = ro.n;
+    int node1 = ro.order[p - n];
+    int node2 = ro.order[p - n + 1];
+    double node1_score = ro.node_scores[node1];
+    double node2_score = ro.node_scores[node2];
+
+    const auto &[node1_score_swap, node2_score_swap] = scoring.swap_nodes(p - n, p - n + 1, ro.order, ro.node_scores); // This should update the orderscore directly maybe.
+    myswap(p - n, p - n + 1, ro.order);                                                                                // swap back
+
+    if (approximatelyEqual(node1_score + node2_score, node1_score_swap + node2_score_swap, EPSILON))
+    {
+        if (node1 > node2)
+        {
+            return (true);
+        }
+    }
+    return (false);
+}
+
+bool has_gap_new(RightOrder &ro,
+                 const std::vector<double> &top_scores,
+                 OrderScoring &scoring)
+{
+    std::size_t p = ro.order.size();
+    std::size_t n = ro.n;
+
+    for (std::size_t node_index = 0; node_index < p - n; node_index++)
+    {
+        int inserted_node = ro.order[node_index];
+        double score_at_very_top = ro.order_score + top_scores[inserted_node];
+        if (ro.best_insert_pos[inserted_node] == ro.front_ind())
+        {
+            // Here best isert score is at the second top ([...],a,i,b,c)
+            if (approximatelyEqual(ro.inserted_max_order_scores[inserted_node], score_at_very_top, EPSILON))
+            {
+                if (equal_and_unordered_top(ro, inserted_node, scoring))
+                {
+                    return (true);
+                }
+            }
+
+            if (definitelyGreaterThan(ro.inserted_max_order_scores[inserted_node], score_at_very_top, EPSILON))
+            {
+                // Here s((i,[...],a,b,c)) = "best inserted score"
+                return (true);
+            }
+        }
+        else
+        {
+            if (definitelyGreaterThan(ro.inserted_max_order_scores[inserted_node], score_at_very_top, EPSILON))
+            {
+                // Here s((i,[...],a,b,c)) = "best inserted score"
+                return (true);
+            }
+        }
+    }
+
+    return (false);
 }
 
 bool has_gap(RightOrder &ro,
@@ -606,6 +729,9 @@ bool has_gap(RightOrder &ro,
 {
     std::size_t p = ro.order.size();
     std::size_t n = ro.n;
+
+    // Each node (position) has a value corresponding to the maximal score when that node is inserted somewhere in the sub order
+    // std::vector<double> inserted_max_order_scores(p);
 
     std::vector<int> indep_nodes;
 
@@ -628,13 +754,14 @@ bool has_gap(RightOrder &ro,
 
         make_visible(node_index, new_top, ro, scoring); // insert new node as new top.
         injected_order_scores.push_back(ro.order_score);
+
         // double max_rest_score = injected_order_scores[0];
 
         for (size_t i = 0; i < n; i++)
         {
             // compute order score when x is inserted at pos p-n-1,...,p-1 called 0,...,n.
             swap_nodes(new_top + i, new_top + i + 1, ro, scoring);
-            injected_order_scores.push_back(ro.order_score);
+            injected_order_scores.push_back(ro.order_score); // TODO: The max of this should maybe be stored for optimel_front?
 
             if (definitelyLessThan(score_at_very_top, ro.order_score, EPSILON))
             {
@@ -663,26 +790,15 @@ bool has_gap(RightOrder &ro,
             }
         }
 
+        // auto max_score = std::max_element(injected_order_scores.begin, injected_order_scores.end());
+        // inserted_max_order_scores[ro.order[node_index]] = *max_score;
         ro = ro_bkp;
     }
 
+    // ro.inserted_max_order_scores = inserted_max_order_scores;
+
     return (false);
 }
-
-RightOrder add_node_in_front(RightOrder ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring)
-{
-    RightOrder ro(ro_prev);
-    ro.n = ro_prev.n + 1;
-    size_t n = ro.n;
-    size_t p = ro.order.size();
-    size_t node = ro_prev.order[index_of_el_to_insert];
-    // Order score is the old score plus the new node score.
-    move_element(ro.order, index_of_el_to_insert, p - n);      // put it in the back
-    ro.node_scores[node] = scoring.score_pos(ro.order, p - n); // O(p)? This should also be quite time consuming..
-    ro.order_score = ro.order_score + ro.node_scores[node];
-    return (ro);
-}
-
 RightOrder init_right_order(size_t node, OrderScoring &scoring)
 {
     size_t p = scoring.numparents.size();
@@ -698,8 +814,108 @@ RightOrder init_right_order(size_t node, OrderScoring &scoring)
     std::vector<double> node_scores = scoring.score(order, p - 1, 1);
     //  score order
     double order_score = node_scores[node];
-    RightOrder opt_order(order, order_score, node_scores, 1);
-    return (opt_order);
+    RightOrder ro(order, order_score, node_scores, 1);
+
+    // Set insert node scores...
+    size_t top_ind = p - 1;
+    size_t new_top_ind = top_ind - 1;
+    double order_score_bkp = ro.order_score;
+    for (size_t i = 0; i < top_ind; i++)
+    {
+        size_t inserted_node = ro.order[i];
+        make_visible(i, new_top_ind, ro, scoring); // ([..i..],a,b,c) -> ([...],i,a,b,c)
+        ro.new_top_scores[inserted_node] = ro.order_score;
+
+        swap_nodes(new_top_ind, top_ind, ro, scoring); // ([...],i,a,b,c) -> ([...],a,i,b,c)
+        ro.inserted_max_order_scores[inserted_node] = ro.order_score;
+        ro.best_insert_pos[inserted_node] = p - 1;
+
+        move_element(ro.order, top_ind, i);  // Move back
+        ro.order_score = order_score_bkp;    // Restore order score
+        ro.node_scores[inserted_node] = 0.0; // restore node score
+        ro.node_scores[node] = order_score;
+        ro.n--;
+    }
+
+    return (ro);
+}
+
+RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring)
+{
+    RightOrder ro(ro_prev);
+    ro.n = ro_prev.n + 1;
+    size_t n = ro.n;
+    size_t p = ro.order.size();
+    size_t node = ro_prev.order[index_of_el_to_insert];
+    // Order score is the old score plus the new node score.
+    move_element(ro.order, index_of_el_to_insert, p - n);   // put it in the front
+    double node_score = scoring.score_pos(ro.order, p - n); // O(p)? This should also be quite time consuming..
+    // double node_score = ro_prev.new_top_scores[node];
+    ro.node_scores[node] = node_score;
+    ro.order_score = ro.order_score + ro.node_scores[node];
+    double order_score_bkp = ro.order_score;
+
+    // Should also update the inserted node order scores.
+    // 1. Remove node from the list.
+    ro.inserted_max_order_scores[node] = 0;
+    ro.best_insert_pos[node] = 0;
+
+    if (n == p)
+    {
+        return (ro);
+    }
+
+    // 2. Update the other scores by adding score of node when also the inserted node is a child.
+    //    The missing one is ([...],node,inserted_node,a,b,c), and it is calculated in step 3.
+    //    This takes is O(p) time.
+    // std::cout << "\nAdding " << node << std::endl;
+    // std::cout << "(BEFORE ADDING) max insert score of " << 19 << " in " << ro_prev << ": " << ro_prev.inserted_max_order_scores[19] << std::endl;
+    // std::cout << "score of " << node << ": " << node_score << std::endl;
+    // std::cout << "best insert pos " << ro.best_insert_pos[19] << std::endl;
+    for (size_t i = 0; i < p - n; i++) // <= ?
+    {
+        // Note that inserted_node must be put as child of node when calculating score of node.
+        size_t inserted_node = ro.order[i];
+        move_element(ro.order, i, ro.front_ind());
+        ro.inserted_max_order_scores[inserted_node] += scoring.score_pos(ro.order, ro.front_ind() - 1);
+        move_element(ro.order, ro.front_ind(), i);
+    }
+
+    // std::cout << "(updated) max insert score of 19 : " << ro.inserted_max_order_scores[19] << std::endl;
+    //  3. Go through all other nodes and compare max inserted score to inserted score
+    //     between node and a in ([...],node,a,b,c).
+    size_t top_ind = p - n;
+    assert(top_ind > 0);
+
+    size_t new_top_ind = top_ind - 1;
+
+    for (size_t i = 0; i <= new_top_ind; i++)
+    {
+        size_t inserted_node = ro.order[i];
+        make_visible(i, new_top_ind, ro, scoring);                                     // ([..i..],a,b,c) -> ([...],i,a,b,c).
+        ro.new_top_scores[inserted_node] = ro.order_score;                             // set the new top score i.e. s([...],i,a,b,c)
+        swap_nodes(new_top_ind, top_ind, ro, scoring);                                 // ([...],i,a,b,c) -> ([...],a,i,b,c). This changes ro.order_score.
+        double inserted_max_order_score = ro.inserted_max_order_scores[inserted_node]; // this should contain max score of the other positions.
+
+        if (approximatelyEqual(ro.order_score, inserted_max_order_score, EPSILON) ||
+            definitelyGreaterThan(ro.order_score, inserted_max_order_score, EPSILON)
+            // ro.order_score >= inserted_max_order_score
+        )
+        {
+            ro.inserted_max_order_scores[inserted_node] = ro.order_score;
+            ro.best_insert_pos[inserted_node] = top_ind;
+        }
+
+        move_element(ro.order, top_ind, i);  // Move back
+        ro.order_score = order_score_bkp;    // Restore order score
+        ro.node_scores[inserted_node] = 0.0; // restore node score
+        ro.node_scores[node] = node_score;
+        ro.n--;
+    }
+    // std::cout << "max insert score of " << 19 << " in " << ro << ": " << ro.inserted_max_order_scores[19] << std::endl;
+    // std::cout << "best insert pos " << ro.best_insert_pos[19] << std::endl;
+
+    return (ro);
 }
 
 std::vector<bool> order_to_boolvec(const std::vector<int> &order, size_t n, bool right_type)
@@ -763,7 +979,7 @@ std::vector<int> unique_sets(const std::vector<std::vector<bool>> &mats,
             // For each index, check if 0 or 1 and add to corresponding vector.
             if (mats[*i][n] == 0)
             {
-                zeros.push_back(*i);
+                zeros.push_back(*i); // Isnt this alreadu n+1 long?????
             }
             else
             {
@@ -850,33 +1066,12 @@ std::vector<RightOrder> prune_equal_sets(std::vector<RightOrder> &right_orders,
     return (kept_ros);
 }
 
-bool equal_and_unordered_top(RightOrder &ro, OrderScoring &scoring)
-{
-    int p = scoring.numparents.size();
-    int n = ro.n;
-    double node1_score = ro.node_scores[ro.order[p - n]];
-    double node2_score = ro.node_scores[ro.order[p - n + 1]];
-
-    const auto &[node2_score_swap, node1_score_swap] = scoring.swap_nodes(p - n, p - n + 1, ro.order, ro.node_scores); // This should update the orderscore directly maybe.
-    myswap(p - n, p - n + 1, ro.order);                                                                                // swap back
-
-    if (approximatelyEqual(node1_score, node1_score_swap, EPSILON) && approximatelyEqual(node2_score, node2_score_swap, EPSILON))
-    {
-        if (ro.order[p - n] < ro.order[p - n + 1])
-        {
-            return (true);
-        }
-    }
-
-    return (false);
-}
-
 std::vector<RightOrder> prune_indep_front(std::vector<RightOrder> &potential_orders,
                                           std::vector<double> &top_scores,
                                           OrderScoring &scoring)
 {
     // get all vectors with inpenendent front.
-    // keep the one with lowest index
+    // keep the one with lowest index. - Highest??  / Felix
     size_t max_indep_node = 0;
     bool has_indep_node = false;
     size_t max_indep_ind = 0;
@@ -908,8 +1103,8 @@ std::vector<RightOrder> prune_indep_front(std::vector<RightOrder> &potential_ord
     }
 }
 
-std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring);
-std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
+std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scoring);
+std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scoring)
 {
     std::size_t p = scoring.numparents.size();
     std::cout << "Starting optimization" << std::endl;
@@ -937,6 +1132,7 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
     size_t orders1 = 0;
     size_t orders2 = 0;
     size_t orders3 = 0;
+    size_t max_n_particles = 0;
     /**
      * Start build and prune
      */
@@ -949,16 +1145,22 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
             // std::cout << "Adding nodes to empty order" << std::endl;
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
+
                 RightOrder ro = init_right_order(node_index, scoring);
-                if (!optimal_front(ro, top_scores, scoring))
+                if (!optimal_front(ro, scoring))
                 {
                     continue;
                 }
                 ++orders1;
 
-                if (has_gap(ro, top_scores, scoring))
+                if (has_gap_new(ro, top_scores, scoring))
                 {
+                    // assert(has_gap(ro, top_scores, scoring));
                     continue;
+                }
+                else
+                {
+                    // assert(!has_gap(ro, top_scores, scoring));
                 }
 
                 potential_orders.push_back(std::move(ro));
@@ -973,23 +1175,26 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
         {
             for (RightOrder &prev_order : right_orders_prev)
             {
-                // std::cout << std::endl;
-                // std::cout << "### Adding nodes to order " << prev_order << std::endl;
-                // std::cout << std::endl;
 
                 std::vector<RightOrder> potential_orders;
                 for (size_t node_index = 0; node_index <= p - n; node_index++)
                 {
-                    RightOrder ro = add_node_in_front(prev_order, node_index, scoring);
-                    if (!optimal_front(ro, top_scores, scoring))
+                    int new_node = prev_order.order[node_index];
+
+                    if (!optimal_front(prev_order, new_node, scoring))
                     {
                         continue;
                     }
 
-                    if (equal_and_unordered_top(ro, scoring))
+                    if (!independent_front(prev_order, top_scores, scoring))
                     {
-                        continue;
+                        if (equal_and_unordered_top(prev_order, new_node, top_scores, scoring))
+                        {
+                            continue;
+                        }
                     }
+                    RightOrder ro = add_node_in_front(prev_order, node_index, scoring);
+
                     potential_orders.push_back(std::move(ro));
                 }
                 // std::cout << "#potential orders" << potential_orders.size() << std::endl;
@@ -997,20 +1202,26 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
                 right_orders.insert(right_orders.end(), potential_orders.begin(), potential_orders.end());
             }
 
+            // O(|right_orders_prev| * p) particles. space
             orders1 = right_orders.size();
-
             // std::cout << "Prune equal sets: #" << orders1 << std::endl;
-            right_orders = prune_equal_sets(right_orders, true);
+            right_orders = prune_equal_sets(right_orders, true); // O(#particles * p) space and time
             orders2 = right_orders.size();
 
             // Remove if has gaps
             std::vector<RightOrder> right_orders_tmp;
             for (RightOrder &ro : right_orders)
             {
-                if (has_gap(ro, top_scores, scoring))
+                if (has_gap_new(ro, top_scores, scoring))
                 {
+                    // assert(has_gap(ro, top_scores, scoring));
                     continue;
                 }
+                else
+                {
+                    // assert(!has_gap_new(ro, top_scores, scoring));
+                }
+
                 right_orders_tmp.push_back(std::move(ro));
             }
             right_orders = std::move(right_orders_tmp);
@@ -1030,7 +1241,10 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
 
         // Print some statistics //
         /* Check that scores are correct */
-
+        if (orders3 > max_n_particles)
+        {
+            max_n_particles = orders3;
+        }
         auto max_ro = std::max_element(right_orders.begin(),
                                        right_orders.end(),
                                        [](const RightOrder &a, const RightOrder &b)
@@ -1038,15 +1252,18 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
 
         // std::cout << "max scoring sub order " << std::endl;
         // std::cout << *max_ro << std::endl;
-        //   std::cout << "score: " << max_ro->order_score << std::endl;
-        //       check correct score
+        // std::cout << "score: " << max_ro->order_score << std::endl;
+
+        // check correct score
         std::vector<double> sc = scoring.score(max_ro->order, p - n, n); // Take only the last n elements in the vector
         // PrintVector(sc);
         double max_score_check = std::accumulate(sc.begin(), sc.end(), 0.0);
+        // std::cout << "correct max score: " << max_score_check << std::endl;
         assert(std::abs(max_ro->order_score - max_score_check) < EPSILON);
 
         std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
         right_orders_prev = std::move(right_orders);
+        // std::cout << "after move" << std::endl;
     }
 
     auto max_ro = std::max_element(right_orders_prev.begin(),
@@ -1056,7 +1273,7 @@ std::pair<std::vector<int>, double> sequential_opt(OrderScoring &scoring)
 
     std::cout << "MAX order " << *max_ro << std::endl;
 
-    return (std::make_pair(max_ro->order, max_ro->order_score));
+    return (std::make_tuple(max_ro->order, max_ro->order_score, max_n_particles));
 }
 
 OrderScoring get_score(Rcpp::List ret)
@@ -1155,10 +1372,11 @@ Rcpp::List r_sequential_opt(Rcpp::List ret)
 {
     OrderScoring scoring = get_score(ret);
 
-    const auto &[order, log_score] = sequential_opt(scoring);
+    const auto &[order, log_score, max_n_particles] = sequential_opt(scoring);
 
     Rcpp::List L = Rcpp::List::create(Rcpp::Named("order") = order,
-                                      Rcpp::Named("log_score") = log_score);
+                                      Rcpp::Named("log_score") = log_score,
+                                      Rcpp::Named("max_n_particles") = max_n_particles);
 
     return (L);
 }

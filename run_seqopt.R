@@ -41,18 +41,18 @@ Sys.setenv("PKG_CXXFLAGS"="-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R
 
 sourceCpp("seq_opt.cpp", verbose=TRUE)
 
-seed <- 1
+seed <- 2
 set.seed(seed)
 
-reps <- 40
-ns <- seq(10, 25)
+reps <- 100
+ns <- seq(15, 25)
 ds <- c(1, 1.5, 2)
-lb <- 0.1
+lb <- 0.25
 ub <- 1
-N <- 200
+N <- 300
 
-timing <- data.frame(matrix(ncol = 4, nrow = 0))
-x <- c("n", "d", "rep", "totaltime")
+timing <- data.frame(matrix(ncol = 5, nrow = 0))
+x <- c("n", "d", "rep", "totaltime", "max_particles")
 colnames(timing) <- x
 
 for (n in ns){
@@ -73,10 +73,10 @@ for (n in ns){
             start <- proc.time()[1]
             ret <- get_scores(filename)
             res <- r_sequential_opt(ret)
-            totaltime <- proc.time()[1] - start
-            df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)))
+            totaltime <- proc.time()[1] - start            
+            df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)), max_particles=c(res$max_n_particles))
             timing <- rbind(timing, df)
-            write.csv(timing, file = "data/times.csv", row.names = FALSE)            
+            #write.csv(timing, file = "data/timesparticles.csv", row.names = FALSE)            
         }
     }
 }
