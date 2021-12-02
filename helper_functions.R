@@ -6,6 +6,12 @@ sourceCpp("src/cppfns.cpp")
 
 
 get_scores <- function(filename){
+
+  # Discrete data
+  # filename <- "data/myasiandata.csv"
+  # data <- read.csv(filename, check.names = FALSE)[-1,]
+  # myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 0.5, edgepf = 2))
+
   data <- read.csv(filename, check.names = FALSE)
   myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
 

@@ -1072,7 +1072,7 @@ std::vector<RightOrder> prune_indep_front(std::vector<RightOrder> &potential_ord
 {
     // get all vectors with inpenendent front.
     // keep the one with lowest index. - Highest??  / Felix
-    size_t max_indep_node = 0;
+    int max_indep_node = 0;
     bool has_indep_node = false;
     size_t max_indep_ind = 0;
     size_t jj = 0;
@@ -1103,8 +1103,8 @@ std::vector<RightOrder> prune_indep_front(std::vector<RightOrder> &potential_ord
     }
 }
 
-std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scoring);
-std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scoring)
+std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring &scoring);
+std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring &scoring)
 {
     std::size_t p = scoring.numparents.size();
     std::cout << "Starting optimization" << std::endl;
@@ -1133,6 +1133,7 @@ std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scorin
     size_t orders2 = 0;
     size_t orders3 = 0;
     size_t max_n_particles = 0;
+    size_t tot_n_particles = 0;
     /**
      * Start build and prune
      */
@@ -1188,7 +1189,7 @@ std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scorin
 
                     if (!independent_front(prev_order, top_scores, scoring))
                     {
-                        if (equal_and_unordered_top(prev_order, new_node, top_scores, scoring))
+                        if (equal_and_unordered_top(prev_order, new_node, scoring))
                         {
                             continue;
                         }
@@ -1240,11 +1241,14 @@ std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scorin
         // }
 
         // Print some statistics //
+        /* Add to number of particles sum */
+        tot_n_particles += orders3;
         /* Check that scores are correct */
         if (orders3 > max_n_particles)
         {
             max_n_particles = orders3;
         }
+        
         auto max_ro = std::max_element(right_orders.begin(),
                                        right_orders.end(),
                                        [](const RightOrder &a, const RightOrder &b)
@@ -1273,7 +1277,7 @@ std::tuple<std::vector<int>, double, size_t> sequential_opt(OrderScoring &scorin
 
     std::cout << "MAX order " << *max_ro << std::endl;
 
-    return (std::make_tuple(max_ro->order, max_ro->order_score, max_n_particles));
+    return (std::make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
 }
 
 OrderScoring get_score(Rcpp::List ret)
@@ -1372,11 +1376,12 @@ Rcpp::List r_sequential_opt(Rcpp::List ret)
 {
     OrderScoring scoring = get_score(ret);
 
-    const auto &[order, log_score, max_n_particles] = sequential_opt(scoring);
+    const auto &[order, log_score, max_n_particles, tot_n_particles] = sequential_opt(scoring);
 
     Rcpp::List L = Rcpp::List::create(Rcpp::Named("order") = order,
                                       Rcpp::Named("log_score") = log_score,
-                                      Rcpp::Named("max_n_particles") = max_n_particles);
+                                      Rcpp::Named("max_n_particles") = max_n_particles,
+                                      Rcpp::Named("tot_n_particles") = tot_n_particles);
 
     return (L);
 }

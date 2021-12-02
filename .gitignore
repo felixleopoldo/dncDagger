@@ -1,3 +1,13 @@
+data/simdata.csv
+data/timesparticles.csv
+data/*.rds
+results
+.DS_Store
+.RData
+.Rhistory
+.devcontainer/
+.dockerignore
+.vscode
 # Prerequisites
 *.d
 

@@ -44,15 +44,16 @@ sourceCpp("seq_opt.cpp", verbose=TRUE)
 seed <- 2
 set.seed(seed)
 
-reps <- 100
+reps <- 50
 ns <- seq(15, 25)
 ds <- c(1, 1.5, 2)
 lb <- 0.25
 ub <- 1
 N <- 300
 
-timing <- data.frame(matrix(ncol = 5, nrow = 0))
-x <- c("n", "d", "rep", "totaltime", "max_particles")
+timing <- data.frame(matrix(ncol = 6, nrow = 0))
+x <- c("n", "d", "rep", "totaltime", "max_particles", "tot_particles")
+
 colnames(timing) <- x
 
 for (n in ns){
@@ -67,22 +68,24 @@ for (n in ns){
             print(paste("n: ",n, "d: ", d, "i: ",i))
             data <- rmvDAG(trueDAGedges, N)
             colnames(data) <- seq(n)
-            #filename <- paste("data/n=",n,"d=",d,"i=",i,".csv", sep="")
+            #filename <- paste("data/n=",n,"d=",d,"i=",i,",seed=",seed,".csv", sep="")
             filename <- paste("data/simdata.csv", sep="")
             write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
-            start <- proc.time()[1]
-            ret <- get_scores(filename)
-            res <- r_sequential_opt(ret)
-            totaltime <- proc.time()[1] - start            
-            df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)), max_particles=c(res$max_n_particles))
+            results_filename <- paste("results/n=",n,"_d=",d,"_i=",i,"_seed=",seed,"_lb=",lb,"_ub=",ub,"_N=",N,".csv", sep="")
+            if(file.exists(results_filename)) {
+              print(paste(results_filename,"already exists"))
+            } else {                  
+              start <- proc.time()[1]
+              ret <- get_scores(filename)
+              res <- r_sequential_opt(ret)
+              totaltime <- proc.time()[1] - start
+              df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)), max_particles=c(res$max_n_particles), tot_particles=c(res$tot_n_particles)) 
+              write.csv(df, file = results_filename, row.names = FALSE)     
+            }
+            df <- read.csv(results_filename)
             timing <- rbind(timing, df)
-            #write.csv(timing, file = "data/timesparticles.csv", row.names = FALSE)            
+            write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
         }
     }
 }
 print(timing)
-
-
-ggplot(timing, aes(x=as.factor(n), y=totaltime, col=as.factor(d))) + geom_boxplot()
-#write.table(timing, file = "timings.csv", row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
-

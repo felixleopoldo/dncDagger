@@ -59,12 +59,12 @@ int main(int argc, char **argv)
     // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
     // Can we use the sampled ones as a prior that is approximately the same?
     // std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
-    // std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
+     //std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
+    //std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
     //  std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
     //         std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
     //         std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
-    // std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
+    std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
 
     RInside R(argc, argv);
     // std::string r_code = "source(\"readtables.R\"); ret";
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
         {
             for (size_t j = 0; j < mat[i].size(); j++)
             {
-                // mat[i][j] = 0.0;
+                //mat[i][j] = 0.0;
             }
         }
     }
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
         {
             for (size_t j = 0; j < mat[i].size(); j++)
             {
-                // mat[i][j] = 0.0;
+                //mat[i][j] = 0.0;
             }
         }
     }
@@ -99,145 +99,8 @@ int main(int argc, char **argv)
     // std::mt19937 gen(rd());
     // std::default_random_engine generator(seed);
 
-    // std::vector<std::vector<bool>> mats;
-    // mats.push_back({1, 1, 1, 1}); // 0
-    // mats.push_back({1, 1, 0, 0}); // 1
-    // mats.push_back({0, 1, 0, 0});
-    // mats.push_back({0, 1, 0, 0}); // 3
-    // mats.push_back({0, 1, 0, 1}); // 4
-    // mats.push_back({1, 1, 0, 0});
-
-    // std::vector<double> order_scores = {1.0, 2.0, 2.1, 3.0, 2.5, 0.5};
-    // std::vector<int> pruned_inds = unique_sets(mats, order_scores);
     auto start = high_resolution_clock::now();
-    // PrintVector(pruned_inds);
-    // std::cout << DBL_EPSILON << std::endl
-    // sequential_opt_left_type(scoring);
 
-    // auto ro = init_right_order(0, scoring);
-    // auto prev_order = add_node_in_front(ro, 2, scoring);
-    // PrintVector(prev_order.order);
-    // std::cout << prev_order << std::endl;
-    // ro = add_node_in_front(prev_order, 1, scoring);
-    // std::cout << ro << std::endl;
-    // bool a = equal_and_unordered_top(prev_order, 2, scoring);
-    // bool b = equal_and_unordered_top(ro, scoring);
-    // std::cout << a << std::endl;
-    // std::cout << b << std::endl;
-
-    // auto ro = init_right_order(0, scoring);
-    // auto prev_order = add_node_in_front(ro, 7, scoring);
-    // std::cout << prev_order << std::endl;
-
-    // prev_order = add_node_in_front(prev_order, 3, scoring);
-    // std::cout << prev_order << std::endl;
-
-    // ro = add_node_in_front(prev_order, 0, scoring);
-    // std::cout << ro << std::endl;
-
-    // std::cout << "new optimal front" << std::endl;
-    // bool b = optimal_front(prev_order, 19, scoring);
-
-    // make_visible(0, 18, prev_order, scoring);
-    // std::cout << prev_order << std::endl;
-    // std::cout << "score " << prev_order.order_score << std::endl;
-
-    // std::cout << "old optimal front" << std::endl;
-    // bool a = optimal_front(ro, scoring); // old: inserted=-1573.1 and newtop (19 in front)=-1585.16, new -1592.59 and -1585.16
-
-    // std::cout << "a " << a << " b " << b << std::endl;
-
-    // std::vector<int> v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 19, 0};
-    // std::vector<double> sc = scoring.score(v1, 20 - 3, 3);
-    // double osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 0, 19};
-    // sc = scoring.score(v1, 20 - 3, 3);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 3, 7, 0};
-    // sc = scoring.score(v1, 20 - 4, 4);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 19, 7, 0};
-    // sc = scoring.score(v1, 20 - 4, 4);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 19, 0};
-    // sc = scoring.score(v1, 20 - 4, 4);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 0, 19};
-    // sc = scoring.score(v1, 20 - 4, 4);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // // std::vector<int> v2 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 19, 0};
-    // // std::vector<int> v3 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 0, 19};
-
-    // assert(a == b);
-
-    // Testing equal_and_unirdered_top
-
-    // auto ro = init_right_order(0, scoring);
-    // auto prev_order = add_node_in_front(ro, 2, scoring);
-    // PrintVector(prev_order.order);
-    // std::cout << prev_order << std::endl;
-    // ro = add_node_in_front(prev_order, 1, scoring);
-    // std::cout << ro << std::endl;
-    // bool a = equal_and_unordered_top(prev_order, 1, scoring);
-    // bool b = equal_and_unordered_top(ro, scoring);
-    // std::cout << a << std::endl;
-    // std::cout << b << std::endl;
-    // assert(a == b);
-
-    // prev_order = init_right_order(2, scoring);
-    // ro = add_node_in_front(prev_order, 0, scoring);
-    // std::cout << prev_order << std::endl;
-    // std::cout << ro << std::endl;
-    // a = equal_and_unordered_top(prev_order, 0, scoring);
-    // b = equal_and_unordered_top(ro, scoring);
-    // std::cout << a << std::endl;
-    // std::cout << b << std::endl;
-
-    // std::vector<int> v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 0, 2};
-    // std::vector<double> sc = scoring.score(v1, 20 - 2, 2);
-    // double osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 2, 0};
-    // sc = scoring.score(v1, 20 - 2, 2);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // assert(a == b);
-
-    // prev_order = init_right_order(0, scoring);
-    // PrintVector(prev_order.order);
-    // ro = add_node_in_front(prev_order, 0, scoring);
-    // std::cout << prev_order << std::endl;
-    // std::cout << ro << std::endl;
-    // a = equal_and_unordered_top(prev_order, 19, scoring);
-    // b = equal_and_unordered_top(ro, scoring);
-    // std::cout << a << std::endl;
-    // std::cout << b << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 0, 19};
-    // sc = scoring.score(v1, 20 - 2, 2);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // v1 = {1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 3, 7, 19, 0};
-    // sc = scoring.score(v1, 20 - 2, 2);
-    // osc = std::accumulate(sc.begin(), sc.end(), 0.0);
-    // std::cout << osc << std::endl;
-
-    // assert(a == b);
 
     sequential_opt(scoring);
 
