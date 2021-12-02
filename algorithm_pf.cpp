@@ -42,32 +42,22 @@ using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
-
-    // R["txt"] = "Hello, world!\n"; // assign a char* (string) to 'txt'
-    // R.parseEvalQ("print(txt)");
     --argc;
     ++argv;
-
     std::size_t N = 3;
+    std::string datafilename;
     if (argc > 0)
     {
-        N = static_cast<std::size_t>(std::atoi(*argv));
+        //N = static_cast<std::size_t>(std::atoi(*argv));
+        datafilename = *argv;
         --argc;
         ++argv;
     }
 
-    // Can we maybe draw N bootstrap samples at each stage? So that the number of particle are fixed?
-    // Can we use the sampled ones as a prior that is approximately the same?
-    // std::string r_code = "ret <- readRDS('data/myvstructdata.csv.rds'); ret"; // Do this in R instead?
-     //std::string r_code = "ret <- readRDS('data/p20n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //std::string r_code = "ret <- readRDS('data/avneigs8p30n300.csv.rds'); ret";
-    //  std::string r_code = "ret <- readRDS('data/p50n300gaussdata.csv.rds'); ret"; // Do this in R instead?
-    //         std::string r_code = "ret <- readRDS('data/jackdata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); ret";
-    //         std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); print(ret$bannedscore); print('aliases'); print(ret$aliases); print('rowmaps_backwards'); print(ret$rowmaps_backwards); print('potential plus1 parents'); print(ret$plus1listsparents); ret";
-    std::string r_code = "ret <- readRDS('data/myasiandata.csv.rds'); ret";
+    std::string r_code = "source('helper_functions.R'); ret <- get_scores('" + datafilename + "'); ret";
 
     RInside R(argc, argv);
-    // std::string r_code = "source(\"readtables.R\"); ret";
+    
     Rcpp::List ret = R.parseEval(r_code);
     OrderScoring scoring = get_score(ret);
 
