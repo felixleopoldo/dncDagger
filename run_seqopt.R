@@ -41,8 +41,8 @@ Sys.setenv("PKG_CXXFLAGS"="-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R
 
 sourceCpp("seq_opt.cpp", verbose=TRUE)
 
-reps <- 20
-ns <- seq(15, 25)
+reps <- 50
+ns <- seq(15, 26)
 ds <- c(1, 1.5, 2)
 lb <- 0.25
 ub <- 1
@@ -53,6 +53,7 @@ x <- c("N","lb","ub","n", "d", "seed", "totaltime", "max_particles", "tot_partic
 
 colnames(timing) <- x
 
+dir.create("results")
 for (n in ns){
     for (d in ds){
         for(i in seq(reps)){
@@ -73,7 +74,7 @@ for (n in ns){
             write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
             results_filename <- paste("results/n=",n,"_d=",d,"_seed=",i,"_lb=",lb,"_ub=",ub,"_N=",N,".csv", sep="")
             if(file.exists(results_filename)) {
-              print(paste(results_filename,"already exists"))
+              #print(paste(results_filename,"already exists"))
             } else {                  
               start <- proc.time()[1]
               ret <- get_scores(filename)

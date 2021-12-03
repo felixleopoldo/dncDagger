@@ -1,7 +1,7 @@
 library(ggplot2)
 
 timing <- read.csv("results/timesparticles.csv")
-
+dir.create("results/figures")
 # Timings
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=totaltime, col=as.factor(d))) + geom_boxplot()
