@@ -5,4 +5,4 @@ services:
     image: ordersmc:gcc
     build:
       context: .
-      dockerfile: ./Dockerfile.ubuntu
+      dockerfile: ./Dockerfile

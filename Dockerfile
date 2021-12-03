@@ -13,6 +13,6 @@ RUN R -e "BiocManager::install()"  --no-save
 RUN R -e "BiocManager::install(c(\"gRbase\", \"RBGL\", \"Rgraphviz\", \"gRain\"))" --no-save 
 RUN R -e "install.packages(\"pcalg\", repos=\"https://cran.rstudio.com\")" --no-save
 RUN R -e "packageurl <- \"https://cran.r-project.org/src/contrib/Archive/BiDAG/BiDAG_2.0.0.tar.gz\" ; install.packages(packageurl, repos=NULL, type=\"source\")" --no-save
-RUN R -e "install.packages(\"pcalg\", \"ggplot2\", \"Rmisc\", \"argparser\")" --no-save
+RUN R -e "install.packages(c(\"pcalg\", \"ggplot2\", \"Jmisc\", \"argparser\"))" --no-save
 WORKDIR /order_pgibbs
 COPY . .
