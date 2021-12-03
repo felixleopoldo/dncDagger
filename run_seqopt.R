@@ -41,37 +41,37 @@ Sys.setenv("PKG_CXXFLAGS"="-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R
 
 sourceCpp("seq_opt.cpp", verbose=TRUE)
 
-seed <- 2
-set.seed(seed)
-
-reps <- 50
+reps <- 20
 ns <- seq(15, 25)
 ds <- c(1, 1.5, 2)
 lb <- 0.25
 ub <- 1
 N <- 300
 
-timing <- data.frame(matrix(ncol = 6, nrow = 0))
-x <- c("n", "d", "rep", "totaltime", "max_particles", "tot_particles")
+timing <- data.frame(matrix(ncol = 9, nrow = 0))
+x <- c("N","lb","ub","n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
 colnames(timing) <- x
 
 for (n in ns){
     for (d in ds){
-        adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
-        weight_mat <- adjmat
-        colnames(weight_mat) <- seq(n)
-        n_edges <- sum(adjmat)
-        weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = lb, ub = ub)
-        trueDAGedges <- weight_mat
         for(i in seq(reps)){
-            print(paste("n: ",n, "d: ", d, "i: ",i))
+            set.seed(i)
+            adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
+            weight_mat <- adjmat
+            colnames(weight_mat) <- seq(n)
+            n_edges <- sum(adjmat)
+            set.seed(i)
+            weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = lb, ub = ub)
+            trueDAGedges <- weight_mat
+            print(paste("n: ",n, "d: ", d, "seed: ",i))
+            set.seed(i)
             data <- rmvDAG(trueDAGedges, N)
             colnames(data) <- seq(n)
             #filename <- paste("data/n=",n,"d=",d,"i=",i,",seed=",seed,".csv", sep="")
             filename <- paste("data/simdata.csv", sep="")
             write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
-            results_filename <- paste("results/n=",n,"_d=",d,"_i=",i,"_seed=",seed,"_lb=",lb,"_ub=",ub,"_N=",N,".csv", sep="")
+            results_filename <- paste("results/n=",n,"_d=",d,"_seed=",i,"_lb=",lb,"_ub=",ub,"_N=",N,".csv", sep="")
             if(file.exists(results_filename)) {
               print(paste(results_filename,"already exists"))
             } else {                  
@@ -79,7 +79,7 @@ for (n in ns){
               ret <- get_scores(filename)
               res <- r_sequential_opt(ret)
               totaltime <- proc.time()[1] - start
-              df <- data.frame(n=c(n),d=c(d),rep=c(i), totaltime=c(as.numeric(totaltime)), max_particles=c(res$max_n_particles), tot_particles=c(res$tot_n_particles)) 
+              df <- data.frame(N=c(N), ub=c(ub),lb=c(lb),n=c(n),d=c(d),seed=c(i), totaltime=c(as.numeric(totaltime)), max_particles=c(res$max_n_particles), tot_particles=c(res$tot_n_particles)) 
               write.csv(df, file = results_filename, row.names = FALSE)     
             }
             df <- read.csv(results_filename)
