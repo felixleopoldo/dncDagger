@@ -1174,42 +1174,57 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
         }
         else
         {
+            // Loop over all the sub orders from the previous round.
             for (RightOrder &prev_order : right_orders_prev)
             {
-
                 std::vector<RightOrder> potential_orders;
+                // For each previous sub order, loop over all the hidden nodes.
                 for (size_t node_index = 0; node_index <= p - n; node_index++)
                 {
                     int new_node = prev_order.order[node_index];
 
+                    // Check if the new node is optimal at front. If not, don't consider this node for addition
                     if (!optimal_front(prev_order, new_node, scoring))
                     {
                         continue;
                     }
 
+                    // From prune_indep_front (used below) we know that from the previous round if a node n is independent of the hidden nodes 
+                    // i.e. S(([hidden],n,rest)) = S((n, [hidden],rest)) then it will be the only node put at front. 
+                    // So it should not be removed by the swap front critera below (equal_and_unordered_top).
                     if (!independent_front(prev_order, top_scores, scoring))
                     {
+                        // If the top from the previous order is not independent of the hidden nodes, we check if 
+                        // the top can be swapped, i.e. S(([hidden],n,m,rest-m)) = S(([hidden],m,n,rest-m)) 
                         if (equal_and_unordered_top(prev_order, new_node, scoring))
                         {
                             continue;
                         }
                     }
+
+                    // If  the new node survived the checks abouve, we add it.
                     RightOrder ro = add_node_in_front(prev_order, node_index, scoring);
 
                     potential_orders.push_back(std::move(ro));
                 }
                 // std::cout << "#potential orders" << potential_orders.size() << std::endl;
+                
+                // If some of the added nodes is independent of the hidden nodes prune_indep_front will keep only that particle.
                 potential_orders = prune_indep_front(potential_orders, top_scores, scoring);
+
+                // Add to the list of all orders
                 right_orders.insert(right_orders.end(), potential_orders.begin(), potential_orders.end());
             }
 
             // O(|right_orders_prev| * p) particles. space
             orders1 = right_orders.size();
             // std::cout << "Prune equal sets: #" << orders1 << std::endl;
+
+            // For orders with the same nodes, keep only one having the maximal score
             right_orders = prune_equal_sets(right_orders, true); // O(#particles * p) space and time
             orders2 = right_orders.size();
 
-            // Remove if has gaps
+            // Remove any order that has gaps.
             std::vector<RightOrder> right_orders_tmp;
             for (RightOrder &ro : right_orders)
             {
@@ -1218,11 +1233,6 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
                     // assert(has_gap(ro, top_scores, scoring));
                     continue;
                 }
-                else
-                {
-                    // assert(!has_gap_new(ro, top_scores, scoring));
-                }
-
                 right_orders_tmp.push_back(std::move(ro));
             }
             right_orders = std::move(right_orders_tmp);
