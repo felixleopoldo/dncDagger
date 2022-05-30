@@ -28,11 +28,15 @@ adjmat <- itfit$scoretable$adjacency
 for (i in seq(p)) {
   n_plus1 <- length(tables[[i]])
   nscores <- n_plus1 * length(tables[[i]][[1]]) # the first plus1 table
-  
+
+  print(labels[i])  
+
+
   write(paste(labels[i], nscores), file = scorefile, append = TRUE)
   
   potparents <- adjmat[i, adjmat[i, ] == 1]
-  
+    print(potparents)
+    
   # for each plus1 table. TODO: Remove the current node
   for (j in seq(n_plus1)) {
     parent_scores <- tables[[i]][[j]]
@@ -40,7 +44,8 @@ for (i in seq(p)) {
     plus1var <- j # TODO: find the correct one.
     
     for (k in seq(n_parsets)) {
-      bitvec <- number2binary(k - 1, n_parents)
+      #print(n_parents)
+      bitvec <- number2binary(k - 1, length(potparents))
       str <- paste(tables[[i]][[j]][k], sum(bitvec) + 1, plus1var)
 
       parents <- names(potparents)[as.logical(bitvec)]
