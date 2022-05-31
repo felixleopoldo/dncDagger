@@ -1,5 +1,5 @@
 # Export score tables to GOBNILP format
-
+library("BiDAG")
 
 number2binary = function(number, noBits) {
   binary_vector = rev(as.numeric(intToBits(number)))
