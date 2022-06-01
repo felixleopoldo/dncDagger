@@ -19,19 +19,13 @@ colnames(data) <- seq(0, ncol(data)-1)
 scores <- scoreparameters("bde",data, bdepar = list(chi = 1, edgepf = 1))
 itfit <- iterativeMCMC(scores, chainout=TRUE, scoreout=TRUE)
 
-
 scorefile <- "scorefile.scores"
-
 tables <- itfit$scoretable$tables
 p <- length(tables)
 write(p, file = scorefile, append = FALSE)
 
 labels <- colnames(itfit$scoretable$adjacency)
 adjmat <- itfit$scoretable$adjacency
-
-conv <- function(){
-  
-}
 
 # For each node
 for (i in seq(p)) {
