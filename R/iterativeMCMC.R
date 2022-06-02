@@ -278,6 +278,18 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
     attr(result$scoretable, "class") <- "MCMCscoretab"
   }
     )
+ 
+  ret <- list()
+  if (MAP == TRUE) {
+    ret$bannedscore <- maxmatrices$maxmatrix
+  } else {
+    ret$bannedscore <- bannedscore
+  }
 
-  return(result)
+  ret$plus1lists <- plus1lists
+  ret$rowmaps <- rowmaps
+  ret$ptab <- ptab
+  ret$result <- result
+
+  return(ret)
 }
