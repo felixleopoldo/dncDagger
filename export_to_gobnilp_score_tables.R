@@ -14,21 +14,15 @@ parent_table <- function(n, p) {
   rbind(rep(NA, n), BiDAG:::parentlistnonempty(1:p, n))[, 1:p, drop = FALSE]
 }
 
-#filename <- "data/myasiandata.csv"
-filename <- "asia_100.dat"
-
-data2 <- read.delim(filename, sep = " ", as.is = FALSE)
-data <- dplyr::mutate_if(data2, is.factor, ~ as.numeric(.x)) - 1
-
-#data <- read.csv(filename, check.names = FALSE)[-1,]
+set.seed(1)
+filename <- "data/datap25d6.csv"
+data <- read.csv(filename, check.names = FALSE)[-1,]
 #data <- data[1:200,]
 colnames(data) <- seq(0, ncol(data)-1)
 
 
 scores <- scoreparameters("bde",data, bdepar = list(chi = 1, edgepf = 1))
 itfit <- iterativeMCMC(scores, chainout=TRUE, scoreout=TRUE)
-
-print(itfit$score)
 
 scorefile <- "scorefile.scores"
 tables <- itfit$scoretable$tables
@@ -43,7 +37,7 @@ for (i in seq(p)) {
   n_plus1 <- length(tables[[i]])
   nscores <- n_plus1 * length(tables[[i]][[1]]) # the first plus1 table
   write(paste(labels[i], nscores), file = scorefile, append = TRUE)
-  potparents <- colnames(adjmat)[adjmat[i, ] == 1]
+  potparents <- colnames(adjmat)[adjmat[, i] == 1]
   
   parenttable <- parent_table(p, length(potparents))
   
@@ -67,7 +61,7 @@ for (i in seq(p)) {
   for (node in seq(p)) {
     # Fix index so it matches the tables.
     # Skip the existing parents and it self
-    if(adjmat[i, node] == 1 || i ==node){
+    if(adjmat[node, i] == 1 || i ==node){
       next
     } 
     
