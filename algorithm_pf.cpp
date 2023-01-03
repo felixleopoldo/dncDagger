@@ -54,6 +54,7 @@ int main(int argc, char **argv)
         ++argv;
     }
 
+    std::cout << datafilename << std::endl;
     std::string r_code = "source('helper_functions.R'); ret <- get_scores('" + datafilename + "'); ret";
 
     RInside R(argc, argv);
@@ -89,8 +90,18 @@ int main(int argc, char **argv)
     // std::mt19937 gen(rd());
     // std::default_random_engine generator(seed);
 
-    auto start = high_resolution_clock::now();
+    // std::vector<int> myorder = {1,3,6,7,5,2,0,4}; // myasiandata.csv
+    ////std::vector<int> myorder = {7,6,2,1,5,0,4,3}; // gobnilp asia
+    //std::vector<int> myorder = {1,3,6,7,5,2,0,4}; // gobnilp asia
+    // std::vector<double> sc = scoring.score(myorder,0,8);
+    // double score_check = std::accumulate(sc.begin(), sc.end(), 0.0);
+    // PrintVector(myorder);
+    // PrintVector(sc, myorder);
+    // PrintVector(sc, {0,1,2,3,4,5,6,7});
+    // //PrintVector(sc);
+    // std::cout << score_check << std::endl;
 
+    auto start = high_resolution_clock::now();
 
     sequential_opt(scoring);
 

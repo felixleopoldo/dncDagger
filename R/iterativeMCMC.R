@@ -112,14 +112,22 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
   i <- 1
   if (is.null(plus1it)) plus1it <- 100
   while (length(updatenodes) > 0 & i <= plus1it) {
+    print("Plus1 iteration Felix edited version to update info (score tables etc) after each iteration.")
     starttimeit <- Sys.time()
     if (i > 1) {
       newptab <- listpossibleparents.PC.aliases(newadj, isgraphNEL = FALSE, n, updatenodes)
+      
       parenttable[updatenodes] <- newptab$parenttable[updatenodes] # basic parenttable without plus1 lists
       aliases[updatenodes] <- newptab$aliases[updatenodes] #aliases for each node since all nodes in parent tables are done as 1,2,3,4... not real parent names
-
       numberofparentsvec[updatenodes] <- newptab$numberofparentsvec[updatenodes]
       numparents[updatenodes] <- newptab$numparents[updatenodes]
+      
+      # Updating ptab / Felix
+      ptab$parenttable <- parenttable
+      ptab$aliases <- aliases
+      ptab$numberofparentsvec <- numberofparentsvec
+      ptab$numparents <- numparents
+
       newplus1lists <- PLUS1(matsize, aliases, updatenodes, blacklistparents)
       plus1lists$mask[updatenodes] <- newplus1lists$mask[updatenodes]
       plus1lists$parents[updatenodes] <- newplus1lists$parents[updatenodes]
@@ -288,8 +296,8 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
 
   ret$plus1lists <- plus1lists
   ret$rowmaps <- rowmaps
-  ret$ptab <- ptab
-  ret$result <- result
+  ret$ptab <- ptab  
+  ret$result <- result # This was previuosly return(result) //Felix
 
   return(ret)
 }

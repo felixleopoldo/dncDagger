@@ -1,6 +1,7 @@
 data/simdata.csv
 data/timesparticles.csv
 data/*.rds
+data/n=*
 results
 .DS_Store
 .RData
