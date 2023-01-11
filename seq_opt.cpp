@@ -1285,14 +1285,14 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
 
             // O(|right_orders_prev| * p) particles. space
             orders1 = right_orders.size();
-            std::cout << "# orders after add in front and prune indep front: " << orders1 << std::endl;
+            //std::cout << "# orders after add in front and prune indep front: " << orders1 << std::endl;
 
             // For orders with the same nodes, keep only one having the maximal score
             // O(#particles * p) = O( (p CR n-1) * p) space and time
             right_orders = prune_equal_sets(right_orders, true); 
 
             orders2 = right_orders.size();
-            std::cout << "# orders after prune equal sets: " << orders2 << std::endl;
+            //std::cout << "# orders after prune equal sets: " << orders2 << std::endl;
             // Remove any order that has gaps.
         
             
@@ -1314,7 +1314,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
             right_orders = std::move(right_orders_tmp);
             
             orders3 = right_orders.size();
-            std::cout << "# orders after has gap prune: " << orders3 << std::endl;        
+            //std::cout << "# orders after has gap prune: " << orders3 << std::endl;        
         }
 
         // std::cout << "orders of size " << n << std::endl;
@@ -1338,15 +1338,15 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
         
         // This is O((p CR n)) 
 
-        std::cout << "# of orders: " << right_orders.size() << std::endl;
+        //std::cout << "# of orders: " << right_orders.size() << std::endl;
         auto max_ro = std::max_element(right_orders.begin(),
                                        right_orders.end(),
                                        [](const RightOrder &a, const RightOrder &b)
                                        { return a.order_score < b.order_score; });
 
-        std::cout << "max scoring sub order " << std::endl;
-        std::cout << *max_ro << std::endl;
-        std::cout << "score: " << max_ro->order_score << std::endl;
+        //std::cout << "max scoring sub order " << std::endl;
+        //std::cout << *max_ro << std::endl;
+        //std::cout << "score: " << max_ro->order_score << std::endl;
 
         // check correct score
         std::vector<double> sc = scoring.score(max_ro->order, p - n, n); // Take only the last n elements in the vector
@@ -1355,7 +1355,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
         //std::cout << "correct max score: " << max_score_check << std::endl;
         assert(std::abs(max_ro->order_score - max_score_check) < EPSILON);
 
-        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
+        //std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
         right_orders_prev = std::move(right_orders);
         // std::cout << "after move" << std::endl;
     }
@@ -1365,7 +1365,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
                                    [](const RightOrder &a, const RightOrder &b)
                                    { return a.order_score < b.order_score; });
 
-    std::cout << "MAX order " << *max_ro << std::endl;
+    //std::cout << "MAX order " << *max_ro << std::endl;
 
     return (std::make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
 }

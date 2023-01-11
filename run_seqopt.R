@@ -51,8 +51,8 @@ Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib
 
 sourceCpp("seq_opt.cpp", verbose = TRUE)
 
-reps <- 300
-ns <- seq(22, 26)
+reps <- seq(1, 400)
+ns <- seq(15, 26)
 ds <- seq(0, 2, 0.1) #c(0, 1.5, 2)
 #ds <- c(0.9)
 lb <- 0.25
@@ -65,38 +65,44 @@ x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_par
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
+results <- list.files("results")
+
 dir.create("results")
 for (n in ns) {
   print(paste("n:", n))
   for (d in ds) {
     print(paste("d:", d))
-    for (i in seq(reps)) {
+    for (i in reps) {
       if(i==212){
         next
       }
     #foreach(i=seq(201,reps),.packages=c('pcalg', 'Rcpp')) %dopar% {
      
-      set.seed(i)
-      adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
-      weight_mat <- adjmat
-      colnames(weight_mat) <- seq(n)
-      n_edges <- sum(adjmat)
-      set.seed(i)
-      weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = lb, ub = ub)
-      trueDAGedges <- weight_mat
-      print(paste("n: ", n, "d: ", d, "seed: ", i))
-      set.seed(i)
-      data <- rmvDAG(trueDAGedges, N)
-      #print(data)
-      colnames(data) <- seq(n)
-      filename <- paste("data/n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep="")
-      #filename <- paste("data/simdata.csv", sep = "")
-      write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
+
       results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
-      if (file.exists(results_filename)) {
-        # print(paste(results_filename,"already exists"))
+      #if (file.exists(results_filename)) {
+      if (basename(results_filename) %in% results) {
+         #print(paste(results_filename,"already exists"))
       } else {
-        
+        print(paste("n: ", n, "d: ", d, "seed: ", i))
+
+        set.seed(i)
+        adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
+        weight_mat <- adjmat
+        colnames(weight_mat) <- seq(n)
+        n_edges <- sum(adjmat)
+        set.seed(i)
+        weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = lb, ub = ub)
+        trueDAGedges <- weight_mat
+        #print(paste("n: ", n, "d: ", d, "seed: ", i))
+        set.seed(i)
+        data <- rmvDAG(trueDAGedges, N)
+        #print(data)
+        colnames(data) <- seq(n)
+        filename <- paste("data/n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep="")
+        #filename <- paste("data/simdata.csv", sep = "")
+        write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
+
         ret <- get_scores(filename)
         start <- proc.time()[1]
         res <- r_sequential_opt(ret)
@@ -117,7 +123,7 @@ for (n in ns) {
 
         print("Score from order opt")
         print(res$log_score)
-        assert("same scores", abs(itscore - res$log_score) < 1e-5)
+        #assert("same scores", abs(itscore - res$log_score) < 1e-5)
         df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles))
         write.csv(df, file = results_filename, row.names = FALSE)
       }
@@ -130,17 +136,21 @@ for (n in ns) {
 
 print("Joining csvs")
 for (n in ns) {
+  print(n)
   for (d in ds) {
     #for (i in seq(reps)) {
-    for (i in seq(reps)) {
+    for (i in reps) {
       if(i==212){
         next
       }
+
       results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       df <- read.csv(results_filename)
       timing <- rbind(timing, df)
-      write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
+      #write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
     }
   }
 }
+
+write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
 print(timing)

@@ -1,8 +1,8 @@
 version: '3.4'
 
 services:
-  ordersmc:
-    image: ordersmc:gcc
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+ ordersmc:
+   image: onceltuca/orderpruning
+#   build:
+#     context: .
+#     dockerfile: ./Dockerfile
