@@ -425,16 +425,17 @@ public:
         else
         {
             f_bar_z = get_f_bar_z(position, ordering);
-            std::vector<int> active_plus1_parents_indices = get_plus1_indices(position, ordering);
+            std::vector<int> active_plus1_parents_indices = get_plus1_indices(position, ordering);// O(p)
             std::vector<double> plus1_parents_scores((active_plus1_parents_indices).size());
 
-            for (std::size_t j = 0; j < plus1_parents_scores.size(); j++)
+            std::cout <<  plus1_parents_scores.size() << std::endl;
+            for (std::size_t j = 0; j < plus1_parents_scores.size(); j++) // O(p)? Or O(K), K = maximal number of parents
             {
                 plus1_parents_scores[j] = scoresmatrices[node][f_bar_z][active_plus1_parents_indices[j]]; // allowedscorelist is in numerical order
             }
             if (MAP == true)
             {
-                orderscore = *std::max_element(plus1_parents_scores.begin(), plus1_parents_scores.end());
+                orderscore = *std::max_element(plus1_parents_scores.begin(), plus1_parents_scores.end()); // O(p)? Or O(K), K = maximal number of parents
             }
             else
             {
@@ -465,6 +466,9 @@ public:
         const int node = ordering[position];
         std::vector<int> active_plus1_parents_indices;
         (active_plus1_parents_indices).push_back(0);                           // f(null)=0, no )=parents is always a possibility.?
+
+        // O(p)
+        std::cout << potential_plus1_parents[node].size() << std::endl;
         for (std::size_t j = 0; j < potential_plus1_parents[node].size(); j++) // Is j the plus1node? -No, but potential_plus1_parents[node][j] is.
         {
             if (std::find(ordering.begin() + position + 1, ordering.end(), potential_plus1_parents[node][j]) != ordering.end())
@@ -585,7 +589,10 @@ bool optimal_front(const RightOrder &ro,
     //  Maybe just swap back instead of copying ro.
     return (true);
 }
+/**
+ * 
 
+ */
 bool independent_front(const RightOrder &ro,
                        const std::vector<double> &top_scores,
                        OrderScoring &scoring)
@@ -923,12 +930,14 @@ RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_in
     // std::cout << "(BEFORE ADDING) max insert score of " << 19 << " in " << ro_prev << ": " << ro_prev.inserted_max_order_scores[19] << std::endl;
     // std::cout << "score of " << node << ": " << node_score << std::endl;
     // std::cout << "best insert pos " << ro.best_insert_pos[19] << std::endl;
+    //
+    // O(p)
     for (size_t i = 0; i < p - n; i++) // <= ?
     {
         // Note that inserted_node must be put as child of node when calculating score of node. ([...],node,inserted_node,a,b,c) ?
         size_t inserted_node = ro.order[i];
         move_element(ro.order, i, ro.front_ind()); // ([..,i,.],node,inserted_node,a,b,c) -> ([...],node,i,a,b,c)
-        ro.inserted_max_order_scores[inserted_node] += scoring.score_pos(ro.order, ro.front_ind() - 1);
+        ro.inserted_max_order_scores[inserted_node] += scoring.score_pos(ro.order, ro.front_ind() - 1); // O(p)
         move_element(ro.order, ro.front_ind(), i);
     }
 
@@ -1216,8 +1225,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
                     // assert(has_gap(ro, top_scores, scoring));
                     continue;
                 }
-                else
-                {
+                else {
                     // assert(!has_gap(ro, top_scores, scoring));
                 }
 
@@ -1235,6 +1243,8 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
             for (RightOrder &prev_order : right_orders_prev)
             {
                 std::vector<RightOrder> potential_orders;
+
+                // Check S(vn,[]|)
                 bool is_indep_front = independent_front(prev_order, top_scores, scoring);
                 //bool some_node_not_opt_at_front = false;
                 // For each previous sub order, loop over all the hidden nodes.
