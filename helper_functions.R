@@ -29,9 +29,9 @@ get_scores <- function(filename) {
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP) # , startspace = startspace)
 
   # this changes the score tables for each plus1 iteration.
-  #print("iterativeMCMC max score")
-  #print(res$result$maxorder)
-  #print(res$result$score)
+  print("iterativeMCMC max score")
+  print(res$result$maxorder)
+  print(res$result$score)
   #print(res$result$plus1lists)
   #print(res$result$scoretable$tables[[1]])
   #print(res$result$scoretable$adjacency)
