@@ -3,10 +3,12 @@ library("Jmisc")
 library("pcalg")
 library("ggplot2")
 library("testit")
+library(argparser)
 #library("foreach")
 #library("doParallel")
 # sourceAll(path = "R")
 source("helper_functions.R")
+
 # This function generates Gaussian data from a DAG
 # following the topological order.
 
@@ -51,7 +53,17 @@ Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib
 
 sourceCpp("seq_opt.cpp", verbose = TRUE)
 
-reps <- seq(1, 400)
+p <- arg_parser("Order pruning")
+
+p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
+p <- add_argument(p, "--filename", help = "Output filename")
+p <- add_argument(p, "--seeds_from", help = "Seeds from")
+p <- add_argument(p, "--seeds_to", help = "Seeds to")
+argv <- parse_args(p)
+print(as.integer(argv$seeds_from))
+
+reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
+
 ns <- seq(15, 26)
 ds <- seq(0, 2, 0.1) #c(0, 1.5, 2)
 #ds <- c(0.9)
@@ -62,18 +74,20 @@ N <- 300
 timing <- data.frame(matrix(ncol = 9, nrow = 0))
 x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
+skipseeds <- c(212, 314)
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
 results <- list.files("results")
 
 dir.create("results")
+dir.create("data")
 for (n in ns) {
   print(paste("n:", n))
   for (d in ds) {
     print(paste("d:", d))
     for (i in reps) {
-      if(i==212){
+      if(i %in% skipseeds){
         next
       }
     #foreach(i=seq(201,reps),.packages=c('pcalg', 'Rcpp')) %dopar% {
@@ -114,12 +128,12 @@ for (n in ns) {
         set.seed(1) # This is just for iterative MCMC and will be overwritten
         data <- read.csv(filename, check.names = FALSE)
         myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
-        itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE) 
-        itscore <- itres$result$score
+        #itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE) 
+        #itscore <- itres$result$score
         
         
-        print("Score from iterative MCMC")
-        print(itscore)
+        #print("Score from iterative MCMC")
+        #print(itscore)
 
         print("Score from order opt")
         print(res$log_score)
@@ -140,7 +154,7 @@ for (n in ns) {
   for (d in ds) {
     #for (i in seq(reps)) {
     for (i in reps) {
-      if(i==212){
+      if(i %in% skipseeds){
         next
       }
 

@@ -4,7 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <iostream>
-#include "thread_pool.hpp"
+//#include "thread_pool.hpp"
 //#include "OrderScoring.cpp"
 // #include <cstdio>
 // #include <algorithm>
@@ -287,12 +287,6 @@ public:
         if (MAP == true)
         {
     
-            
-            // myswap(nodea_index, nodeb_index, ordering);
-            // nodea_score = score_pos(ordering, nodeb_index);
-            // nodeb_score = score_pos(ordering, nodea_index);
-            // return (std::make_tuple(nodea_score, nodeb_score));
-
             // Computing score for nodea, which is moved up (what is up and down? I guess up is right.., i.e. less possible parents.)
             // If b is (was) a potential parent for a, we have to recompute the scores since b is now banned.
             if (std::find(potential_parents[node_a].begin(), potential_parents[node_a].end(), node_b) != potential_parents[node_a].end())

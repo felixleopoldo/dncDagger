@@ -15,5 +15,10 @@ RUN R -e "install.packages(\"pcalg\", repos=\"https://cran.rstudio.com\")" --no-
 RUN R -e "packageurl <- \"https://cran.r-project.org/src/contrib/Archive/BiDAG/BiDAG_2.0.0.tar.gz\" ; install.packages(packageurl, repos=NULL, type=\"source\")" --no-save
 RUN R -e "install.packages(c(\"pcalg\", \"ggplot2\", \"Jmisc\", \"argparser\"))" --no-save
 RUN R -e "install.packages(c(\"testit\"))" --no-save
+RUN R -e "install.packages(c(\"argparser\"))" --no-save
 WORKDIR /order_pruning
-#COPY . .
+COPY src src
+COPY *.R .
+COPY *.cpp .
+COPY runsims.sh .
+ADD R R
