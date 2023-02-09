@@ -286,13 +286,12 @@ public:
 
         if (MAP == true)
         {
-            //myswap(nodea_index, nodeb_index, ordering);
-            //double nodea_score_ver = score_pos(ordering, nodeb_index); // O(p)
-            //double nodeb_score_ver = score_pos(ordering, nodea_index); // O(p)
-            //myswap(nodea_index, nodeb_index, ordering);
+    
             
+            // myswap(nodea_index, nodeb_index, ordering);
+            // nodea_score = score_pos(ordering, nodeb_index);
+            // nodeb_score = score_pos(ordering, nodea_index);
             // return (std::make_tuple(nodea_score, nodeb_score));
-
 
             // Computing score for nodea, which is moved up (what is up and down? I guess up is right.., i.e. less possible parents.)
             // If b is (was) a potential parent for a, we have to recompute the scores since b is now banned.
@@ -348,33 +347,7 @@ public:
                         //std::cout << "use old score" << std::endl;
                         nodea_score = node_scores[node_a];
                     }
-                    //double max = std::max(node_scores[node_a], nodeb_as_plus1_score); // I should use order_scores not node scores here. Or something. This is not right at least.
-                    // std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
-                    //if (std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0.000001)
-                    //{ // 0.000001 is arbitrary
-                        // OK
-                        // std::cout << "NO RECOMPUTE order score for node" << std::endl;
-                        //nodea_score = std::log(std::exp(node_scores[node_a] - max) - std::exp(nodeb_as_plus1_score - max)) + max; // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
-                    //myswap(nodea_index, nodeb_index, ordering);
-                    //double nodea_score_ver = score_pos(ordering, nodeb_index);
-                    //myswap(nodea_index, nodeb_index, ordering);
-                    //nodea_score = max;
-
-                    //assert(nodea_score_ver == nodea_score);
-                   
-                   
-                   // }
-                   // else
-                    //{
-                        // round off error. Recompute.
-                        // std::cout << "RECOMPUTE order score for node" << std::endl;
-                    //    myswap(nodea_index, nodeb_index, ordering);
-                     //   nodea_score = score_pos(ordering, nodeb_index);
-                      //  myswap(nodea_index, nodeb_index, ordering);
-                   // }
-
-                    // std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
-                    // assert(std::abs(nodea_score-true_score) < 0.001);
+                 
                 }
             }
 
@@ -423,12 +396,7 @@ public:
         }
 
 
-
-
-
-
-
-        else
+        else // MAP=False
         {
             // Computing score for nodea, which is moved up (what is up and down? I guess up is right.., i.e. less possible parents.)
             // If b is (was) a potential parent for a, we have to recompute the scores since b is now banned.
