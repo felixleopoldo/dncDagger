@@ -269,7 +269,7 @@ public:
     }
 
     /**
-     * Re-calculation scores after swapping up node_a so that (node_a, node_b) --> (node_b, node_a).
+     * Re-calculation scores after swapping up node_a so that (a, b) -> (b, a).
      *
      * Order of node1 is lower than node2.
      *
@@ -286,15 +286,152 @@ public:
 
         if (MAP == true)
         {
+            //myswap(nodea_index, nodeb_index, ordering);
+            //double nodea_score_ver = score_pos(ordering, nodeb_index); // O(p)
+            //double nodeb_score_ver = score_pos(ordering, nodea_index); // O(p)
+            //myswap(nodea_index, nodeb_index, ordering);
+            
+            // return (std::make_tuple(nodea_score, nodeb_score));
+
+
+            // Computing score for nodea, which is moved up (what is up and down? I guess up is right.., i.e. less possible parents.)
+            // If b is (was) a potential parent for a, we have to recompute the scores since b is now banned.
+            if (std::find(potential_parents[node_a].begin(), potential_parents[node_a].end(), node_b) != potential_parents[node_a].end())
+            {
+                myswap(nodea_index, nodeb_index, ordering);
+                nodea_score = score_pos(ordering, nodeb_index);
+                myswap(nodea_index, nodeb_index, ordering);
+            }
+            else
+            {   // Since b is not a potential parent of a, f_bar_z is not altered.
+                // But this means that before the swap it was a potential plus1 parent.
+                // After the swap, i.e. (b, a) it is not however since its to the left in the ordering.
+                // This we can check if the current maximal score of a is the plus1 score for b.
+                // If it is, it means that we might have used that score table, so we need to re-calculate (no shortcut possible).
+                // If not (it is presumably is lower) we should use the old score.
+
+                // Check if b was (is) a plus1 parent for a. This should always be the true.
+                std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_a].begin(), potential_plus1_parents[node_a].end(), node_b); // O(p)
+                if (itr != potential_plus1_parents[node_a].end())
+                {
+                    // Subtract the bs plus1 score contibution.
+
+                    myswap(nodea_index, nodeb_index, ordering);
+                    int f_bar_z = get_f_bar_z(nodeb_index, ordering); // ok? f_bar_z is an indexing of a parent subset (probably for b's parents.)
+                    // find the correct index j and take it.
+
+                    // get the index (of b?) in the potential_plus1_parents[nodea], since this is used with scorematrices[nodea].
+                    int plus1_parents_index = std::distance(potential_plus1_parents[node_a].begin(), itr); 
+                    // Why is it + 1 here? - since the potential_plus1_parents does not have the empty set included at index 0
+                    // as scorematrices has.
+
+                    //the problem here migth be that I dont check if b is to the right in the ordering.
+                    // Thts why wie subratct in the sum case! Since it cant be a plus1 parent!
+                    // Since we maximize we cant sum now, though.. Do we have to re-calculate?
+
+                    // recaclulate if this score is equal to the current, since that meand we used it..?
+                    // it could be used if it was NOT a potential prent befor the sap, as then it was a potential plus1 parent.
+
+                    double nodeb_as_plus1_score = scoresmatrices[node_a][f_bar_z][plus1_parents_index +1]; 
+                    myswap(nodea_index, nodeb_index, ordering);
+
+                    //std::cout << node_scores[node_a] << " is to compare with " << nodeb_as_plus1_score << std::endl;
+                   
+                    if(node_scores[node_a] == nodeb_as_plus1_score){
+                        // recalculate sinc it means b was (couldalso be another one with same score) the plus1 parent wich maximal score.
+                        //std::cout << "recalcylate node score from scratch" << std::endl;
+                        myswap(nodea_index, nodeb_index, ordering);
+                        nodea_score = score_pos(ordering, nodeb_index);
+                        myswap(nodea_index, nodeb_index, ordering);
+
+                    } else {
+                        //std::cout << "use old score" << std::endl;
+                        nodea_score = node_scores[node_a];
+                    }
+                    //double max = std::max(node_scores[node_a], nodeb_as_plus1_score); // I should use order_scores not node scores here. Or something. This is not right at least.
+                    // std::cout << nodeb_as_plus1_score - node_scores[node_a] << " " << std::endl;
+                    //if (std::abs(nodeb_as_plus1_score - node_scores[node_a]) > 0.000001)
+                    //{ // 0.000001 is arbitrary
+                        // OK
+                        // std::cout << "NO RECOMPUTE order score for node" << std::endl;
+                        //nodea_score = std::log(std::exp(node_scores[node_a] - max) - std::exp(nodeb_as_plus1_score - max)) + max; // gets inf... 0 at node_scores[node_a] but something at node_scores[node_b]
+                    //myswap(nodea_index, nodeb_index, ordering);
+                    //double nodea_score_ver = score_pos(ordering, nodeb_index);
+                    //myswap(nodea_index, nodeb_index, ordering);
+                    //nodea_score = max;
+
+                    //assert(nodea_score_ver == nodea_score);
+                   
+                   
+                   // }
+                   // else
+                    //{
+                        // round off error. Recompute.
+                        // std::cout << "RECOMPUTE order score for node" << std::endl;
+                    //    myswap(nodea_index, nodeb_index, ordering);
+                     //   nodea_score = score_pos(ordering, nodeb_index);
+                      //  myswap(nodea_index, nodeb_index, ordering);
+                   // }
+
+                    // std::cout << "true score " << true_score << " calcuated score " << node_scores[node_a] << std::endl;
+                    // assert(std::abs(nodea_score-true_score) < 0.001);
+                }
+            }
+
+            /** 
+             * Computing score for node_b.
+             * 
+             * which is moved down (to the left? I.e. more possible parents)
+             *  (a, b) -> (b, a) 
+             * 
+             */            
+
+            // If a is a potential parent of b.
+            if (std::find(potential_parents[node_b].begin(), potential_parents[node_b].end(), node_a) != potential_parents[node_b].end())
+            {
+                myswap(nodea_index, nodeb_index, ordering);
+                nodeb_score = score_pos(ordering, nodea_index); // Recalculate b score
+                myswap(nodea_index, nodeb_index, ordering);
+            }
+            else // If a is NOT a potential parent of b. Then a can be a plus1 parent which should be taken into account.
+            {                
+                std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_b].begin(),
+                                                           potential_plus1_parents[node_b].end(),
+                                                           node_a);
+                // Find the score where a is a plus1 parent of b. This should always exist? 
+                // Since a is to the right and not a possible normal parent.
+                if (itr != potential_plus1_parents[node_b].cend()) // Should never reach cend?
+                {
+                    int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since "no parents" is the first
+                    myswap(nodea_index, nodeb_index, ordering);
+                    int f_bar_z = get_f_bar_z(nodea_index, ordering);
+                    double nodea_as_plus1_score = scoresmatrices[node_b][f_bar_z][plus1_parents_index+1]; // +1
+                    myswap(nodea_index, nodeb_index, ordering);
+
+                    // Add the score to the sum using the log max trick.
+                    double max = std::max(node_scores[node_b], nodea_as_plus1_score);
+                    //nodeb_score = std::log(std::exp(node_scores[node_b] - max) + std::exp(nodea_as_plus1_score - max)) + max;
+
+                    nodeb_score = max;
+                }
+            }
+
+            // std::swap(ordering[nodea_index], ordering[nodeb_index]); // last swap
             myswap(nodea_index, nodeb_index, ordering);
-            nodea_score = score_pos(ordering, nodeb_index);
-            nodeb_score = score_pos(ordering, nodea_index);
+
             return (std::make_tuple(nodea_score, nodeb_score));
         }
+
+
+
+
+
+
+
         else
         {
-            // Computing score for nodea, which is moved up
-            // If b is a potential parent for a, we have to recompute the scores since b is now banned.
+            // Computing score for nodea, which is moved up (what is up and down? I guess up is right.., i.e. less possible parents.)
+            // If b is (was) a potential parent for a, we have to recompute the scores since b is now banned.
             if (std::find(potential_parents[node_a].begin(), potential_parents[node_a].end(), node_b) != potential_parents[node_a].end())
             {
                 myswap(nodea_index, nodeb_index, ordering);
@@ -339,27 +476,38 @@ public:
                 }
             }
 
-            // // Computing score for node_b, which is moved down
+            /** 
+             * Computing score for node_b.
+             * 
+             * which is moved down (to the left? I.e. more possible parents)
+             *  (a, b) -> (b, a) 
+             * 
+             */            
+
+            // If a is a potential parent of b.
             if (std::find(potential_parents[node_b].begin(), potential_parents[node_b].end(), node_a) != potential_parents[node_b].end())
             {
                 myswap(nodea_index, nodeb_index, ordering);
-                nodeb_score = score_pos(ordering, nodea_index);
+                nodeb_score = score_pos(ordering, nodea_index); // Recalculate b score
                 myswap(nodea_index, nodeb_index, ordering);
             }
-            else
-            {
+            else // If a is not a potential parent of a. Then a can be a plus1 parent which should be taken into account.
+            {                
                 std::vector<int>::iterator itr = std::find(potential_plus1_parents[node_b].begin(),
                                                            potential_plus1_parents[node_b].end(),
                                                            node_a);
-                if (itr != potential_plus1_parents[node_b].cend())
+                // Find the score where a is a plus1 parent of b. This should always exist? 
+                // Since a is to the right and not a possible normal parent.
+                if (itr != potential_plus1_parents[node_b].cend()) // Should never reach cend?
                 {
-                    int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since no parents is the first
+                    int plus1_parents_index = std::distance(potential_plus1_parents[node_b].begin(), itr); // since "no parents" is the first
                     myswap(nodea_index, nodeb_index, ordering);
-                    int f_bar_z = get_f_bar_z(nodea_index, ordering);
+                    int f_bar_z = get_f_bar_z(nodea_index, ordering); // some numbering of the parent setting?
                     double nodea_as_plus1_score = scoresmatrices[node_b][f_bar_z][plus1_parents_index + 1];
                     myswap(nodea_index, nodeb_index, ordering);
-                    double max = std::max(node_scores[node_b], nodea_as_plus1_score);
 
+                    // Add the score to the sum using the log max trick.
+                    double max = std::max(node_scores[node_b], nodea_as_plus1_score);
                     nodeb_score = std::log(std::exp(node_scores[node_b] - max) + std::exp(nodea_as_plus1_score - max)) + max;
                 }
             }
@@ -392,10 +540,10 @@ public:
             {
                 f_bar_z = get_f_bar_z(position, ordering);
                 active_plus1_parents_indices = get_plus1_indices(position, ordering);
-                std::vector<double> plus1_parents_scores((active_plus1_parents_indices).size());
+                std::vector<double> plus1_parents_scores(active_plus1_parents_indices.size());
                 for (std::size_t j = 0; j < plus1_parents_scores.size(); j++)
                 {
-                    plus1_parents_scores[j] = scoresmatrices[node][f_bar_z][(active_plus1_parents_indices)[j]]; // allowedscorelist is in numerical order
+                    plus1_parents_scores[j] = scoresmatrices[node][f_bar_z][active_plus1_parents_indices[j]]; // allowedscorelist is in numerical order
                 }
 
                 if (MAP == true)
@@ -411,6 +559,9 @@ public:
         return (orderscores);
     }
 
+    /**
+     * position is the index in the ordering of the node.
+    */
     double score_pos(const std::vector<int> &ordering, const std::size_t &position) const
     {
         double orderscore(0.0); // O(p)           // orderscores <- vector("double", n)
@@ -419,23 +570,33 @@ public:
 
         if (position == ordering.size() - 1)
         {
-            // no parents allowed, i.e.only first row, only first list
-            orderscore = scoretable[node][0][0]; // orderscores[node] <- scoretable [[node]][[1]][1, 1]
+            // no parents allowed, i.e. only first row, only first list.
+            // Shouldnt we consider all plus 1 parents.?????
+
+            orderscore = scoretable[node][0][0]; // orderscores[node] <- scoretable [[node]][[1]][1, 1]. What is in scoretable[node][0][1]?
+            // scoretable[node][plus1 index][the numbering of the edge setting? 2^(#permitted parents)]
+            // so if no parent are permitted parents, there will only be one element in the last list.
+        
+            // Whats the difference between scoretable and scorematrices?            
+            // scorematrices has the Maximal scores over all parent compinations for each plus1 node.
+            // scoretable has all the maxima scores for evey edge setting for each plus1 node.?
+            // How do we get the edge setting and why do we care about them, I thought we summed over all of them?
         }
         else
         {
             f_bar_z = get_f_bar_z(position, ordering);
-            std::vector<int> active_plus1_parents_indices = get_plus1_indices(position, ordering);// O(p)
-            std::vector<double> plus1_parents_scores((active_plus1_parents_indices).size());
+            std::vector<int> active_plus1_parents_indices = get_plus1_indices(position, ordering);// O(p). This seems to add
+            std::vector<double> plus1_parents_scores(active_plus1_parents_indices.size());
 
             //std::cout <<  plus1_parents_scores.size() << std::endl;
             for (std::size_t j = 0; j < plus1_parents_scores.size(); j++) // O(p)? Or O(K), K = maximal number of parents
             {
                 plus1_parents_scores[j] = scoresmatrices[node][f_bar_z][active_plus1_parents_indices[j]]; // allowedscorelist is in numerical order
             }
+
             if (MAP == true)
             {
-                orderscore = *std::max_element(plus1_parents_scores.begin(), plus1_parents_scores.end()); // O(p)? Or O(K), K = maximal number of parents
+                orderscore = *std::max_element(plus1_parents_scores.begin(), plus1_parents_scores.end()); // O(p)? Or O(K), K = maximal number of parents. O(p) ~ #plus1 parents
             }
             else
             {
@@ -465,7 +626,7 @@ public:
         // allowedscorelist is a filetered version of plius1listparents, removing the node before in the ordering
         const int node = ordering[position];
         std::vector<int> active_plus1_parents_indices;
-        (active_plus1_parents_indices).push_back(0);                           // f(null)=0, no )=parents is always a possibility.?
+        active_plus1_parents_indices.push_back(0);                           // f(null)=0, no )=parents is always a possibility.?
 
         // O(p)
         //std::cout << potential_plus1_parents[node].size() << std::endl;
@@ -473,7 +634,7 @@ public:
         {
             if (std::find(ordering.begin() + position + 1, ordering.end(), potential_plus1_parents[node][j]) != ordering.end())
             {
-                (active_plus1_parents_indices).push_back(j + 1); // +1 since the 0 is no +1 parent at all?
+                active_plus1_parents_indices.push_back(j + 1); // +1 since the 0 is no +1 parent at all?
             }
         }
         return (active_plus1_parents_indices);
@@ -1288,7 +1449,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
     size_t max_n_particles = 0;
     size_t tot_n_particles = 0;
     /**
-     * Start build and prune
+     * Start build and prune    
      */
     for (std::size_t n = 1; n <= p; n++)
     {
@@ -1443,7 +1604,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
 
         // This is O((p CR n))
 
-        //std::cout << "# of orders: " << right_orders.size() << std::endl;
+        std::cout << "# of orders: " << right_orders.size() << std::endl;
         auto max_ro = std::max_element(right_orders.begin(),
                                        right_orders.end(),
                                        [](const RightOrder &a, const RightOrder &b)
