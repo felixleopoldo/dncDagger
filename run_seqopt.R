@@ -81,7 +81,7 @@ skipseeds <- c(212, 314)
 results <- list.files("results")
 
 dir.create("results")
-dir.create("data")
+
 for (n in ns) {
   print(paste("n:", n))
   for (d in ds) {

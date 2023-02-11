@@ -1383,7 +1383,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
 std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring &scoring)
 {
     std::size_t p = scoring.numparents.size();
-    std::cout << "Starting optimization" << std::endl;
+    //std::cout << "Starting optimization" << std::endl;
     std::vector<RightOrder> right_orders;
     std::vector<RightOrder> right_orders_prev;
 
@@ -1566,7 +1566,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
 
         // This is O((p CR n))
 
-        std::cout << "# of orders: " << right_orders.size() << std::endl;
+        //std::cout << "# of orders: " << right_orders.size() << std::endl;
         auto max_ro = std::max_element(right_orders.begin(),
                                        right_orders.end(),
                                        [](const RightOrder &a, const RightOrder &b)
@@ -1583,7 +1583,7 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt(OrderScoring
         //std::cout << "correct max score: " << max_score_check << std::endl;
         assert(std::abs(max_ro->order_score - max_score_check) < EPSILON);
 
-        std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
+        //std::cout << n << " & " << orders1 << " & " << orders2 << " & " << orders3 << " & " << max_ro->order_score << " \\\\" << std::endl;
         right_orders_prev = std::move(right_orders);
         // std::cout << "after move" << std::endl;
     }
@@ -1603,7 +1603,7 @@ OrderScoring get_score(Rcpp::List ret)
 
     // Read MAP flag
     bool MAP = Rcpp::as<int>(ret["MAP"]);
-    std::cout << "MAP:" << MAP << std::endl;
+    //std::cout << "MAP:" << MAP << std::endl;
 
     // Read numparents
     std::vector<int> numparents = Rcpp::as<std::vector<int>>(ret["numparents"]);

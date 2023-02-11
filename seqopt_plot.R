@@ -4,7 +4,7 @@ library(tidyverse)
 #library(Hmisc)
 
 timing <- read.csv("results/timesparticles.csv")
-dir.create("results/figures")
+dir.create("figures")
 
 
 
@@ -54,7 +54,7 @@ ggplot(plotdf, aes(x=d, y=a)) +
   geom_errorbar(aes(ymin=a-aerr, ymax=a+aerr), width=.2,
                 position=position_dodge(0.05))
 
-ggsave("results/figures/aplots.png")
+ggsave("figures/aplots.png")
 
 ggplot(plotdf, aes(x=d, y=b)) + 
   ggtitle(paste0("for varying d: log(", label, ") ~  a*n + b*log(n) + c")) +
@@ -64,11 +64,11 @@ ggplot(plotdf, aes(x=d, y=b)) +
   geom_errorbar(aes(ymin=b-berr, ymax=b+berr), width=.2,
                 position=position_dodge(0.05))
 
-ggsave("results/figures/bplots.png")
+ggsave("figures/bplots.png")
 
 
 ## Reg coeffs ########
-png("results/figures/reglines.png")
+png("figures/reglines.png")
 par(mfrow=c(2,1))
 
 #errbar(as.factor(ds[["d"]]), as, y+error_values,y-error_values,type='b')
@@ -78,11 +78,7 @@ title(paste0("for varying d: log(", label, ") ~  a*n + b*log(n) + c"))
 plot(as.factor(ds[["d"]]), bs, pch = 1, xlab = "graph (d)ensity", ylab = "b")
 title(paste0("for varying d: log(", label, ") ~  a*n + b*log(n) + c")) 
 
-
 dev.off()
-
-
-
 
 ## Boxplots
 ###########################################
@@ -92,27 +88,27 @@ timing <- timing %>% filter(d %in% c(0.0, 0.5 , 1.0,1.1, 1.5,0.9, 2.0))
 # Timings
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=totaltime, col=as.factor(d))) + geom_boxplot()
-ggsave("results/figures/boxplots_timing.png")
+ggsave("figures/boxplots_timing.png")
 
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=log(totaltime), col=as.factor(d))) + geom_boxplot()
-ggsave("results/figures/boxplots_timing_log.png")
+ggsave("figures/boxplots_timing_log.png")
 
 # Max particles
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=max_particles, col=as.factor(d))) + geom_boxplot() 
-ggsave("results/figures/boxplot_maxparticles.png")
+ggsave("figures/boxplot_maxparticles.png")
 
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=log(max_particles), col=as.factor(d))) + geom_boxplot() + geom_smooth(method = "lm", se = FALSE)
-ggsave("results/figures/boxplots_maxparticles_log.png")
+ggsave("figures/boxplots_maxparticles_log.png")
 
 # Tot particles
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=tot_particles, col=as.factor(d))) + geom_boxplot()
-ggsave("results/figures/boxplots_totparticles.png")
+ggsave("figures/boxplots_totparticles.png")
 
 graphics.off()
 ggplot(timing, aes(x=as.factor(n), y=log(tot_particles), col=as.factor(d))) + geom_boxplot()
-ggsave("results/figures/boxplots_totparticles_log.png")
+ggsave("figures/boxplots_totparticles_log.png")
 

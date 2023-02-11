@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     // std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
-    std::cout << "Execution time: " << duration.count() << std::endl;
+    //std::cout << "Execution time: " << duration.count() << std::endl;
     // int M = 100000000;
     // const auto &[max_order, mh_log_scores] = mh(M, scoring, generator);
     // int mh_max_score_ind = std::max_element(mh_log_scores.begin(), mh_log_scores.end()) - mh_log_scores.begin();

@@ -112,7 +112,7 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
   i <- 1
   if (is.null(plus1it)) plus1it <- 100
   while (length(updatenodes) > 0 & i <= plus1it) {
-    print("Plus1 iteration Felix edited version to update info (score tables etc) after each iteration.")
+    #print("Plus1 iteration Felix edited version to update info (score tables etc) after each iteration.")
     starttimeit <- Sys.time()
     if (i > 1) {
       newptab <- listpossibleparents.PC.aliases(newadj, isgraphNEL = FALSE, n, updatenodes)

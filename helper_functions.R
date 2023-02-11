@@ -1,7 +1,7 @@
 rm(list = ls())
 library("Rcpp")
 library("Jmisc")
-sourceAll(path = "R")
+sourceAll(path = "R", echo=FALSE, verbose=FALSE)
 sourceCpp("src/cppfns.cpp")
 
 get_scores <- function(filename) {
@@ -26,12 +26,12 @@ get_scores <- function(filename) {
   MAP <- TRUE
 
   #print("iterativeMCMC scoretable for node 1 (0)")
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP) # , startspace = startspace)
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
 
   # this changes the score tables for each plus1 iteration.
-  print("iterativeMCMC max score")
-  print(res$result$maxorder)
-  print(res$result$score)
+  #print("iterativeMCMC max score")
+  #print(res$result$maxorder)
+  #print(res$result$score)
   #print(res$result$plus1lists)
   #print(res$result$scoretable$tables[[1]])
   #print(res$result$scoretable$adjacency)
