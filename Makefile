@@ -9,5 +9,7 @@ all: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -O3 $(CFLAGS)
 debug: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -g $(CFLAGS)
 gprof: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -pg -no-pie -fno-builtin $(CFLAGS)
 sandbox: ; c++ -o main main.cpp  -g -Wall
-docker_build: ;  docker build -t onceltuca/order_pgibbs -f Dockerfile.ubuntu  .
-docker_push: ;  docker push onceltuca/order_pgibbs
+docker_build: ;  docker build -t onceltuca/orderpruning .
+docker_push: ;  docker push onceltuca/orderpruning
+singu_build: ; singularity pull --dir ~/singularity_images/ docker://onceltuca/orderpruning:1.2.1
+sung_push: singularity push -U ~/singularity_images/orderpruning_1.2.1.sif library://felixleopoldo/bn/orderpruning:1.2.1

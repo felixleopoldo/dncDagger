@@ -135,8 +135,8 @@ for (n in ns) {
         #print("Score from iterative MCMC")
         #print(itscore)
 
-        print("Score from order opt")
-        print(res$log_score)
+        #print("Score from order opt")
+        #print(res$log_score)
         #assert("same scores", abs(itscore - res$log_score) < 1e-5)
         df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles))
         write.csv(df, file = results_filename, row.names = FALSE)
