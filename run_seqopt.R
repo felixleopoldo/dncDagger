@@ -78,9 +78,9 @@ skipseeds <- c()
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
-results <- list.files("results")
+results <- list.files(argv$output_dir)
 
-dir.create("results")
+dir.create(argv$output_dir)
 
 for (n in ns) {
   print(paste("n:", n))
@@ -93,7 +93,7 @@ for (n in ns) {
     #foreach(i=seq(201,reps),.packages=c('pcalg', 'Rcpp')) %dopar% {
      
 
-      results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       #if (file.exists(results_filename)) {
       if (basename(results_filename) %in% results) {
          #print(paste(results_filename,"already exists"))
@@ -135,8 +135,8 @@ for (n in ns) {
         #print("Score from iterative MCMC")
         #print(itscore)
 
-        #print("Score from order opt")
-        #print(res$log_score)
+        print("Score from order opt")
+        print(res$log_score)
         #assert("same scores", abs(itscore - res$log_score) < 1e-5)
         df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles))
         write.csv(df, file = results_filename, row.names = FALSE)
@@ -158,7 +158,7 @@ for (n in ns) {
         next
       }
 
-      results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       df <- read.csv(results_filename)
       timing <- rbind(timing, df)
       #write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
@@ -166,5 +166,5 @@ for (n in ns) {
   }
 }
 
-write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
+write.csv(timing, file = "timesparticles.csv", row.names = FALSE)
 print(timing)
