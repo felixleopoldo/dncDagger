@@ -74,7 +74,7 @@ N <- 300
 timing <- data.frame(matrix(ncol = 9, nrow = 0))
 x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
-skipseeds <- c(212, 314)
+skipseeds <- c()
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
