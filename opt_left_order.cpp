@@ -1,3 +1,18 @@
+#include <bits/stdc++.h>
+#include <RInside.h>
+#include <cassert>
+#include <chrono>
+#include <thread>
+#include <iostream>
+// #include "thread_pool.hpp"
+// #include "OrderScoring.cpp"
+//  #include <cstdio>
+//  #include <algorithm>
+
+using namespace std::chrono;
+
+// double EPSILON = 0.000000001;
+double EPSILON = 0.0000001;
 /**
  * n number of nodes in the new order
  */
@@ -128,6 +143,97 @@ void put_nodes_in_back(int n,
         }
     }
 }
+
+std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderScoring &scoring);
+std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderScoring &scoring)
+{
+    std::size_t p = scoring.numparents.size();
+    // std::cout << "Starting optimization" << std::endl;
+    std::vector<LeftOrder> left_orders;
+    std::vector<LefttOrder> left_orders_prev;
+
+    /**
+     * Compute S((x,[...])) for all x.
+     */
+    std::vector<double> bottom_scores(p);
+    std::vector<int> order_tmp(p);
+    size_t n_orders1 = 0;
+    size_t n_orders2 = 0;
+    size_t n_orders3 = 0;
+    size_t max_n_particles = 0;
+    size_t tot_n_particles = 0;
+
+    for (size_t i = 0; i < p; i++)
+    {
+        order_tmp[i] = i;
+    }
+    // top_scores has scores for individual nodes.
+    for (size_t i = 0; i < p; i++)
+    {
+        move_element(order_tmp, i, p - 1);
+        top_scores[i] = scoring.score_pos(order_tmp, p - 1);
+        move_element(order_tmp, p - 1, i);
+    }
+
+    for (std::size_t n = 1; n <= p; n++) // n is the number of nodes, not the index
+    {
+        if (n == 1)
+        {
+            LeftOrder lo = init_left_order(node_index, scoring);
+            if (!optimal_back(lo, scoring)) // O(1)
+            {
+                continue;
+            }
+            n_orders1++;
+
+            left_orders.push_back(std::move(lo));
+        }
+        else
+        {
+            std::vector<int> inds_to_consider = no_left_gaps(prev_order, bottom_scores, scoring); // O(p)
+
+            for (auto node_index : inds_to_consider)
+            {
+                int new_node = prev_order.order[node_index];
+
+                if (!optimal_back(prev_order, new_node, scoring)) // O(1)
+                {
+                    continue;
+                }
+                if (equal_and_unordered_back(prev_order, new_node, scoring)) // O(1)
+                {
+                    continue;
+                }
+
+                LeftOrder lo = add_node_in_back(prev_order, node_index, scoring); // O(p)
+
+                left_orders.push_back(std::move(lo));
+            }
+        }
+
+        n_orders1 = left_orders.size();
+        // Prune equal lsets
+        left_orders = prune_equal_sets(left_orders, false);
+        n_orders2 = left_orders.size();
+        tot_n_particles += n_orders2;
+
+        if (n_orders3 > max_n_particles)
+        {
+            max_n_particles = n_orders2;
+        }
+
+        // move orders to the next round.
+        left_orders_prev = std::move(left_orders);
+    }
+
+    auto max_lo = std::max_element(left_orders_prev.begin(),
+                                   left_orders_prev.end(),
+                                   [](const LeftOrder &a, const LeftOrder &b)
+                                   { return a.order_score < b.order_score; });
+
+    return (std::make_tuple(max_lo->order, max_lo->order_score, max_n_particles, tot_n_particles));
+}
+
 void sequential_opt_left_type(OrderScoring &scoring)
 {
 
