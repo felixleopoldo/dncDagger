@@ -3,6 +3,7 @@ library("Rcpp")
 library("Jmisc")
 sourceAll(path = "R", echo=FALSE, verbose=FALSE)
 sourceCpp("src/cppfns.cpp")
+source("export_to_gobnilp_score_tables.R")
 
 get_scores <- function(filename) {
   # Discrete data
@@ -25,8 +26,15 @@ get_scores <- function(filename) {
 
   MAP <- TRUE
 
-  #print("iterativeMCMC scoretable for node 1 (0)")
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
+
+  tables <- res$result$scoretable$tables
+  adjmat <- res$result$scoretable$adjacency # Is this the right one?
+  
+  # scorefile <- "gobnilpscores.txt"
+  # print("Writing gobnilp scoretables")
+  # write_gobnilp_scores(tables, adjmat, scorefile)
+  # print("done")
 
   # this changes the score tables for each plus1 iteration.
   #print("iterativeMCMC max score")
@@ -36,30 +44,6 @@ get_scores <- function(filename) {
   #print(res$result$scoretable$tables[[1]])
   #print(res$result$scoretable$adjacency)
 
-
-  # print("Testing scores")
-  # print(myscore$nsmall)
-
-  # order <- as.integer(res$result$maxorder)+1
-  # tmp <-list()
-  # tmp$maxmatrix <- res$bannedscore
-  # scores <- orderscorePlus1max(
-  #                           myscore$n, # number of nodes
-  #                           order, # score nodes
-  #                           seq(myscore$nsmall), # score positions
-  #                           res$ptab$parenttable, # parenttable
-  #                           res$ptab$aliases, # alisases
-  #                           res$ptab$numparents, #numparents
-  #                           res$plus1lists, # OBS! Tho order is changedhere compared to orderscorePlus1
-  #                           res$rowmaps, # OBS! Tho order is changedhere compared to orderscorePlus1
-  #                           res$result$scoretable$table,
-  #                           tmp,
-  #                           order)
-  # print("check node scores")
-  # print(order-1)
-  # print(scores$totscores)
-  # print(sum(scores$totscores))
-  # #assert(sum(scores$totscores) == res$result$score)
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
