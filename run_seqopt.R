@@ -64,9 +64,8 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(15, 26)
-ds <- seq(0, 2, 0.1) #c(0, 1.5, 2)
-#ds <- c(0.9)
+ns <- seq(15, 30)
+ds <- c(seq(0, 2, 0.1), 2.5)
 lb <- 0.25
 ub <- 1
 N <- 300
@@ -74,13 +73,13 @@ N <- 300
 timing <- data.frame(matrix(ncol = 9, nrow = 0))
 x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
-skipseeds <- c()
+skipseeds <- c(331,332,333,334,335) # 333 is the problem
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
-results <- list.files("results")
+results <- list.files(argv$output_dir)
 
-dir.create("results")
+dir.create(argv$output_dir)
 
 for (n in ns) {
   print(paste("n:", n))
@@ -93,7 +92,7 @@ for (n in ns) {
     #foreach(i=seq(201,reps),.packages=c('pcalg', 'Rcpp')) %dopar% {
      
 
-      results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       #if (file.exists(results_filename)) {
       if (basename(results_filename) %in% results) {
          #print(paste(results_filename,"already exists"))
@@ -158,7 +157,7 @@ for (n in ns) {
         next
       }
 
-      results_filename <- paste("results/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       df <- read.csv(results_filename)
       timing <- rbind(timing, df)
       #write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
@@ -166,5 +165,5 @@ for (n in ns) {
   }
 }
 
-write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)
+write.csv(timing, file = argv$filename, row.names = FALSE)
 print(timing)
