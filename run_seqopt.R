@@ -65,7 +65,7 @@ print(as.integer(argv$seeds_from))
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
 ns <- seq(15, 30)
-ds <- c(seq(0, 2, 0.1), 2.5)
+ds <- seq(0, 2, 0.1)
 lb <- 0.25
 ub <- 1
 N <- 300
@@ -73,7 +73,7 @@ N <- 300
 timing <- data.frame(matrix(ncol = 9, nrow = 0))
 x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
-skipseeds <- c(331,332,333,334,335) # 333 is the problem
+skipseeds <- c(331,332,333,334,335, 514, 517, 519, 606) # 333 is the problem
 #colnames(timing) <- x
 #.GlobalEnv$gaussCItest <- gaussCItest # makes gaussCItest global so that it can be reached inside foreach
 
