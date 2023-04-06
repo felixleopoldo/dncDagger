@@ -11,53 +11,7 @@
 
 using namespace std::chrono;
 
-// double EPSILON = 0.000000001;
 double EPSILON = 0.0000001;
-
-// // Function to find the nCr
-// void printNcR(int n, int r)
-// {
-
-//     // p holds the value of n*(n-1)*(n-2)...,
-//     // k holds the value of r*(r-1)...
-//     long long p = 1, k = 1;
-
-//     // C(n, r) == C(n, n-r),
-//     // choosing the smaller value
-//     if (n - r < r)
-//         r = n - r;
-
-//     if (r != 0)
-//     {
-//         while (r)
-//         {
-//             p *= n;
-//             k *= r;
-
-//             // gcd of p, k
-//             long long m = __gcd(p, k);
-
-//             // dividing by gcd, to simplify
-//             // product division by their gcd
-//             // saves from the overflow
-//             p /= m;
-//             k /= m;
-
-//             n--;
-//             r--;
-//         }
-
-//         // k should be simplified to 1
-//         // as C(n, r) is a natural number
-//         // (denominator should be 1 ) .
-//     }
-
-//     else
-//         p = 1;
-
-//     // if our approach is correct p = ans and k =1
-//     std::cout << p << std::endl;
-// }
 
 bool approximatelyEqual(float a, float b, float epsilon)
 {
@@ -167,12 +121,52 @@ void PrintVector(const std::vector<T> &arr, std::vector<int> order)
     PrintVector(vec);
 }
 
+class Order 
+{
+    public:
+        double order_score;
+};
+
+class LeftOrder: public Order
+{
+public:
+    std::vector<int> order;
+    double order_score;
+    std::vector<double> node_scores;
+    size_t n;
+    std::vector<double> inserted_max_order_scores;
+    std::vector<double> new_back_scores;
+    std::vector<size_t> best_insert_pos;
+    LeftOrder(std::vector<int> &order,
+               double order_score,
+               std::vector<double> &node_scores,
+               size_t n) : order(order),
+                           order_score(order_score),
+                           node_scores(node_scores),
+                           n(n)
+    {
+        inserted_max_order_scores = std::vector<double>(order.size());
+        new_back_scores = std::vector<double>(order.size());
+        best_insert_pos = std::vector<size_t>(order.size());
+    }
+
+    int back() const
+    {
+        return order[n-1];
+    }
+
+    size_t back_ind() const
+    {
+        return n - 1;
+    }
+};
+
 /**
  *
  * Particle struct may be
  *
  */
-class RightOrder
+class RightOrder: Order
 {
 public:
     std::vector<int> order;
@@ -1108,7 +1102,7 @@ std::vector<bool> order_to_boolvec(const std::vector<int> &order, size_t n, bool
             boolvec[order[i]] = true;
         }
     }
-    else
+    else // left order
     {
         for (std::size_t i = 0; i < n; i++)
         {
@@ -1222,7 +1216,7 @@ std::vector<int> unique_sets(const std::vector<std::vector<bool>> &mats,
     return (samesets);
 }
 
-std::vector<RightOrder> prune_equal_sets(std::vector<RightOrder> &right_orders,
+std::vector<RightOrder> prune_equal_sets(std::vector<RightOrder> right_orders,
                                          bool right_type)
 {
     std::vector<std::vector<bool>> boolmat;
@@ -1248,6 +1242,34 @@ std::vector<RightOrder> prune_equal_sets(std::vector<RightOrder> &right_orders,
 
     return (kept_ros);
 }
+
+std::vector<LeftOrder> prune_equal_sets(std::vector<LeftOrder> left_orders,
+                                         bool right_type)
+{
+    std::vector<std::vector<bool>> boolmat;
+    std::vector<double> order_scores;
+
+    // std::cout << "Creating boolmatrix" << std::endl;
+    for (const LeftOrder &ro : left_orders)
+    {
+        std::vector<bool> boolvec = order_to_boolvec(ro.order, ro.n, right_type);
+        boolmat.push_back(std::move(boolvec));
+        order_scores.push_back(ro.order_score);
+    }
+
+    // std::cout << "Get indices of unique maximal scoring sets" << std::endl;
+    std::vector<int> pruned_inds = unique_sets(boolmat, order_scores);
+    std::vector<double> pruned_scores;
+    std::vector<LeftOrder> kept_ros;
+
+    for (const auto &ind : pruned_inds)
+    {
+        kept_ros.push_back(left_orders[ind]);
+    }
+
+    return (kept_ros);
+}
+
 
 std::vector<int> no_right_gaps(RightOrder &ro,
                                std::vector<double> &top_scores,

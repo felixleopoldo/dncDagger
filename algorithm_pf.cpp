@@ -42,21 +42,102 @@ using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
-    --argc;
-    ++argv;
-    std::size_t N = 3;
+    //--argc;        
+    //++argv; // For the program name
+
+    //std::size_t N = 3;
     std::string datafilename;
-    if (argc > 0)
-    {
-        //N = static_cast<std::size_t>(std::atoi(*argv));
-        datafilename = *argv;
-        --argc;
-        ++argv;
+    std::string scoretype;
+    //double am = 1;
+    std::string am = "1";
+    //double chi = 0.5;
+    std::string chi = "0.5";
+    //double aw = NULL;
+    std::string aw = "NULL";
+    //double edgepf = 2;
+    std::string edgepf = "2";
+
+    if(argc < 4){
+        std::cout << "usage: ./orderpruner --filename datafilename --scoretype [bde|bge] [--am am|--chi chi] [--aw aw|--edgepf aw]" << std::endl;
+        return(0);
+    }
+
+    datafilename = *argv;
+    // ++argv;
+
+    // scoretype = *argv;
+    // ++argv;
+    
+
+    // for (size_t i = 0; i < argc+1; i++){
+
+    //     std::cout << "hej" << argv[i];
+    // }
+
+    for (int i = 1; i < argc; i++)
+    {  
+        if (i + 1 != argc)
+        {
+            if (strcmp(argv[i], "--filename") == 0) // This is your parameter name
+            {                 
+                datafilename = argv[i + 1];    // The next value in the array is your value
+                i++;    // Move to the next flag
+                std::cout << datafilename << std::endl;
+            }
+
+            if (strcmp(argv[i], "--scoretype") == 0) // This is your parameter name
+            {                 
+                scoretype = argv[i + 1];    // The next value in the array is your value
+                i++;    // Move to the next flag
+                std::cout << scoretype << std::endl;
+            }
+
+            if (strcmp(argv[i], "--aw") == 0) // This is your parameter name
+            {                 
+                //char* aw = argv[i + 1];    // The next value in the array is your value
+                //aw = static_cast<double>(std::atof(argv[i+1]));
+                aw = argv[i+1];
+                i++;    // Move to the next flag
+                std::cout << aw << std::endl;
+            }
+
+            if (strcmp(argv[i], "--am") == 0) // This is your parameter name
+            {                 
+                //char* aw = argv[i + 1];    // The next value in the array is your value
+                //am = static_cast<double>(std::atof(argv[i+1]));
+                am = argv[i+1];
+                i++;    // Move to the next flag
+                std::cout << am << std::endl;
+            }
+
+            if (strcmp(argv[i], "--chi") == 0) // This is your parameter name
+            {                 
+                //char* aw = argv[i + 1];    // The next value in the array is your value
+                //chi = static_cast<double>(std::atof(argv[i+1]));
+                chi = argv[i+1];
+                i++;    // Move to the next flag
+                std::cout << chi << std::endl;
+            }
+
+            if (strcmp(argv[i], "--edgepf") == 0) // This is your parameter name
+            {                 
+                //char* aw = argv[i + 1];    // The next value in the array is your value
+                //edgepf = static_cast<double>(std::atof(argv[i+1]));
+                edgepf = argv[i+1];
+                i++;    // Move to the next flag
+                std::cout << edgepf << std::endl;
+            }
+        }
     }
 
     std::cout << datafilename << std::endl;
-    std::string r_code = "source('helper_functions.R'); ret <- get_scores('" + datafilename + "'); ret";
-
+    std::string r_code;
+    if(scoretype == "bge") {
+        r_code = "source('helper_functions.R'); ret <- get_scores('" + datafilename + "', scoretype='"+scoretype+"', bgepar=list(am="+am+", aw="+aw+")); ret";
+    } else if(scoretype == "bde")
+    {
+        r_code = "source('helper_functions.R'); ret <- get_scores('" + datafilename + "', scoretype='"+scoretype+"', bdepar=list(chi="+chi+", edgepf="+edgepf+")); ret";
+    } 
     RInside R(argc, argv);
     
     Rcpp::List ret = R.parseEval(r_code);
@@ -103,8 +184,8 @@ int main(int argc, char **argv)
 
     auto start = high_resolution_clock::now();
 
-    sequential_opt(scoring);
-
+    const auto &[order, log_score, max_n_particles, tot_n_particles] = sequential_opt(scoring);
+    std::cout << log_score << std::endl;
     // std::cout << definitelyGreaterThan(0.0003, 0.0002, 0.001) << std::endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);

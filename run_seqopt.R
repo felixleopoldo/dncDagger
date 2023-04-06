@@ -54,9 +54,8 @@ Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib
 sourceCpp("seq_opt.cpp", verbose = TRUE)
 
 p <- arg_parser("Order pruning")
-
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
-p <- add_argument(p, "--filename", help = "Output filename")
+p <- add_argument(p, "--filename", help = "Output filename") # the filename of the joined results
 p <- add_argument(p, "--seeds_from", help = "Seeds from")
 p <- add_argument(p, "--seeds_to", help = "Seeds to")
 argv <- parse_args(p)
@@ -64,13 +63,19 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(15, 30)
-ds <- seq(0, 2, 0.1)
-lb <- 0.25
-ub <- 1
-N <- 300
+ns <- seq(15, 15) # Number of nodes
+ds <- seq(0, 2, 0.1) # graph density (avg indegree)
+lb <- 0.25 # SEM parameters lower bound
+ub <- 1 # SEM parameters upper bound
+N <- 300 # number of samples
+scoretype = "bge"
+# score parameters:
+am <- 0.1
+aw <- NULL
+chi <- 0.5
+edgepf <- 2
 
-timing <- data.frame(matrix(ncol = 9, nrow = 0))
+timing <- data.frame(matrix(ncol = 14, nrow = 0))
 x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
 skipseeds <- c(331,332,333,334,335, 514, 517, 519, 606) # 333 is the problem
@@ -90,9 +95,17 @@ for (n in ns) {
         next
       }
     #foreach(i=seq(201,reps),.packages=c('pcalg', 'Rcpp')) %dopar% {
-     
+      datastr <- paste("n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, sep="")
+      if(scoretype == "bge"){
+        #name <- paste("n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, "_scoretype=", scoretype, "_am=", am, "_aw=", aw, ".csv", sep = "")
+        name <- paste(datastr, "_scoretype=", scoretype, "_am=", am, "_aw=", format(aw), ".csv", sep = "")
+      } else if (scoretype == "bde") {
+        name <- paste(datastr, "_scoretype=", scoretype, "_chi=", chi, "_edgepf=", edgepf, ".csv", sep = "")
+        #name <- paste("n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, "_scoretype=", scoretype, "_chi=", chi, "_edgepf=", edgepf, ".csv", sep = "")
+      }
 
-      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      #results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      results_filename <- paste(argv$output_dir,"/", name , sep = "")
       #if (file.exists(results_filename)) {
       if (basename(results_filename) %in% results) {
          #print(paste(results_filename,"already exists"))
@@ -112,11 +125,15 @@ for (n in ns) {
         data <- rmvDAG(trueDAGedges, N)
         #print(data)
         colnames(data) <- seq(n)
-        filename <- paste("data/n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep="")
+        #filename <- paste("data/n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep="")
+        filename <- paste("data/", datastr, ".csv", sep="")
         #filename <- paste("data/simdata.csv", sep = "")
         write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
 
-        ret <- get_scores(filename)
+        #ret <- get_scores(filename, scoretype="bge", scoretype=list(am=0.1, aw=NULL))
+        
+        ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignores
+        
         start <- proc.time()[1]
         res <- r_sequential_opt(ret)
         totaltime <- proc.time()[1] - start
@@ -124,9 +141,9 @@ for (n in ns) {
         # We run the itsearch here too for comparison of the scores.
         # itsearch is not guraranteed to be optimal but foor these small scale
         # graphs it seems to usually be.
-        set.seed(1) # This is just for iterative MCMC and will be overwritten
-        data <- read.csv(filename, check.names = FALSE)
-        myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
+        #set.seed(1) # This is just for iterative MCMC and will be overwritten
+        #data <- read.csv(filename, check.names = FALSE)
+        #myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
         #itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE) 
         #itscore <- itres$result$score
         
@@ -137,7 +154,7 @@ for (n in ns) {
         print("Score from order opt")
         print(res$log_score)
         #assert("same scores", abs(itscore - res$log_score) < 1e-5)
-        df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles))
+        df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), edgepf=c(edgepf))
         write.csv(df, file = results_filename, row.names = FALSE)
       }
       #df <- read.csv(results_filename)
@@ -157,7 +174,16 @@ for (n in ns) {
         next
       }
 
-      results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
+      datastr <- paste("n=",n,"d=",d,"_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, sep="")
+      if(scoretype == "bge"){
+        #name <- paste("n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, "_scoretype=", scoretype, "_am=", am, "_aw=", aw, ".csv", sep = "")
+        name <- paste(datastr, "_scoretype=", scoretype, "_am=", am, "_aw=", aw, ".csv", sep = "")
+      } else if (scoretype == "bde") {
+        name <- paste(datastr, "_scoretype=", scoretype, "_chi=", chi, "_edgepf=", edgepf, ".csv", sep = "")
+        #name <- paste("n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, "_scoretype=", scoretype, "_chi=", chi, "_edgepf=", edgepf, ".csv", sep = "")
+      }
+      results_filename <- paste(argv$output_dir, name, sep = "")
+      #results_filename <- paste(argv$output_dir,"/n=", n, "_d=", d, "_seed=", i, "_lb=", lb, "_ub=", ub, "_N=", N, ".csv", sep = "")
       df <- read.csv(results_filename)
       timing <- rbind(timing, df)
       #write.csv(timing, file = "results/timesparticles.csv", row.names = FALSE)

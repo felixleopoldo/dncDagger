@@ -144,6 +144,90 @@ void put_nodes_in_back(int n,
     }
 }
 
+
+
+
+
+LeftOrder init_left_order(size_t node, OrderScoring &scoring)
+{
+    size_t p = scoring.numparents.size();
+    std::vector<int> order(p, 0);
+    // It all vectors with all the nodes.
+    // The makes it easier to keep track of which nodes are used.
+    for (size_t i = 0; i < p; i++)
+    {
+        order[i] = i;
+    }
+    
+    // score node
+    std::vector<double> node_scores = scoring.score(order, 0, 1); // Just one node as pos 0
+    // score order
+    double order_score = node_scores[node];
+    LeftOrder lo(order, order_score, node_scores, 1);
+
+    return (lo);
+}
+
+std::vector<int> has_left_gaps(LeftOrder &lo, int new_node,
+                               std::vector<double> &bottom_scores,
+                               OrderScoring &scoring)
+
+{
+    // lo can be considered as an ordering from the previous round.
+    int min_indep_node = 0;
+    int p = lo.order.size();
+    int n = lo.n 
+
+    if (approximatelyEqual(bottom_scores[new_node] + ro.order_score, ro.new_back_scores[new_node], EPSILON))
+    {
+        // new node is independent of hidden nodes.
+        for (size_t node_index = n; node_index < p; node_index++)
+        {                
+            if (new_node > ro.order[node_index])
+            {
+                return true;
+            }
+        }    
+    }
+
+    return false;
+}
+
+/**
+ * 
+ */
+bool optimal_back(const LeftOrder &lo,
+                   size_t new_node,
+                   OrderScoring &scoring)
+{
+    if (definitelyGreaterThan(lo.inserted_max_order_scores[new_node], lo.new_back_scores[new_node], EPSILON)) // a > b
+    {
+        return (false);
+    }
+    return (true);
+}
+
+bool equal_and_unordered_back(const LeftOrder &lo, int new_back, OrderScoring &scoring)
+{
+    // size_t p = lo.order.size();
+
+    //if (ro.best_insert_pos[new_front] == ro.front_ind())
+    ///{
+        // If new_node is best inserted as the second top ([..i..],a,b,c) before, and best pos for i is s([...],a,i,b,c)
+        if (approximatelyEqual(lo.new_back_scores[new_back], lo.inserted_max_order_scores[new_back], EPSILON))
+        {
+            // Compare a > i in (c,b,a,i,[...]) and (c,b,i,a,[...])
+            if (new_back < lo.back())
+            {
+                // If new_node can be added as new front and has higher value, prune.
+                return (true);
+            }
+        }
+    //}
+    return (false);
+}
+
+
 std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderScoring &scoring);
 std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderScoring &scoring)
 {
@@ -171,11 +255,11 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderSc
     for (size_t i = 0; i < p; i++)
     {
         move_element(order_tmp, i, p - 1);
-        top_scores[i] = scoring.score_pos(order_tmp, p - 1);
+        bottom_scores[i] = scoring.score_pos(order_tmp, p - 1);
         move_element(order_tmp, p - 1, i);
     }
 
-    for (std::size_t n = 1; n <= p; n++) // n is the number of nodes, not the index
+    for (std::size_t n = 1; n <= p; n++) // O(p). n is the number of nodes, not the index
     {
         if (n == 1)
         {
@@ -190,12 +274,13 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderSc
         }
         else
         {
-            std::vector<int> inds_to_consider = no_left_gaps(prev_order, bottom_scores, scoring); // O(p)
-
-            for (auto node_index : inds_to_consider)
+            for (size_t node_index = n; node_index < p; node_index++) // O(p)
             {
                 int new_node = prev_order.order[node_index];
 
+                if (has_left_gap(prev_order, new_node, bottom_scores, scoring)){ // O(p)
+                    continue;
+                }
                 if (!optimal_back(prev_order, new_node, scoring)) // O(1)
                 {
                     continue;
@@ -209,13 +294,19 @@ std::tuple<std::vector<int>, double, size_t, size_t> sequential_opt_left(OrderSc
 
                 left_orders.push_back(std::move(lo));
             }
-        }
+        }        
 
         n_orders1 = left_orders.size();
         // Prune equal lsets
-        left_orders = prune_equal_sets(left_orders, false);
+        left_orders = prune_equal_sets(left_orders, false);        
         n_orders2 = left_orders.size();
         tot_n_particles += n_orders2;
+
+        for (LeftOrder &lo : left_orders)
+        {
+            update_insertion_scores(lo, scoring);
+        }
+
 
         if (n_orders3 > max_n_particles)
         {

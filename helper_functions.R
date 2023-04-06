@@ -5,8 +5,10 @@ sourceAll(path = "R", echo=FALSE, verbose=FALSE)
 sourceCpp("src/cppfns.cpp")
 source("export_to_gobnilp_score_tables.R")
 
-get_scores <- function(filename) {
-  # Discrete data
+get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
+                      bgepar = list(am = 1, aw = NULL), # am = 1
+                      bdepar = list(chi = 0.5, edgepf = 2)) {
+  
 
   set.seed(1)
   #data <- read.delim(filename, sep = ",", as.is = FALSE)
@@ -21,10 +23,15 @@ get_scores <- function(filename) {
   #data <- data[,c(1:5)]
   #myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 1, edgepf = 1))
 
-   data <- read.csv(filename, check.names = FALSE)
-   myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
-
   MAP <- TRUE
+
+  data <- read.csv(filename, check.names = FALSE)
+  if (scoretype =="bge") {
+      #myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
+      myscore <- scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
+  } else if (scoretype == "bde") {
+      myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
+  }
 
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
 
@@ -39,7 +46,7 @@ get_scores <- function(filename) {
   # this changes the score tables for each plus1 iteration.
   #print("iterativeMCMC max score")
   #print(res$result$maxorder)
-  #print(res$result$score)
+  print(res$result$score)
   #print(res$result$plus1lists)
   #print(res$result$scoretable$tables[[1]])
   #print(res$result$scoretable$adjacency)
@@ -72,7 +79,7 @@ get_scores <- function(filename) {
   # combination of possible parents. The nunbering of the list is done
   # in some special way, that Jack knows.
   # eg.
-  # tables[[1]] has the scores of parent cobinations with out any pllus1 parent
+  # tables[[1]] has the scores of parent combinations with out any plus1 parent
   # tables[[j]], j>1 has the scores of parent combinations with
   # a plus1 parent that Jack knows.
 

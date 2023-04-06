@@ -52,10 +52,10 @@ This section should list any major frameworks/libraries used to bootstrap your p
 
 ### Installation
 
-Using the environment provided by Dockerfile, you just have to clone the repository and make
+Using the environment provided by the Dockerfile, it remains to clone the repository and make
 
    ```sh
-   git clone https://github.com/felixleopoldo/order_smc.git
+   git clone https://github.com/felixleopoldo/orderpruner.git
    make
    ```
 
@@ -66,7 +66,7 @@ Using the environment provided by Dockerfile, you just have to clone the reposit
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-To run the algoritm using the file data/avneigs8p30n300.csv do
+To run the algorithm using the file data/avneigs8p30n300.csv do
 ```sh
    ./algorithm_pf data/avneigs8p30n300.csv
 ```
