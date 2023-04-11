@@ -6,51 +6,31 @@ sourceCpp("src/cppfns.cpp")
 source("export_to_gobnilp_score_tables.R")
 
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
-                      bgepar = list(am = 1, aw = NULL), # am = 1
-                      bdepar = list(chi = 0.5, edgepf = 2)) {
+                      bgepar = list(am = 1, aw = NULL),
+                      bdepar = list(chi = 0.5, edgepf = 2),
+                      seed=1) {
   
+  set.seed(seed)
 
-  set.seed(1)
-  #data <- read.delim(filename, sep = ",", as.is = FALSE)
-  #data <- dplyr::mutate_if(data, is.factor, ~ as.numeric(.x)) - 1
   
-  #data <- read.csv(filename, check.names = FALSE)[-1,]
-  #data <- data[1:200,]
   
-  #colnames(data) <- seq(0, ncol(data) - 1)
-  #colnames(data) <- seq(ncol(data))-1
-
-  #data <- data[,c(1:5)]
-  #myscore <- scoreparameters(scoretype = "bde", data, bdepar = list(chi = 1, edgepf = 1))
-
   MAP <- TRUE
 
   data <- read.csv(filename, check.names = FALSE)
   if (scoretype =="bge") {
-      #myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
       myscore <- scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
   } else if (scoretype == "bde") {
+      #data <- dplyr::mutate_if(data, is.factor, ~ as.numeric(.x)) - 1
       myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
   }
 
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
 
-  tables <- res$result$scoretable$tables
-  adjmat <- res$result$scoretable$adjacency # Is this the right one?
-  
-  # scorefile <- "gobnilpscores.txt"
-  # print("Writing gobnilp scoretables")
-  # write_gobnilp_scores(tables, adjmat, scorefile)
-  # print("done")
 
   # this changes the score tables for each plus1 iteration.
   #print("iterativeMCMC max score")
   #print(res$result$maxorder)
   print(res$result$score)
-  #print(res$result$plus1lists)
-  #print(res$result$scoretable$tables[[1]])
-  #print(res$result$scoretable$adjacency)
-
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
@@ -71,6 +51,7 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   ret$bannedscore <- res$bannedscore
   ret$MAP <- MAP
 
+  
   # scoretable is a list of lists of scores corresponing to combations of the 
   # possible parents and which plus1 parent that is included.
   # The first list has the scores of combinations where no 

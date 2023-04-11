@@ -1,22 +1,10 @@
 library(ggplot2)
 library(dplyr)
-library(tidyverse)
-#library(argparser)
-#library(Hmisc)
+#library(tidyverse)
 library(latex2exp)
 library(patchwork)
-#p <- arg_parser("Order pruning")
-#p <- add_argument(p, "--filename", help = "Output filename")
-#argv <- parse_args(p)
-#timing <- read.csv(argv$filename)
-
-#timing <- read.csv("timesparticles.csv")
-timing <- read.csv("times_seeds_1000_p15_to_30_final.csv")
+timing <- read.csv("test.csv")
 #dir.create("figures")
-
-
-#timing <- timing %>% filter(d %in% c(2.0))
-#print(timing)
 
 ds <- timing %>% distinct(d)
 
@@ -32,28 +20,24 @@ bstderrs <- c()
 mylm = 1
 
 label <- bquote(N[p])
-#  "tot #particles"
+
 
 for (dd in ds[["d"]]) {
-  #mylm <- lm(log(tot_particles) ~ n + log(n), timing %>% filter(d == dd))
-  mylm <- lm(log2(tot_particles) ~ n + log2(n), timing %>% filter(d == dd))
-  #mylm <- lm(log(max_particles) ~ n + log(n), timing %>% filter(d == dd))
+  #print(timing %>% filter(d == dd))
+  mylm <- lm(log2(tot_particles) ~ n + log2(n), timing %>% filter(d == dd)) # Could change to max_particles
 
   stderrs <- sqrt(diag(vcov(mylm)))
   astderrs <- c(astderrs, stderrs[2])
   bstderrs <- c(bstderrs, stderrs[3])
-  
+  print( coef(mylm))
   a <- coef(mylm)[["n"]]
-  b <- coef(mylm)[["log2(n)"]]
-  #b <- coef(mylm)[["log(n)"]]
+  b <- coef(mylm)[["log2(n)"]] # gets NA for some reason
   as <- c(as, a)
   bs <- c(bs, b)
   reglist[toString(dd)] <- summary(mylm) 
 }
 
-
-
-## Reg coeffs with errorbars ########
+## Regression coefficients with errorbars 
 plotdf <- data.frame(a=as,b=bs, aerr=astderrs, berr=bstderrs, d= ds[["d"]], coef="a")
 
 
@@ -69,11 +53,9 @@ p1 <- ggplot(plotdf, aes(x=d, y=a)) +
 #                position=position_dodge(0.05))
 
 #ggsave("figures/aplots.png")
-
+print(a)
+print(b)
 p2 <- ggplot(plotdf, aes(x=d, y=b)) + 
-  #ggtitle(TeX("$\\log_2(N_p) \\sim  a*p + b*\\log_2(p) + c$")) +
-  #ggtitle(TeX("For varying $d$: $\\log_2(N_p) \\sim  a*p + b*\\log_2(p) + c$")) +
-  #xlab("graph (d)ensity") + ylab("b") +
   xlab("d") + ylab("b") +
   geom_line(colour="blue") +
   geom_point(colour="blue") +
@@ -103,9 +85,7 @@ title(paste0(TeX("For varying $d$: $\\log_2(N_p) \\sim  a*p + b*\\log_2(p) + c$"
 dev.off()
 
 ## Boxplots
-###########################################
-
-
+##########################################
 
 timing_1 <- timing %>% filter(d %in% c(0.5, 1.0, 1.5, 2.0))
 # Timings

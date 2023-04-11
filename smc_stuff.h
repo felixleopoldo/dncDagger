@@ -1,1 +1,0 @@
-void move_element(std::vector<int> &v, int index_from, int index_to);

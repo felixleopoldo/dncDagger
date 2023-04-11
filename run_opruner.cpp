@@ -32,7 +32,7 @@
 //#include "algorithm_pf.hpp"
 #include <RInside.h>
 #include <Rcpp.h>
-#include "seq_opt.cpp"
+#include "opruner.cpp"
 #include "thread_pool.hpp"
 #include <experimental/any>
 #include <chrono>
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     std::string edgepf = "2";
 
     if(argc < 4){
-        std::cout << "usage: ./orderpruner --filename datafilename --scoretype [bde|bge] [--am am|--chi chi] [--aw aw|--edgepf aw]" << std::endl;
+        std::cout << "usage: ./run_opruner --filename datafilename --scoretype [bde|bge] [--am am|--chi chi] [--aw aw|--edgepf aw]" << std::endl;
         return(0);
     }
 

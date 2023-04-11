@@ -1,6 +1,7 @@
 # Export score tables to GOBNILP format
 library("BiDAG")
 
+
 number2binary = function(number, noBits) {
   binary_vector = rev(as.numeric(intToBits(number)))
   if (missing(noBits)) {
@@ -15,12 +16,19 @@ parent_table <- function(n, p) {
 }
 
 
+
 write_gobnilp_scores <- function(tables, adjmat, scorefile) {
+  # Example:
+  #res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
+  # tables <- res$result$scoretable$tables
+  #adjmat <- res$result$scoretable$adjacency # Is this the right one?
+  # scorefile <- "gobnilpscores.txt"
+  # print("Writing gobnilp scoretables")
+  # write_gobnilp_scores(tables, adjmat, scorefile)
+  # print("done")
   p <- length(tables)
   write(p, file = scorefile, append = FALSE)
   
-  #labels <- colnames(itfit$scoretable$adjacency)
-  #adjmat <- itfit$scoretable$adjacency
   labels <- colnames(adjmat) # maybe the labels are wrong here..
   
   # For each node
@@ -29,30 +37,16 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
     nscores <- n_plus1 * length(tables[[i]][[1]]) # the first plus1 table
     write(paste(labels[i], nscores), file = scorefile, append = TRUE)
     potparents <- colnames(adjmat)[adjmat[, i] == 1]
-    
-    
+        
     parenttable <- parent_table(p, length(potparents)) #shold be bigger?
-    #print("node")
-    #print(i)
-    #print("potparents")
-    #print(potparents)
-    #print("parenttable dimension")
-    #print(dim(parenttable))
-    #print("parenttable")
-    #print(parenttable)
-
 
     # going through the plus1 table
     # First should always be included since it has no plus1 parents
-    parent_scores <- tables[[i]][[1]] # This seems to be too large?? Having 32 instead of 16 entries for node 1..
-    n_parsets <- length(parent_scores) #parentable?
-    #rint("no plus 1 score table")
-    #print(parent_scores)
+    parent_scores <- tables[[i]][[1]] 
+    n_parsets <- length(parent_scores) 
 
     for (k in seq(n_parsets)) {
-      #print("before")
       parvec <- parenttable[k, ]
-      #print("after")
       parvec <- parvec[which(!is.na(parvec))]
       str <- paste(tables[[i]][[1]][k], length(parvec))
       
@@ -72,7 +66,6 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
       } 
       
       parent_scores <- tables[[i]][[j+1]] # get the plus1 score table
-      
       n_parsets <- length(parent_scores)
       plus1var <- labels[node] 
       

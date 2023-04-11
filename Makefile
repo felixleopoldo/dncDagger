@@ -5,9 +5,9 @@ CFLAGS=-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R  -pthread 
 #LDFLAGS=-DNDEBUG -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g
 
 
-all: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -O3 $(CFLAGS)
-debug: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -g $(CFLAGS)
-gprof: ; c++ -DMCKL_USE_ASM_LIB=1 -o algorithm_pf algorithm_pf.cpp -pg -no-pie -fno-builtin $(CFLAGS)
+all: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp -O3 $(CFLAGS)
+debug: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp -g $(CFLAGS)
+gprof: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp -pg -no-pie -fno-builtin $(CFLAGS)
 sandbox: ; c++ -o main main.cpp  -g -Wall
 docker_build: ;  docker build -t onceltuca/orderpruning .
 docker_push: ;  docker push onceltuca/orderpruning
