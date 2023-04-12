@@ -2,6 +2,7 @@
 #include <Rcpp.h>
 #include "opruner.cpp"
 #include <chrono>
+#include "includes/OrderScoring.h"
 
 using namespace std::chrono;
 
