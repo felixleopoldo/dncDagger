@@ -1,11 +1,12 @@
 
-#ifndef A2DD_H
-#define A2DD_H
+#ifndef ORDERSCORING_H
+#define ORDERSCORING_H
 
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include <cmath>
+#include <Rcpp.h>
 
 using namespace std;
 
@@ -58,6 +59,7 @@ public:
     int get_f_bar_z(const int &position, const vector<int> &ordering) const;
 };
 
-#endif
 
 OrderScoring get_score(Rcpp::List ret);
+
+#endif

@@ -1,10 +1,12 @@
+
 #include <cassert>
 #include <chrono>
 #include <iostream>
-#include "includes/auxiliary.h"
-#include "includes/OrderScoring.h"
-#include "includes/RightOrder.h"
-#include "includes/LeftOrder.h"
+#include <Rcpp.h>
+#include "auxiliary.h"
+#include "OrderScoring.h"
+#include "RightOrder.h"
+#include "LeftOrder.h"
 
 double EPSILON = 0.0000001;
 
@@ -362,6 +364,11 @@ RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_in
     return (ro);
 }
 
+/// @brief
+/// @param order
+/// @param n
+/// @param right_type
+/// @return
 vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_type)
 {
     vector<bool> boolvec(order.size(), false);
@@ -406,33 +413,6 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
     for (const auto &ind : pruned_inds)
     {
         kept_ros.push_back(right_orders[ind]);
-    }
-
-    return (kept_ros);
-}
-
-vector<LeftOrder> prune_equal_sets(vector<LeftOrder> left_orders,
-                                   bool right_type)
-{
-    vector<vector<bool>> boolmat;
-    vector<double> order_scores;
-
-    // cout << "Creating boolmatrix" << endl;
-    for (const LeftOrder &ro : left_orders)
-    {
-        vector<bool> boolvec = order_to_boolvec(ro.order, ro.n, right_type);
-        boolmat.push_back(move(boolvec));
-        order_scores.push_back(ro.order_score);
-    }
-
-    // cout << "Get indices of unique maximal scoring sets" << endl;
-    vector<int> pruned_inds = unique_sets(boolmat, order_scores, EPSILON);
-    vector<double> pruned_scores;
-    vector<LeftOrder> kept_ros;
-
-    for (const auto &ind : pruned_inds)
-    {
-        kept_ros.push_back(left_orders[ind]);
     }
 
     return (kept_ros);
@@ -494,7 +474,6 @@ vector<int> no_right_gaps(RightOrder &ro,
     return (indices_to_consider);
 }
 
-tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring);
 tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 {
     size_t p = scoring.numparents.size();
@@ -696,13 +675,10 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
     return (make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
 }
 
-tuple<vector<int>, double, size_t, size_t> opruner_left(OrderScoring &scoring)
-{
-}
-
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]
+
 Rcpp::List r_opruner_right(Rcpp::List ret)
 {
     OrderScoring scoring = get_score(ret);

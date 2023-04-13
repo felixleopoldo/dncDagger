@@ -5,7 +5,7 @@ CFLAGS=-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R  -pthread 
 #LDFLAGS=-DNDEBUG -fpic  -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2 -g
 
 
-all: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp includes/auxiliary.cpp includes/RightOrder.cpp includes/OrderScoring.cpp -O3 $(CFLAGS)
+all: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp includes/auxiliary.cpp includes/RightOrder.cpp includes/OrderScoring.cpp includes/opruner_right.cpp includes/opruner_left.cpp -O3 $(CFLAGS)
 debug: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp -g $(CFLAGS)
 gprof: ; c++ -DMCKL_USE_ASM_LIB=1 -o run_opruner run_opruner.cpp -pg -no-pie -fno-builtin $(CFLAGS)
 sandbox: ; c++ -o main main.cpp  -g -Wall

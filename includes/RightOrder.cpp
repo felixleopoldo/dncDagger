@@ -1,12 +1,6 @@
 #include "RightOrder.h"
 using namespace std;
 
-/**
- *
- * Particle struct
- *
- */
-
 RightOrder::RightOrder(vector<int> &order,
                        double order_score,
                        vector<double> &node_scores,

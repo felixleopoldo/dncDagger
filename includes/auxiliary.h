@@ -1,3 +1,6 @@
+#ifndef AUXILIARY_H
+#define AUXILIARY_H
+
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -68,3 +71,5 @@ void PrintVector(const vector<T> &arr, vector<int> order)
   }
   PrintVector(vec);
 }
+
+#endif

@@ -2,7 +2,8 @@
 #include <chrono>
 #include <iostream>
 #include <cmath>
-#include "auxiliary.h"
+#include <vector>
+
 using namespace std;
 using std::vector;
 

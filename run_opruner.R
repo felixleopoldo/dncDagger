@@ -40,7 +40,7 @@ wFUN <- function(m, lb, ub) {
 
 Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R  -pthread -lpcre -llzma -lbz2 -lz -lrt -ldl -lm -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -llapack -lblas  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -I thread-pool-master/ -std=c++17 -O3")
 
-sourceCpp("opruner.cpp", verbose = TRUE)
+sourceCpp("includes/opruner_right.cpp",  verbose = TRUE)
 
 p <- arg_parser("Order pruning")
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")

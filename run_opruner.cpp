@@ -1,7 +1,7 @@
 #include <RInside.h>
 #include <Rcpp.h>
-#include "opruner.cpp"
 #include <chrono>
+#include "includes/opruner_right.h"
 #include "includes/OrderScoring.h"
 
 using namespace std::chrono;
@@ -15,7 +15,6 @@ int main(int argc, char **argv)
     std::string aw = "NULL";
     std::string edgepf = "2";
     bool leftorder = false;
-
 
     if (argc < 4)
     {
@@ -33,48 +32,41 @@ int main(int argc, char **argv)
             {
                 datafilename = argv[i + 1];
                 i++;
-                std::cout << datafilename << std::endl;
             }
 
             if (strcmp(argv[i], "--scoretype") == 0)
             {
                 scoretype = argv[i + 1];
                 i++;
-                std::cout << scoretype << std::endl;
             }
 
             if (strcmp(argv[i], "--aw") == 0)
             {
                 aw = argv[i + 1];
                 i++;
-                std::cout << aw << std::endl;
             }
 
             if (strcmp(argv[i], "--am") == 0)
             {
                 am = argv[i + 1];
                 i++;
-                std::cout << am << std::endl;
             }
 
             if (strcmp(argv[i], "--chi") == 0)
             {
                 chi = argv[i + 1];
                 i++;
-                std::cout << chi << std::endl;
             }
 
             if (strcmp(argv[i], "--edgepf") == 0)
             {
                 edgepf = argv[i + 1];
                 i++;
-                std::cout << edgepf << std::endl;
             }
 
             if (strcmp(argv[i], "--leftorder") == 0)
             {
                 leftorder = true;
-                std::cout << "leftorder: " << leftorder << std::endl;
             }
         }
     }
@@ -95,14 +87,17 @@ int main(int argc, char **argv)
     OrderScoring scoring = get_score(ret);
 
     auto start = high_resolution_clock::now();
-    if (leftorder){
-//        const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_left(scoring);
-//        std::cout << log_score << std::endl;
-//        auto stop = high_resolution_clock::now();
-//       auto duration = duration_cast<milliseconds>(stop - start);
-    } else {
+    if (leftorder)
+    {
+        //        const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_left(scoring);
+        //        std::cout << log_score << std::endl;
+        //        auto stop = high_resolution_clock::now();
+        //       auto duration = duration_cast<milliseconds>(stop - start);
+    }
+    else
+    {
         const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring);
-        std::cout << log_score << std::endl;
+        // std::cout << log_score << std::endl;
         auto stop = high_resolution_clock::now();
         auto duration = duration_cast<milliseconds>(stop - start);
     }

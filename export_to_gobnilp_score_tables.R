@@ -15,8 +15,6 @@ parent_table <- function(n, p) {
   rbind(rep(NA, n), BiDAG:::parentlistnonempty(1:p, n))[, 1:p, drop = FALSE]
 }
 
-
-
 write_gobnilp_scores <- function(tables, adjmat, scorefile) {
   # Example:
   #res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
@@ -84,7 +82,3 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
   }
   
 }
-
-
-
-
