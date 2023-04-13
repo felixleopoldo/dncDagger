@@ -31,13 +31,6 @@ public:
         vector<vector<vector<double>>> scoretable,
         vector<vector<vector<double>>> scoresmatrices,
         bool MAP); 
-        // : potential_parents(potential_parents),
-        //             rowmaps_backwards(rowmaps_backwards),
-        //             potential_plus1_parents(potential_plus1_parents),
-        //             MAP(MAP),
-        //             numparents(numparents),
-        //             scoretable(scoretable),
-        //             scoresmatrices(scoresmatrices);
 
     /**
      * Re-calculation scores after swapping up node_a so that (a, b) -> (b, a).

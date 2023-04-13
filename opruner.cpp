@@ -1,122 +1,14 @@
-
-#include <RInside.h>
 #include <cassert>
 #include <chrono>
 #include <iostream>
 #include "includes/auxiliary.h"
 #include "includes/OrderScoring.h"
+#include "includes/RightOrder.h"
+#include "includes/LeftOrder.h"
 
 double EPSILON = 0.0000001;
 
 using namespace std;
-
-class Order
-{
-public:
-    double order_score;
-};
-
-class LeftOrder : public Order
-{
-public:
-    vector<int> order;
-    double order_score;
-    vector<double> node_scores;
-    size_t n;
-    vector<double> inserted_max_order_scores;
-    vector<double> new_back_scores;
-    vector<size_t> best_insert_pos;
-    LeftOrder(vector<int> &order,
-              double order_score,
-              vector<double> &node_scores,
-              size_t n) : order(order),
-                          order_score(order_score),
-                          node_scores(node_scores),
-                          n(n)
-    {
-        inserted_max_order_scores = vector<double>(order.size());
-        new_back_scores = vector<double>(order.size());
-        best_insert_pos = vector<size_t>(order.size());
-    }
-
-    int back() const
-    {
-        return order[n - 1];
-    }
-
-    size_t back_ind() const
-    {
-        return n - 1;
-    }
-};
-
-/**
- *
- * Particle struct
- *
- */
-class RightOrder : Order
-{
-public:
-    vector<int> order;
-    double order_score;
-    vector<double> node_scores;
-    size_t n;
-    vector<double> inserted_max_order_scores;
-    vector<double> new_top_scores;
-    vector<size_t> best_insert_pos;
-    RightOrder(vector<int> &order,
-               double order_score,
-               vector<double> &node_scores,
-               size_t n) : order(order),
-                           order_score(order_score),
-                           node_scores(node_scores),
-                           n(n)
-    {
-        inserted_max_order_scores = vector<double>(order.size());
-        new_top_scores = vector<double>(order.size());
-        best_insert_pos = vector<size_t>(order.size());
-    }
-
-    int front() const
-    {
-        return order[order.size() - n];
-    }
-
-    size_t front_ind() const
-    {
-        return order.size() - n;
-    }
-};
-
-ostream &operator<<(ostream &os, const RightOrder &ro)
-{
-    size_t p = ro.order.size();
-
-    if (ro.n != p)
-    {
-        os << "([...],";
-    }
-    else
-    {
-        os << "(";
-    }
-
-    for (size_t i = p - ro.n; i < p; i++)
-    {
-        if (i != p - 1)
-        {
-            os << ro.order[i] << ", ";
-        }
-        else
-        {
-            os << ro.order[i];
-        }
-    }
-
-    os << ")";
-    return os;
-}
 
 void swap_nodes(const int lower, const int upper, RightOrder &ro, OrderScoring &scoring)
 {
@@ -127,8 +19,6 @@ void swap_nodes(const int lower, const int upper, RightOrder &ro, OrderScoring &
     ro.node_scores[node1] = node1_scoretmp;
     ro.node_scores[node2] = node2_scoretmp;
 }
-
-
 
 /**
  * Compares the max score when new_node is inserted somewhere to when its put in at the top.
@@ -494,110 +384,6 @@ vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_typ
     return (boolvec);
 }
 
-/**
- * Row matrix of bool vectors, representing sets of orderings, and selects the
- * indices with highest scores.
- *
- * It does it column by columns and adding the indices corresponding to zeros
- * and ones respectively as arrays. in the next itetration, column n+1 these indices are used.
- *
- */
-vector<int> unique_sets(const vector<vector<bool>> &mats,
-                        const vector<double> &order_scores)
-{
-    size_t N = mats.size();
-    size_t p = mats[0].size();
-    vector<int> samesets;
-    vector<vector<int>> q;
-    // The starting indecis are all indices. The first element indicates which column of
-    // mats these indices should be used. To start, this is column 0.
-    vector<int> start(N + 1, 0);
-    for (size_t i = 0; i < N; i++)
-    {
-        start[i + 1] = i;
-    }
-    q.push_back(move(start));
-
-    while (q.size() > 0)
-    {
-        // take a set of indeces from the queue
-        vector<int> inds = q.back();
-        size_t n = inds[0]; // ge the column to look at
-        q.pop_back();       // remove from the queue
-
-        vector<int> ones(1, n + 1);  // get the indices correspoing to ones. And indicate that thes should be used at column 1.
-        vector<int> zeros(1, n + 1); // same for zeros.
-        vector<int>::iterator i;
-        for (i = inds.begin() + 1; i != inds.end(); ++i)
-        {
-            // For each index, check if 0 or 1 and add to corresponding vector.
-            if (mats[*i][n] == 0)
-            {
-                zeros.push_back(*i); // Isnt this alreadu n+1 long?????
-            }
-            else
-            {
-                ones.push_back(*i);
-            }
-        }
-        if (n == p - 1)
-        { // Add to the unique elements
-            if (zeros.size() > 1)
-            {
-                // PrintVector(zeros);
-                //  Get the max scoring index
-                double maxscore = -INFINITY;
-                int max_ind = -1;
-                vector<int>::iterator i;
-                for (i = zeros.begin() + 1; i != zeros.end(); ++i)
-                {
-                    // cout << "row " << *i << " score " << order_scores[*i] << endl;
-                    if (order_scores[*i] - maxscore < EPSILON)
-                    {
-                        // cout << order_scores[*i] - maxscore << endl;
-                    }
-                    // if (abs(order_scores[*i] - maxscore) > EPSILON)
-                    if (order_scores[*i] > maxscore)
-                    {
-                        maxscore = order_scores[*i];
-                        max_ind = *i;
-                    }
-                }
-                samesets.push_back(max_ind);
-            }
-
-            if (ones.size() > 1)
-            {
-                // PrintVector(ones);
-                //  Get the max scoring index
-                double maxscore = -INFINITY;
-                int max_ind = -1;
-                vector<int>::iterator i;
-                for (i = ones.begin() + 1; i != ones.end(); ++i)
-                {
-                    // if(definitelyGreaterThan(order_scores[*i], maxscore, EPSILON))
-                    if (order_scores[*i] > maxscore)
-                    {
-                        maxscore = order_scores[*i];
-                        max_ind = *i;
-                    }
-                }
-
-                samesets.push_back(max_ind);
-            }
-        }
-        else
-        { // Add elements to the queue
-            if (zeros.size() > 1)
-                q.push_back(move(zeros));
-            if (ones.size() > 1)
-                q.push_back(move(ones));
-        }
-    }
-
-    return (samesets);
-}
-
 vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
                                     bool right_type)
 {
@@ -613,7 +399,7 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
     }
 
     // cout << "Get indices of unique maximal scoring sets" << endl;
-    vector<int> pruned_inds = unique_sets(boolmat, order_scores);
+    vector<int> pruned_inds = unique_sets(boolmat, order_scores, EPSILON);
     vector<double> pruned_scores;
     vector<RightOrder> kept_ros;
 
@@ -640,7 +426,7 @@ vector<LeftOrder> prune_equal_sets(vector<LeftOrder> left_orders,
     }
 
     // cout << "Get indices of unique maximal scoring sets" << endl;
-    vector<int> pruned_inds = unique_sets(boolmat, order_scores);
+    vector<int> pruned_inds = unique_sets(boolmat, order_scores, EPSILON);
     vector<double> pruned_scores;
     vector<LeftOrder> kept_ros;
 
@@ -913,7 +699,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 tuple<vector<int>, double, size_t, size_t> opruner_left(OrderScoring &scoring)
 {
 }
-
 
 // [[Rcpp::plugins(cpp17)]]
 
