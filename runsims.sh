@@ -1,9 +1,8 @@
 #!/bin/bash
 
-
 START_SEED=$1
 N_WORKERS=$2
-N_SEEDS_EACH=$3 # Seeds each
+N_SEEDS_EACH=$3 # Number of seeds per worker
 
 for i in $(seq 0 $((N_WORKERS-1)))
 do
@@ -11,6 +10,5 @@ do
     TO=$((i * N_SEEDS_EACH + N_SEEDS_EACH -1 + START_SEED))
     echo $FROM
     echo $TO
-    Rscript run_opruner.R --seeds_from $FROM --seeds_to $TO --output_dir $4 --filename $5 &
-
+    Rscript R/run_opruner.R --seeds_from $FROM --seeds_to $TO --output_dir $4 --filename $5 &
 done
