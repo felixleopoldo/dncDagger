@@ -29,8 +29,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Th prder pruner is a score based structure learning algorithm for Bayesian networks, using the order representation.
-The idea is to learn the order scores sequentially and at each step prune the orders which will not lead to the optimal order.
+The order pruner is an exact structure learning algorithm for Bayesian networks, using the order representation.
+It learns the order scores sequentially and at each step prune the paths which will not lead to the optimal order.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
