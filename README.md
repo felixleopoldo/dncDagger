@@ -69,16 +69,16 @@ The easiest way to get started is to create an Docker image based on Dockerfile 
 
 To run the algorithm with the data file *data/p20n300gaussdata.csv* type
 ```sh
-    ./run_opruner --filename  data/p20n300gaussdata.csv--scoretype bge --am 0.1 --aw NULL
+    ./run_opruner --filename data/p20n300gaussdata.csv--scoretype bge --am 0.1 --aw NULL
 ```
 
 To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
 
 ```sh
-    Rscript R/run_opruner.R --output_dir results --filename joined_results.csv --seeds_from 1 --seeds_to 5
+    Rscript R/run_opruner.R --output_dir results --filename res.csv --seeds_from 1 --seeds_to 5
 ```
 
-This produces *joined_results.csv* which can be analysed in R-studio by
+This produces joined results in the file *res.csv* which can be analysed by typing
 ```R
     source('R/plotting.R')
 ```
