@@ -9,20 +9,6 @@
 
 using namespace std;
 
-// class OrderScoring
-// {
-// private:
-//     vector<vector<int>> potential_parents;
-//     vector<Rcpp::IntegerVector> rowmaps_backwards;
-//     vector<vector<int>> potential_plus1_parents;
-
-//     bool MAP;
-
-// public:
-//     vector<int> numparents;
-//     vector<vector<vector<double>>> scoretable;
-//     vector<vector<vector<double>>> scoresmatrices;
-
 OrderScoring::OrderScoring(
     vector<vector<int>> potential_parents,
     vector<int> numparents,
