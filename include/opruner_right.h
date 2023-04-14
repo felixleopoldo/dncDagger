@@ -5,7 +5,6 @@
 #include "auxiliary.h"
 #include "OrderScoring.h"
 #include "RightOrder.h"
-#include "LeftOrder.h"
 
 void swap_nodes(const int lower, const int upper, RightOrder &ro, OrderScoring &scoring);
 

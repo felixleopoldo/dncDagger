@@ -63,11 +63,6 @@ int main(int argc, char **argv)
                 edgepf = argv[i + 1];
                 i++;
             }
-
-            if (strcmp(argv[i], "--leftorder") == 0)
-            {
-                leftorder = true;
-            }
         }
     }
 
@@ -87,18 +82,8 @@ int main(int argc, char **argv)
     OrderScoring scoring = get_score(ret);
 
     auto start = high_resolution_clock::now();
-    if (leftorder)
-    {
-        //        const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_left(scoring);
-        //        std::cout << log_score << std::endl;
-        //        auto stop = high_resolution_clock::now();
-        //       auto duration = duration_cast<milliseconds>(stop - start);
-    }
-    else
-    {
-        const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring);
-        // std::cout << log_score << std::endl;
-        auto stop = high_resolution_clock::now();
-        auto duration = duration_cast<milliseconds>(stop - start);
-    }
+    const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+
 }

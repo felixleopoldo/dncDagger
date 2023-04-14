@@ -6,7 +6,6 @@
 #include "auxiliary.h"
 #include "OrderScoring.h"
 #include "RightOrder.h"
-#include "LeftOrder.h"
 
 double EPSILON = 0.0000001;
 
