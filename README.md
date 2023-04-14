@@ -29,7 +29,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-Seqopt is a score based structure learning algorithm for Bayesian networks, using the order representation.
+Th prder pruner is a score based structure learning algorithm for Bayesian networks, using the order representation.
 The idea is to learn the order scores sequentially and at each step prune the orders which will not lead to the optimal order.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -52,7 +52,8 @@ This section should list any major frameworks/libraries used to bootstrap your p
 
 ### Installation
 
-Using the environment provided by the Dockerfile, it remains to clone the repository and make
+
+Clone the repository and make
 
    ```sh
    git clone https://github.com/felixleopoldo/orderpruner.git
@@ -60,31 +61,29 @@ Using the environment provided by the Dockerfile, it remains to clone the reposi
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
+The easiest way to get started is to create an Docker image based on Dockerfile and run the program there.
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-To run the algorithm using the file data/avneigs8p30n300.csv do
+To run the algorithm with the data file *data/n=17d=0.9_seed=208_lb=0.25_ub=1_N=300.csv* type
 ```sh
-   ./algorithm_pf data/avneigs8p30n300.csv
+    ./run_opruner --filename data/n=17d=0.9_seed=208_lb=0.25_ub=1_N=300.csv --scoretype bge --am 0.1 --aw NULL
 ```
 
-To generate and analyse benchmarks do
+To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
 
 ```sh
-    Rscript run_seqopt.R 
+    Rscript R/run_opruner.R --output_dir results --filename joined_results.csv --seeds_from 1 --seeds_to 5
 ```
-This produces a csv file which can be analysed in R-studio by
+
+This produces *joined_results.csv* which can be analysed in R-studio by
 ```R
-    source('seqopt_plot.R')
+    source('R/plotting.R')
 ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
 
 <!-- CONTRIBUTING -->
 ## Contributing
