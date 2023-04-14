@@ -4,7 +4,7 @@ library("pcalg")
 library("ggplot2")
 library("testit")
 library(argparser)
-source("scoring.R")
+source("R/scoring.R")
 
 # This function generates Gaussian data from a DAG
 # following the topological order.
@@ -38,7 +38,7 @@ wFUN <- function(m, lb, ub) {
   runif(m, lb, ub) * sample(c(-1, 1), m, replace = TRUE)
 }
 
-Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R  -pthread -lpcre -llzma -lbz2 -lz -lrt -ldl -lm -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -llapack -lblas  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -I thread-pool-master/ -std=c++17 -O3")
+Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
 
 sourceCpp("includes/opruner_right.cpp",  verbose = TRUE)
 
@@ -105,7 +105,6 @@ for (n in ns) {
           #print(paste("n: ", n, "d: ", d, "seed: ", i))
           set.seed(i)
           data <- rmvDAG(trueDAGedges, N)
-          #print(data)
           colnames(data) <- seq(n)
           filename <- paste("data/", datastr, ".csv", sep="")
           write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
@@ -129,7 +128,11 @@ for (n in ns) {
 
           print("Score from order opt")
           print(res$log_score)
-          df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), totaltime = c(as.numeric(totaltime)), max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), edgepf=c(edgepf))
+          df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                          totaltime = c(as.numeric(totaltime)), 
+                          max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
+                          scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+                          edgepf=c(edgepf))
           write.csv(df, file = results_filename, row.names = FALSE)
         }
       }

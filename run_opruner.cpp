@@ -75,11 +75,11 @@ int main(int argc, char **argv)
     std::string r_code;
     if (scoretype == "bge")
     {
-        r_code = "source('scoring.R'); ret <- get_scores('" + datafilename + "', scoretype='" + scoretype + "', bgepar=list(am=" + am + ", aw=" + aw + ")); ret";
+        r_code = "source('R/scoring.R'); ret <- get_scores('" + datafilename + "', scoretype='" + scoretype + "', bgepar=list(am=" + am + ", aw=" + aw + ")); ret";
     }
     else if (scoretype == "bde")
     {
-        r_code = "source('scoring.R'); ret <- get_scores('" + datafilename + "', scoretype='" + scoretype + "', bdepar=list(chi=" + chi + ", edgepf=" + edgepf + ")); ret";
+        r_code = "source('R/scoring.R'); ret <- get_scores('" + datafilename + "', scoretype='" + scoretype + "', bdepar=list(chi=" + chi + ", edgepf=" + edgepf + ")); ret";
     }
 
     RInside R(argc, argv);

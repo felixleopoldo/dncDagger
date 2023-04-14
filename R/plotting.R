@@ -3,7 +3,7 @@ library(dplyr)
 #library(tidyverse)
 library(latex2exp)
 library(patchwork)
-timing <- read.csv("test.csv")
+timing <- read.csv("test.csv") # change this
 #dir.create("figures")
 
 ds <- timing %>% distinct(d)
