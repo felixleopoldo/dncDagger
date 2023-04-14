@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 
     auto start = high_resolution_clock::now();
     const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring);
+    cout << log_score << endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 

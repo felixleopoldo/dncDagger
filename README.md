@@ -67,9 +67,9 @@ The easiest way to get started is to create an Docker image based on Dockerfile 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-To run the algorithm with the data file *data/n=17d=0.9_seed=208_lb=0.25_ub=1_N=300.csv* type
+To run the algorithm with the data file *data/p20n300gaussdata.csv* type
 ```sh
-    ./run_opruner --filename data/n=17d=0.9_seed=208_lb=0.25_ub=1_N=300.csv --scoretype bge --am 0.1 --aw NULL
+    ./run_opruner --filename  data/p20n300gaussdata.csv--scoretype bge --am 0.1 --aw NULL
 ```
 
 To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
