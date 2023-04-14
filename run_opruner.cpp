@@ -1,8 +1,8 @@
 #include <RInside.h>
 #include <Rcpp.h>
 #include <chrono>
-#include "includes/opruner_right.h"
-#include "includes/OrderScoring.h"
+#include "include/opruner_right.h"
+#include "include/OrderScoring.h"
 
 using namespace std::chrono;
 
