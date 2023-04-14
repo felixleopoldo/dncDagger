@@ -1,8 +1,5 @@
 version: '3.4'
 
 services:
- ordersmc:
+ orderpruner:
    image: onceltuca/orderpruning
-#   build:
-#     context: .
-#     dockerfile: ./Dockerfile
