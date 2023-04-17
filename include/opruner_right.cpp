@@ -11,6 +11,13 @@ double EPSILON = 0.0000001;
 
 using namespace std;
 
+/**
+ * @brief Swaps two nodes in the order ro.
+ * @param lower the lower index
+ * @param upper the upper index
+ * @param ro the RightOrder
+ * @param scoring the OrderScoring
+ */
 void swap_nodes(const int lower, const int upper, RightOrder &ro, OrderScoring &scoring)
 {
     int node1 = ro.order[lower];
@@ -22,25 +29,28 @@ void swap_nodes(const int lower, const int upper, RightOrder &ro, OrderScoring &
 }
 
 /**
- * Compares the max score when new_node is inserted somewhere to when its put in at the top.
+ * @brief Checks if the new node is optimal at the front of the order.
+ * @param ro the RightOrder
+ * @param new_node the new node
+ * @param scoring the OrderScoring
+ * @return
  */
 bool optimal_front(const RightOrder &ro,
                    size_t new_node,
                    OrderScoring &scoring)
 {
-
-    // cout << ro.inserted_max_order_scores[new_node] << " > " << ro.new_top_scorses[new_node] << "?" << endl;
     if (definitelyGreaterThan(ro.inserted_max_order_scores[new_node], ro.new_top_scores[new_node], EPSILON)) // a > b
     {
-        // cout << "YES, so " << new_node << " not optimal at top " << endl;
         return (false);
     }
-    // cout << "NO, so " << new_node << "  optimal at top " << endl;
     return (true);
 }
 
 /**
- * Checks if the front is optimal where it is or if it fits better somewhere else.
+ * @brief Checks if the front node is actually optimal at the front of the order.
+ * @param ro the RightOrder
+ * @param scoring the OrderScoring
+ * @return
  */
 bool optimal_front(const RightOrder &ro,
                    OrderScoring &scoring)
@@ -51,7 +61,7 @@ bool optimal_front(const RightOrder &ro,
     for (int i = ro.front_ind(); i < p - 1; ++i)
     {
         swap_nodes(i, i + 1, ro_tmp, scoring);
-        if (definitelyGreaterThan(ro_tmp.order_score, ro.order_score, EPSILON)) // this implies worse performance..
+        if (definitelyGreaterThan(ro_tmp.order_score, ro.order_score, EPSILON))
         {
             return (false);
         }
@@ -60,7 +70,11 @@ bool optimal_front(const RightOrder &ro,
 }
 
 /**
- *
+ * @brief Checks if the new node is independent at the front of the order.
+ * @param ro the RightOrder
+ * @param top_scores the top scores
+ * @param scoring the OrderScoring
+ * @return true if the new node is independent at the front of the order.
  */
 bool independent_front(const RightOrder &ro,
                        const vector<double> &top_scores,
@@ -71,11 +85,21 @@ bool independent_front(const RightOrder &ro,
 }
 
 /**
- * Moves an unsscored node to the right of the sub order and scores.
+ * Moves an unsscored node to the right of the sub order and scores it.
  * Eg if x is the node to score:
  * ([0,x,2,3],5,6,4) -> ([0,2,3],x,5,6,4)
  *
  * NOTE: It's not really visible since n does not change..
+ */
+
+
+/**
+ * @brief Moves an unsscored node to the right of the sub order and rescores the order (ie makes it visible).
+ *        Eg if x is the node to score: ([0,x,2,3],5,6,4) -> ([0,2,3],x,5,6,4)
+ * @param from_index the index of the node to move
+ * @param to_index the index to move the node to
+ * @param ro the RightOrder
+ * @param scoring the OrderScoring
  */
 void make_visible(int from_index,
                   int to_index,
@@ -91,7 +115,7 @@ void make_visible(int from_index,
         // If the new node is to be put somewhere in the order.
         // [0,(1),2,3|5,6,4] -> [(1),0,2,3|5,6,4]
         move_element(ro.order, from_index, to_index);                 // put it in the back [0,(1),2,3,|5,6,4] -> [(1),0,2,3,|,5,6,4]
-        ro.node_scores[node] = scoring.score_pos(ro.order, to_index); // O(p)? This should also be quite time consuming..
+        ro.node_scores[node] = scoring.score_pos(ro.order, to_index); // O(p)
         ro.order_score += ro.node_scores[node];
     }
 
@@ -100,7 +124,7 @@ void make_visible(int from_index,
         // If the new node is to be put on the very left of the sub order
         // ([0,x,2,3],5,6,4) -s> ([0,2,3],x,5,6,4)
         move_element(ro.order, from_index, p - n - 1);                 // put it in the back [0,(1),2,3,|5,6,4] -> [0,2,3,|(1),5,6,4]
-        ro.node_scores[node] = scoring.score_pos(ro.order, p - n - 1); // O(p)? This should also be quite time consuming..
+        ro.node_scores[node] = scoring.score_pos(ro.order, p - n - 1); // O(p)?
         ro.order_score += ro.node_scores[node];
 
         // If the new node is put somewhere in the sub order we wave to shift it in from the left.
@@ -417,6 +441,16 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
     return (kept_ros);
 }
 
+
+/**
+ * @brief TODO: Check that the visible nodes does not need any hidden node.
+ * i.e. that S((h,[H],a,b,c)) < S(([H],a,h,b,c))
+ * 
+ * @param ro RightOrder
+ * @param top_scores scores of the nodes when put at the top.
+ * @param scoring OrderScoring
+ * @return vector<int> indices of the nodes that are not independent of the hidden nodes TODO: .
+*/
 vector<int> no_right_gaps(RightOrder &ro,
                           vector<double> &top_scores,
                           OrderScoring &scoring)
@@ -677,6 +711,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]
+
 
 Rcpp::List r_opruner_right(Rcpp::List ret)
 {
