@@ -1,6 +1,7 @@
 rm(list = ls())
 library("Rcpp")
 library("Jmisc")
+#library("BiDAG")
 wd <- getwd()
 setwd(paste(wd,"BiDAG", sep="/"))
 sourceAll(path = "R", echo=FALSE, verbose=FALSE)
@@ -21,10 +22,18 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
       myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
   }
 
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE)
+  ret <- get_plus1_score_essentials_for_cpp(myscore, seed=seed)
 
-  # this iterativeMCMC version changes the score tables for each plus1 iteration.
-  #print("iterativeMCMC max score")
+  return(ret)
+}
+
+get_plus1_score_essentials_for_cpp <- function(myscore, seed=1) {
+  set.seed(seed)
+  MAP <- TRUE
+
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=TRUE) #this is bidag version 2.0.0
+
+  print("bidag score")
   print(res$result$score)
 
   ret <- list()
@@ -46,19 +55,5 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   ret$bannedscore <- res$bannedscore
   ret$MAP <- MAP
 
-  # scoretable is a list of lists of scores corresponding to combinations of the 
-  # possible parents and which plus1 parent that is included.
-  # The first list has the scores of combinations where no 
-  # plus1 parent is included.
-  # The others include one plus1 parent each in additon to the 
-  # combination of possible parents. The numbering of the list is done
-  # in the way descrbed in the paper of iterativeMCMC.
-  # eg.
-  # tables[[1]] has the scores of parent combinations with out any plus1 parent
-  # tables[[j]], j>1 has the scores of parent combinations with
-  # a plus1 parent.
-
-  # bannedscores has the maximum score of each parent configureation where 
-  # some nodes are banned. 
   return(ret)
 }

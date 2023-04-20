@@ -17,9 +17,11 @@ parent_table <- function(n, p) {
 
 write_gobnilp_scores <- function(tables, adjmat, scorefile) {
   # Example:
-  #res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) # , startspace = startspace)
-  # tables <- res$result$scoretable$tables
-  #adjmat <- res$result$scoretable$adjacency # Is this the right one?
+  #library("BiDAG")
+  # myscore<-scoreparameters("bge",Boston)
+  #res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=FALSE) 
+  #tables <- res$scoretable$tables
+  #adjmat <- res$$scoretable$adjacency 
   # scorefile <- "gobnilpscores.txt"
   # print("Writing gobnilp scoretables")
   # write_gobnilp_scores(tables, adjmat, scorefile)

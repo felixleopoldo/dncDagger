@@ -40,7 +40,7 @@ wFUN <- function(m, lb, ub) {
 
 Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
 
-sourceCpp("includes/opruner_right.cpp",  verbose = TRUE)
+sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
 
 p <- arg_parser("Order pruning")
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
@@ -126,7 +126,7 @@ for (n in ns) {
           #print("Score from iterative MCMC")
           #print(itscore)
 
-          print("Score from order opt")
+          print("Score from order pruner")
           print(res$log_score)
           df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
                           totaltime = c(as.numeric(totaltime)), 
