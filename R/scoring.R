@@ -27,11 +27,11 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   return(ret)
 }
 
-get_plus1_score_essentials_for_cpp <- function(myscore, seed=1) {
+get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, seed=1) {
   set.seed(seed)
   MAP <- TRUE
 
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, verbose=TRUE) #this is bidag version 2.0.0
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, plus1it=plus1it, verbose=TRUE) #this is bidag version 2.0.0
 
   print("bidag score")
   print(res$result$score)
@@ -54,6 +54,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, seed=1) {
   ret$scoretable <- res$result$scoretable$table
   ret$bannedscore <- res$bannedscore
   ret$MAP <- MAP
+  ret$space <- res$result$endspace
 
   return(ret)
 }
