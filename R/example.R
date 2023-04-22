@@ -16,11 +16,9 @@ if (scoretype =="bge") {
     bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
 }
 
-cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2) # from iterativeMCMC
+cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=NULL) # from iterativeMCMC
 
 opr <- optimal_order(cpp_friendly_scores)
-opr
-
-dag <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
-print(dag)
+adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
+colnames(adjmat) <- colnames(data)
 

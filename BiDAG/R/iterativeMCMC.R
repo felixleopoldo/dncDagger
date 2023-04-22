@@ -223,9 +223,14 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
     }
     updatenodes <- which(apply(newadj == oldadj, 2, all) == FALSE)
     updatenodeslist[[i]] <- updatenodes
-    oldadj <- newadj
+    
+   
     startorder <- c(MCMCresult$orders[[maxN]], param$bgnodes)
     i <- i + 1
+    # Felix added
+    if(length(updatenodes) > 0 & i <= plus1it){ 
+      oldadj <- newadj
+    }
   }
 
 

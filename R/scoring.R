@@ -1,7 +1,6 @@
 rm(list = ls())
 library("Rcpp")
 library("Jmisc")
-#library("BiDAG")
 wd <- getwd()
 setwd(paste(wd,"BiDAG", sep="/"))
 sourceAll(path = "R", echo=FALSE, verbose=FALSE)
