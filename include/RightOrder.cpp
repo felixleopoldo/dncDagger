@@ -1,4 +1,5 @@
 #include "RightOrder.h"
+#include "LeftOrder.h"
 using namespace std;
 
 RightOrder::RightOrder(vector<int> &order,
@@ -22,6 +23,61 @@ int RightOrder::front() const
 size_t RightOrder::front_ind() const
 {
   return order.size() - n;
+}
+
+vector<int>::reverse_iterator RightOrder::begin()
+{
+  return order.rbegin();
+}
+
+vector<int>::reverse_iterator RightOrder::end()
+{
+  return order.rbegin() + n;
+}
+
+vector<int>::iterator RightOrder::rbegin()
+{
+  return order.end() - n;
+}
+vector<int>::iterator RightOrder::rend()
+{
+  return order.end();
+}
+
+vector<int>::reverse_iterator RightOrder::hidden_begin()
+{
+  return order.rbegin() + n;
+}
+
+vector<int>::reverse_iterator RightOrder::hidden_end()
+{
+  return order.rend();
+}
+
+RightOrder operator+(RightOrder &ro, LeftOrder &lo)
+{
+  vector<int> order;
+  order.reserve(ro.n + lo.n);
+  order.insert(order.end(), lo.begin(), lo.end());
+  order.insert(order.end(), ro.rbegin(), ro.rend());
+
+  double order_score = ro.order_score + lo.order_score;
+  // This has to be fixe as well
+  size_t n = ro.n + lo.n;
+
+  vector<double> node_scores(n, -1);
+  // loop trought all the nodes.
+  for (auto i = lo.begin(); i != lo.end(); i++)
+  {
+    node_scores[*i] = lo.node_scores[*i];
+  }
+  for (auto i = ro.begin(); i != ro.end(); i++)
+  {
+    node_scores[*i] = ro.node_scores[*i];
+  }
+
+  RightOrder c(order, order_score, node_scores, n);
+  return c;
 }
 
 ostream &operator<<(ostream &os, const RightOrder &ro)

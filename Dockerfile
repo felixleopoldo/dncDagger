@@ -4,9 +4,21 @@ RUN R -e "install.packages(\"RInside\", repos=\"https://cran.rstudio.com\")" --n
 RUN R -e "install.packages(\"Jmisc\")" --no-save
 RUN R -e "install.packages(\"argparser\")" --no-save
 
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
+RUN tar xvf boost_1_82_0.tar.gz
+WORKDIR boost_1_82_0
+RUN ./bootstrap.sh --prefix=/usr/
+RUN ./b2 install
+
+RUN apt-get update
+RUN apt install git -y
+RUN git clone https://github.com/atofigh/edmonds-alg.git
+
 WORKDIR /orderpruner
 COPY . .
-RUN make
+# RUN make
+
+
 
 #RUN R -e "install.packages(\"ggplot2\")" --no-save
 #RUN R -e "install.packages(c(\"testit\"))" --no-save

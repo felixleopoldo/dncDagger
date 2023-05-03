@@ -6,6 +6,7 @@
 #include "auxiliary.h"
 #include "OrderScoring.h"
 #include "RightOrder.h"
+#include "LeftOrder.h"
 
 double EPSILON = 0.0000001;
 
@@ -91,7 +92,6 @@ bool independent_front(const RightOrder &ro,
  *
  * NOTE: It's not really visible since n does not change..
  */
-
 
 /**
  * @brief Moves an unsscored node to the right of the sub order and rescores the order (ie makes it visible).
@@ -387,7 +387,7 @@ RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_in
     return (ro);
 }
 
-/// @brief
+/// @brief Binary array version of sub order.
 /// @param order
 /// @param n
 /// @param right_type
@@ -441,16 +441,15 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
     return (kept_ros);
 }
 
-
 /**
  * @brief TODO: Check that the visible nodes does not need any hidden node.
  * i.e. that S((h,[H],a,b,c)) < S(([H],a,h,b,c))
- * 
+ *
  * @param ro RightOrder
  * @param top_scores scores of the nodes when put at the top.
  * @param scoring OrderScoring
  * @return vector<int> indices of the nodes that are not independent of the hidden nodes TODO: .
-*/
+ */
 vector<int> no_right_gaps(RightOrder &ro,
                           vector<double> &top_scores,
                           OrderScoring &scoring)
@@ -505,6 +504,58 @@ vector<int> no_right_gaps(RightOrder &ro,
     // cout << "has indep of hodden node " << has_indep_node << endl;
 
     return (indices_to_consider);
+}
+
+LeftOrder get_suborder_internal_order(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
+{
+    size_t p = ro.order.size();
+
+    // set the internal order to be the same as the reference order for the hidden nodes.
+    vector<int> left_order(p, -1);
+    int i = 0;
+    for (auto &node : reference_order.order)
+    {
+        // if node is hidden, add it to the left order.
+        if (find(ro.hidden_begin(), ro.hidden_end(), node) != ro.hidden_end())
+        {
+            left_order[i] = node; // reference_order.order[node];
+            i++;
+        }
+    }
+
+    // score the left order.
+    vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n); // This may be optimized by swapping nodes.
+    double left_order_score = accumulate(left_node_scores.begin(), left_node_scores.end(), 0.0);
+
+    LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n);
+
+
+    return (left_order_obj);
+}
+
+vector<RightOrder> prune_path(RightOrder &reference_order, vector<RightOrder> &right_orders, OrderScoring &scoring)
+{
+    vector<RightOrder> kept_right_orders;
+    
+    for (auto &ro : right_orders)
+    {
+        // This is actually a right order but now it is.
+        LeftOrder left_order = get_suborder_internal_order(ro, reference_order, scoring);
+
+        // compare the reference score to the score of the left order and the right order scores
+        if (left_order.order_score + ro.order_score > reference_order.order_score)
+        {
+            cout << "******************************** Pruning " << ro << endl;
+            reference_order = ro + left_order; // something like this. 
+            cout << "New reference order " << reference_order << endl;
+        } else {
+            kept_right_orders.push_back(ro);
+        }
+
+        // vector<int> suborder = get_suborder_prims(ro, scoring);
+        // double upper_bound = get_suborder_edmond(ro, scoring);
+    }
+    return (kept_right_orders);
 }
 
 tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
@@ -661,6 +712,21 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 
             orders3 = right_orders.size();
             // cout << "# orders after has gap prune: " << orders3 << endl;
+            // tree estimate of the left side of the orders
+
+
+
+            // RightOrder reference
+            RightOrder reference_order = init_right_order(0, scoring);
+            // Add all nodes
+            for (size_t i = 1; i < p; i++)
+            {
+                reference_order = add_node_in_front(reference_order, i, scoring);
+            }
+
+            prune_path(reference_order, right_orders, scoring);
+
+
         }
 
         // cout << "orders of size " << n << endl;
@@ -711,7 +777,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]
-
 
 Rcpp::List r_opruner_right(Rcpp::List ret)
 {

@@ -108,7 +108,7 @@ for (n in ns) {
           colnames(data) <- seq(n)
           filename <- paste("data/", datastr, ".csv", sep="")
           write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
-          
+          set.seed(1)
           ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignores
           
           start <- proc.time()[1]

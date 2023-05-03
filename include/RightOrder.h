@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include "LeftOrder.h"
 /**
  *
  * Particle struct
@@ -30,6 +31,17 @@ public:
     int front() const;
 
     size_t front_ind() const;
+    vector<int>::reverse_iterator begin();
+    vector<int>::reverse_iterator end();
+    vector<int>::iterator rbegin();
+    vector<int>::iterator rend();
+    vector<int>::reverse_iterator hidden_begin();
+    vector<int>::reverse_iterator hidden_end();
 };
 
+
+RightOrder operator+( RightOrder &c1,  LeftOrder &c2);
+ostream &operator<<(ostream &os, const RightOrder &ro);
+
 #endif
+

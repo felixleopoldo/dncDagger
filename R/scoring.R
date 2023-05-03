@@ -9,9 +9,7 @@ setwd(wd)
 
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
                       bgepar = list(am = 1, aw = NULL),
-                      bdepar = list(chi = 0.5, edgepf = 2),
-                      seed=1) {
-  set.seed(seed)
+                      bdepar = list(chi = 0.5, edgepf = 2), plus1it=NULL, iterations=NULL) {
   MAP <- TRUE
 
   data <- read.csv(filename, check.names = FALSE)
@@ -20,20 +18,18 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   } else if (scoretype == "bde") {
       myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
   }
-
-  ret <- get_plus1_score_essentials_for_cpp(myscore, seed=seed)
+  print(plus1it)
+  
+  ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
   return(ret)
 }
 
-get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, seed=1) {
-  set.seed(seed)
+get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
   MAP <- TRUE
 
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, plus1it=plus1it, verbose=TRUE) #this is bidag version 2.0.0
-
-  print("bidag score")
-  print(res$result$score)
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, 
+                       plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
