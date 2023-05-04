@@ -7,6 +7,9 @@
 #include "OrderScoring.h"
 #include "RightOrder.h"
 #include "LeftOrder.h"
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/prim_minimum_spanning_tree.hpp>
 
 double EPSILON = 0.0000001;
 
@@ -506,7 +509,7 @@ vector<int> no_right_gaps(RightOrder &ro,
     return (indices_to_consider);
 }
 
-LeftOrder get_suborder_internal_order(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
+LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
 {
     size_t p = ro.order.size();
 
@@ -524,35 +527,127 @@ LeftOrder get_suborder_internal_order(RightOrder &ro, RightOrder &reference_orde
     }
 
     // score the left order.
-    vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n); // This may be optimized by swapping nodes.
+    vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n); // O(p^2) ?
     double left_order_score = accumulate(left_node_scores.begin(), left_node_scores.end(), 0.0);
 
-    LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n);
-
-
+    LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n); // O(p)
     return (left_order_obj);
+}
+
+vector<vector<double>> get_unrestr_mat(RightOrder &ro, OrderScoring &scoring)
+{
+    size_t p = ro.order.size();
+    size_t n = ro.n;
+    size_t k = p - n;
+
+    // create a matrix of scores for all suborders of size k.
+    vector<vector<double>> M(k, vector<double>(k));
+    // create symmetric matrix of scores for all suborders of size k.
+    vector<double> unrestr(k, 0);
+    // working with the hidden nodes here
+    for (size_t i = 0; i < k; i++)
+    {
+        move_element(ro.order, i, 0); // put i in the front.
+        
+        unrestr[i] = scoring.score_pos(ro.order, 0); 
+        for (size_t j = 0; j < k; j++)
+        {
+            if (i == j)
+            {
+                M[i][j] = unrestr[i];
+                continue;
+            }
+            // put j in the front so that i is at the second place.
+            size_t j_ind = j;
+            if (i>j){
+                j_ind = j+1;
+            }
+            move_element(ro.order, j_ind, 0); // +1 if j>i or something like that.
+             M[i][j] = scoring.score_pos(ro.order, 1);
+            // move back j.
+            move_element(ro.order, 0, j_ind); 
+
+        }
+        // move back i.
+        move_element(ro.order, 0, i);
+    }
+
+    // subtract each row by its diagonal elemets.
+
+    for (size_t i = 0; i < k; i++)
+    {
+        for (size_t j = 0; j < k; j++)
+        {
+            M[i][j] -= unrestr[i];
+            assert(M[i][j] <= 0);
+        }
+    }
+
+    // for each element and its transpose, keep the maximal value.
+    for (size_t i = 0; i < k; i++)
+    {
+        for (size_t j = i+1; j < k; j++)
+        {
+            double m = max(M[i][j], M[j][i]);
+            if (M[i][j] < m)
+            { // maybe approximate here? EPSILON
+                M[i][j] = 0;
+            }
+
+            if (M[j][i] < m)
+            { // maybe approximate here? EPSILON
+                M[j][i] = 0;
+            }
+
+        }
+    }
+
+    return (M); // should keep track of the order of the nodes.
+}
+void print_matrix(vector<vector<double>> &M)
+{
+    for (auto &row : M)
+    {
+        for (auto &el : row)
+        {
+            cout << el << "\t  ";
+        }
+        cout << endl;
+    }
+}
+vector<int> get_suborder_prim(RightOrder &ro, OrderScoring &scoring)
+{
+
+    vector<vector<double>> M = get_unrestr_mat(ro, scoring);
+    // print M
+    cout << "Matrix" << endl;
+    print_matrix(M);
+    vector<int> ret(ro.order.size() - ro.n);
+    return (ret);
 }
 
 vector<RightOrder> prune_path(RightOrder &reference_order, vector<RightOrder> &right_orders, OrderScoring &scoring)
 {
     vector<RightOrder> kept_right_orders;
-    
+
     for (auto &ro : right_orders)
     {
         // This is actually a right order but now it is.
-        LeftOrder left_order = get_suborder_internal_order(ro, reference_order, scoring);
+        LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
 
         // compare the reference score to the score of the left order and the right order scores
         if (left_order.order_score + ro.order_score > reference_order.order_score)
         {
             cout << "******************************** Pruning " << ro << endl;
-            reference_order = ro + left_order; // something like this. 
+            reference_order = ro + left_order; // something like this.
             cout << "New reference order " << reference_order << endl;
-        } else {
+        }
+        else
+        {
             kept_right_orders.push_back(ro);
         }
 
-        // vector<int> suborder = get_suborder_prims(ro, scoring);
+        vector<int> suborder = get_suborder_prim(ro, scoring);
         // double upper_bound = get_suborder_edmond(ro, scoring);
     }
     return (kept_right_orders);
@@ -714,8 +809,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             // cout << "# orders after has gap prune: " << orders3 << endl;
             // tree estimate of the left side of the orders
 
-
-
             // RightOrder reference
             RightOrder reference_order = init_right_order(0, scoring);
             // Add all nodes
@@ -725,8 +818,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             }
 
             prune_path(reference_order, right_orders, scoring);
-
-
         }
 
         // cout << "orders of size " << n << endl;
