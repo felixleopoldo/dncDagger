@@ -44,14 +44,14 @@ vector<int>::iterator RightOrder::rend()
   return order.end();
 }
 
-vector<int>::reverse_iterator RightOrder::hidden_begin()
+vector<int>::iterator RightOrder::hidden_begin()
 {
-  return order.rbegin() + n;
+  return order.begin() ;
 }
 
-vector<int>::reverse_iterator RightOrder::hidden_end()
+vector<int>::iterator RightOrder::hidden_end()
 {
-  return order.rend();
+  return order.begin() + order.size() - n;
 }
 
 RightOrder operator+(RightOrder &ro, LeftOrder &lo)

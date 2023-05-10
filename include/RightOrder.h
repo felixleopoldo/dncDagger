@@ -35,8 +35,8 @@ public:
     vector<int>::reverse_iterator end();
     vector<int>::iterator rbegin();
     vector<int>::iterator rend();
-    vector<int>::reverse_iterator hidden_begin();
-    vector<int>::reverse_iterator hidden_end();
+    vector<int>::iterator hidden_begin();
+    vector<int>::iterator hidden_end();
 };
 
 
