@@ -42,6 +42,18 @@ double EPSILON = 0.0000001;
 
 using namespace std;
 
+void print_matrix(vector<vector<double>> &M)
+{
+    for (auto &row : M)
+    {
+        for (auto &el : row)
+        {
+            cout << el << "\t  ";
+        }
+        cout << endl;
+    }
+}
+
 /**
  * @brief Swaps two nodes in the order ro.
  * @param lower the lower index
@@ -562,7 +574,7 @@ LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderSc
 }
 
 int prim(UndirectedGraph &g){
-    
+
     using namespace boost;
     std::vector<graph_traits<UndirectedGraph>::vertex_descriptor> p(num_vertices(g));
 
@@ -586,9 +598,7 @@ int prim(UndirectedGraph &g){
 
 UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder &ro)
 {
-
     using namespace boost;
-    //typedef adjacency_list<vecS, vecS, undirectedS,property<vertex_distance_t, int>, property<edge_weight_t, int>> UndirectedGraph;
     
     typedef std::pair<int, int> E;
     const size_t num_nodes = ro.order.size() - ro.n; // Number of hidden nodes.
@@ -606,10 +616,6 @@ UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder 
             cnt++;
         }   
     }
-    
-    //E edges[] = {E(0, 2), E(1, 3), E(1, 4), E(2, 1), E(2, 3), E(3, 4), E(4, 0)};
-    //int weights[] = {1, 1, 2, 7, 3, 1, 1};
-
 
 #if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
     UndirectedGraph g(num_nodes);
@@ -625,21 +631,12 @@ UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder 
     UndirectedGraph g(edges, edges + sizeof(edges) / sizeof(E), weights, num_nodes);
 #endif
     return g;
-
 }
 
 DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro)
-//                               vector<int>::iterator first,
-//                               vector<int>::iterator last)
 {
-    //int N = distance(first, last);
     int N = ro.order.size() - ro.n;
-    //cout << "N = " << N << endl;
-
-    // const int N = myweights.size();
-
-    // Graph with N vertices
-    DirectedGraph G(N); // Is it possible to name them? / Felix
+    DirectedGraph G(N);
 
     // Create a vector to keep track of all the vertices and enable us
     // to index them. As a side note, observe that this is not
@@ -652,25 +649,11 @@ DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro
         the_vertices.push_back(v);
     }
 
-    // // add edges with weight from myweights using iterators begin and end
-    // vector<int>::iterator it;
-    // for (it = first; it != last; it++)
-    // {
-    //     vector<int>::iterator it2;
-    //     for (it2 = first; it2 != last; it2++)
-    //     {
-    //         cout << "adding edge " << *it << " " << *it2 << endl;
-    //         cout << "adding edge " << *it << " " << *it2 << endl;
-    //         add_edge(the_vertices[*it], the_vertices[*it2], myweights[*it][*it2], G);
-    //         cout << "done" << endl;
-    //     }
-
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < N; j++)
         {
             // OBS!!! Negative weights as edmond finds maximal matching!
-
             add_edge(the_vertices[i],
                      the_vertices[j],
                      -myweights[ro.order[i]][ro.order[j]], 
@@ -681,7 +664,7 @@ DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro
     return (G);
 }
 
-double edmonds(DirectedGraph &G)
+vector<Edge> edmonds(DirectedGraph &G)
 {
     using namespace boost;
     // This is how we can get a property map that gives the weights of
@@ -712,6 +695,8 @@ double edmonds(DirectedGraph &G)
                                                   static_cast<Vertex *>(0),
                                                   back_inserter(branching));
 
+    return branching;
+
     // Print the edges of the maximum branching
     // cout << "This is the maximum branching (for negative weights)\n";
     // BOOST_FOREACH (Edge e, branching)
@@ -729,7 +714,11 @@ double edmonds(DirectedGraph &G)
     }
 
     return -weight; // OBS!!! Negative again as when defining the weights.
+
+    tuple<double, vector<Edge>> result = make_tuple(-weight, branching);
 }
+
+
 
 vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
 {
@@ -863,17 +852,7 @@ vector<vector<double>> get_hard_restr_mat(size_t p, OrderScoring &scoring)
     return (M); // should keep track of the order of the nodes.
 }
 
-void print_matrix(vector<vector<double>> &M)
-{
-    for (auto &row : M)
-    {
-        for (auto &el : row)
-        {
-            cout << el << "\t  ";
-        }
-        cout << endl;
-    }
-}
+
 vector<int> get_suborder_prim(RightOrder &ro, vector<vector<double>> &M)
 {
     // Graph hard_rest_graph = get_boost_ugraph(H);
@@ -915,15 +894,19 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
         // cout << endl;
 
         DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro); // need to map to the right nodes somewhere.
-        double min_span_tree_weight = edmonds(loose_rest_graph);
+        
+        vector<Edge> min_span_tree_edges  = edmonds(loose_rest_graph);
+
+        // get weight of min spanning tree
+        double min_span_tree_weight = 0;       
         double hidden_unrestr_sum = 0;
 
-        // Loop over the hidden nodes
+        // Loop over the hidden nodes and sum thier unrestricted scores.
         for(size_t i = 0; i < ro.order.size()-ro.n; i++)
         {
             hidden_unrestr_sum += top_scores[ro.order[i]];
         }
-        double upper_bound = min_span_tree_weight + hidden_unrestr_sum;
+        double upper_bound =  + hidden_unrestr_sum;
 
         cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
         cout << "min_span_tree_weights " << min_span_tree_weight << endl;        
@@ -939,7 +922,8 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
         }
 
         UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
-        prim(hard_rest_graph);
+        std::vector<boost::graph_traits<UndirectedGraph>::vertex_descriptor> MST = prim(hard_rest_graph);
+        //double MST_weight = get_graph_weight(MST);
 
     }
     return (kept_right_orders);
