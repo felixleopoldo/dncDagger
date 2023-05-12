@@ -32,6 +32,12 @@ typedef boost::adjacency_list<boost::listS,
 typedef boost::graph_traits<DirectedGraph>::vertex_descriptor Vertex;
 typedef boost::graph_traits<DirectedGraph>::edge_descriptor Edge;
 
+typedef boost::adjacency_list<boost::vecS, 
+                            boost::vecS, 
+                            boost::undirectedS, 
+                            boost::property<boost::vertex_distance_t, int>, 
+                            boost::property<boost::edge_weight_t, int>> UndirectedGraph;
+
 double EPSILON = 0.0000001;
 
 using namespace std;
@@ -555,31 +561,9 @@ LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderSc
     return (left_order_obj);
 }
 
-int get_boost_ugraph()
-{
-
+int prim(UndirectedGraph &g){
+    
     using namespace boost;
-    typedef adjacency_list<vecS, vecS, undirectedS,
-                           property<vertex_distance_t, int>, property<edge_weight_t, int>>
-        UndirectedGraph;
-    typedef std::pair<int, int> E;
-    const int num_nodes = 5;
-    E edges[] = {E(0, 2), E(1, 3), E(1, 4), E(2, 1), E(2, 3), E(3, 4), E(4, 0)};
-    int weights[] = {1, 1, 2, 7, 3, 1, 1};
-#if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
-    GraUndirectedGraphh g(num_nodes);
-    property_map<UndirectedGraph, edge_weight_t>::type weightmap = get(edge_weight, g);
-    for (std::size_t j = 0; j < sizeof(edges) / sizeof(E); ++j)
-    {
-        graph_traits<UndirectedGraph>::edge_descriptor e;
-        bool inserted;
-        boost::tie(e, inserted) = add_edge(edges[j].first, edges[j].second, g);
-        weightmap[e] = weights[j];
-    }
-#else
-    UndirectedGraph g(edges, edges + sizeof(edges) / sizeof(E), weights, num_nodes);
-#endif
-
     std::vector<graph_traits<UndirectedGraph>::vertex_descriptor> p(num_vertices(g));
 
 #if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
@@ -591,13 +575,57 @@ int get_boost_ugraph()
     prim_minimum_spanning_tree(g, &p[0]);
 #endif
 
-    for (std::size_t i = 0; i != p.size(); ++i)
+    for (size_t i = 0; i != p.size(); ++i)
         if (p[i] != i)
-            std::cout << "parent[" << i << "] = " << p[i] << std::endl;
+            cout << "parent[" << i << "] = " << p[i] << std::endl;
         else
-            std::cout << "parent[" << i << "] = no parent" << std::endl;
+            cout << "parent[" << i << "] = no parent" << std::endl;
 
     return EXIT_SUCCESS;
+}
+
+UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder &ro)
+{
+
+    using namespace boost;
+    //typedef adjacency_list<vecS, vecS, undirectedS,property<vertex_distance_t, int>, property<edge_weight_t, int>> UndirectedGraph;
+    
+    typedef std::pair<int, int> E;
+    const size_t num_nodes = ro.order.size() - ro.n; // Number of hidden nodes.
+    const size_t nedges = (num_nodes * num_nodes - num_nodes)/2;  
+    E edges[nedges];
+    double weights[nedges];
+    // Add edges
+    int cnt = 0;
+    for (size_t i = 0; i < num_nodes-1; i++)
+    {
+        for (size_t j = i+1; j < num_nodes; j++)
+        {
+            edges[cnt] = E(i, j);
+            weights[cnt] = my_weights[ro.order[i]][ro.order[j]];
+            cnt++;
+        }   
+    }
+    
+    //E edges[] = {E(0, 2), E(1, 3), E(1, 4), E(2, 1), E(2, 3), E(3, 4), E(4, 0)};
+    //int weights[] = {1, 1, 2, 7, 3, 1, 1};
+
+
+#if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
+    UndirectedGraph g(num_nodes);
+    property_map<UndirectedGraph, edge_weight_t>::type weightmap = get(edge_weight, g);
+    for (std::size_t j = 0; j < sizeof(edges) / sizeof(E); ++j)
+    {
+        graph_traits<UndirectedGraph>::edge_descriptor e;
+        bool inserted;
+        boost::tie(e, inserted) = add_edge(edges[j].first, edges[j].second, g);
+        weightmap[e] = weights[j];
+    }
+#else
+    UndirectedGraph g(edges, edges + sizeof(edges) / sizeof(E), weights, num_nodes);
+#endif
+    return g;
+
 }
 
 DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro)
@@ -894,21 +922,15 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
         for(size_t i = 0; i < ro.order.size()-ro.n; i++)
         {
             hidden_unrestr_sum += top_scores[ro.order[i]];
-            
         }
-        // for (auto it = ro.hidden_begin(); it != ro.hidden_end(); ++it)
-        // {            
-        //     hidden_unrestr_sum += top_scores[*it];
-        //     cout << "top_scores[*it] " << top_scores[*it] << endl;
-        //     cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
-        // }
-        cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
-        cout << "min_span_tree_weights " << min_span_tree_weight << endl;
         double upper_bound = min_span_tree_weight + hidden_unrestr_sum;
+
+        cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
+        cout << "min_span_tree_weights " << min_span_tree_weight << endl;        
         cout << "upper_bound " << upper_bound << endl;
         cout << "reference_order.order_score " << reference_order.order_score << endl;
         cout << endl;
-        if(upper_bound < reference_order.order_score)
+        if(upper_bound <= reference_order.order_score)
         {
             cout << "******************************** Edmond Pruning " << ro << endl;
             continue;
@@ -916,17 +938,9 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
             kept_right_orders.push_back(ro);
         }
 
-        // compare the reference score to the score of the left order and the right order scores
-        if (left_order.order_score + ro.order_score > reference_order.order_score)
-        {
-            cout << "******************************** Pruning " << ro << endl;
-            reference_order = ro + left_order; // something like this.
-            cout << "New reference order " << reference_order << endl;
-        }
-        else
-        {
-            kept_right_orders.push_back(ro);
-        }
+        UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
+        prim(hard_rest_graph);
+
     }
     return (kept_right_orders);
 }
@@ -966,19 +980,17 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 
     vector<double> top_scores = get_unrestricted_vec(p, scoring);
 
-
     // RightOrder reference
     RightOrder reference_order = init_right_order(0, scoring);
-    cout << "Reference order " << reference_order << endl;
-    cout << "Reference order score " << reference_order.order_score << endl;
     // Add all nodes in order a.t.m.
     for (size_t i = 1; i < p; i++)
     {        
         reference_order = add_node_in_front(reference_order, 0, scoring);
         update_insertion_scores(reference_order, scoring);
-        cout << "Reference order " << reference_order << endl;
-        cout << "Reference order score " << reference_order.order_score << endl;
     }
+    cout << "Reference order " << reference_order << endl;
+    cout << "Reference order score " << reference_order.order_score << endl;
+
 
     //assert(1==2);
 
@@ -995,8 +1007,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
     
         if (n == 1)
         {
-            // vector<RightOrder> potential_orders;
-            //  cout << "Adding nodes to empty order" << endl;
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
 
@@ -1019,11 +1029,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
                 }
 
                 right_orders.push_back(move(ro));
-                // potential_orders.push_back(move(ro));
             }
-
-            // potential_orders = prune_indep_front(potential_orders, top_scores, scoring);
-            // right_orders = potential_orders;
             orders2 = right_orders.size();
             orders3 = orders2;
         }
