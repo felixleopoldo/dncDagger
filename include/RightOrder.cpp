@@ -25,6 +25,16 @@ size_t RightOrder::front_ind() const
   return order.size() - n;
 }
 
+size_t RightOrder::size() const
+{
+  return n;
+}
+
+size_t RightOrder::size_hidden() const
+{
+  return order.size() - n;
+}
+
 vector<int>::reverse_iterator RightOrder::begin()
 {
   return order.rbegin();

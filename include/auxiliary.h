@@ -19,8 +19,19 @@ bool definitelyLessThan(float a, float b, float epsilon);
 
 int rand_int_in_range(const size_t &from, const size_t &to);
 
-vector<int> unique_sets(const vector<vector<bool>> &mats, const vector<double> &order_scores, double);
+void print_matrix(vector<vector<double>>& M);
 
+vector<int> unique_sets(const vector<vector<bool>> &mats, const vector<double> &order_scores, double);
+// function that prints vector by passing begin and end iterators.
+template <typename T>
+void print_vector(vector<T> &v, int start, int end)
+{
+  for (int i = start; i < end; i++)
+  {
+    cout << v[i] << " ";
+  }
+  cout << endl;
+}
 /**
  *  Asserts index_to < index_from.?
  */

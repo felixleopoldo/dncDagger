@@ -31,6 +31,8 @@ public:
     int front() const;
 
     size_t front_ind() const;
+    size_t size() const;
+    size_t size_hidden() const;
     vector<int>::reverse_iterator begin();
     vector<int>::reverse_iterator end();
     vector<int>::iterator rbegin();

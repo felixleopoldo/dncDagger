@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <iomanip>
+
 
 using namespace std;
 using std::vector;
@@ -32,6 +34,23 @@ int rand_int_in_range(const size_t &from, const size_t &to)
 {
     return (from + (std::rand() % (to - from + 1)));
 }
+
+void print_matrix(vector<vector<double>> &M)
+{
+    cout << setprecision(2);
+    for (auto &row : M)
+    {
+        for (auto &el : row)
+        {
+            cout << el << "\t";
+        }
+        
+        cout << endl;
+    }
+    cout << setprecision(5);
+}
+
+
 
 /**
  * Row matrix of bool vectors, representing sets of orderings, and selects the

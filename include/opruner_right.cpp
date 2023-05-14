@@ -7,52 +7,14 @@
 #include "OrderScoring.h"
 #include "RightOrder.h"
 #include "LeftOrder.h"
-#include <boost/config.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/prim_minimum_spanning_tree.hpp>
-
-#include <algorithm>
-#include <iterator>
-#include <boost/property_map/property_map.hpp>
-#include <boost/graph/adjacency_list.hpp>
-
-#include "edmonds/edmonds_optimum_branching.hpp"
-#include "edmonds/edmonds_optimum_branching_impl.hpp"
-
-// Define a directed graph type that associates a weight with each
-// edge. We store the weights using internal properties as described
-// in BGL.
-typedef boost::property<boost::edge_weight_t, double> EdgeProperty;
-typedef boost::adjacency_list<boost::listS,
-                              boost::vecS,
-                              boost::directedS,
-                              boost::no_property,
-                              EdgeProperty>
-    DirectedGraph;
-typedef boost::graph_traits<DirectedGraph>::vertex_descriptor Vertex;
-typedef boost::graph_traits<DirectedGraph>::edge_descriptor Edge;
-
-typedef boost::adjacency_list<boost::vecS, 
-                            boost::vecS, 
-                            boost::undirectedS, 
-                            boost::property<boost::vertex_distance_t, int>, 
-                            boost::property<boost::edge_weight_t, int>> UndirectedGraph;
+#include "opruner_right.h"
+#include "path_pruning.h"
 
 double EPSILON = 0.0000001;
 
 using namespace std;
 
-void print_matrix(vector<vector<double>> &M)
-{
-    for (auto &row : M)
-    {
-        for (auto &el : row)
-        {
-            cout << el << "\t  ";
-        }
-        cout << endl;
-    }
-}
+
 
 /**
  * @brief Swaps two nodes in the order ro.
@@ -548,404 +510,8 @@ vector<int> no_right_gaps(RightOrder &ro,
     return (indices_to_consider);
 }
 
-LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
-{
-    size_t p = ro.order.size();
-
-    // set the internal order to be the same as the reference order for the hidden nodes.
-    vector<int> left_order(p, -1);
-    int i = 0;
-    for (auto &node : reference_order.order)
-    {
-        // if node is hidden, add it to the left order.
-        if (find(ro.hidden_begin(), ro.hidden_end(), node) != ro.hidden_end())
-        {
-            left_order[i] = node; // reference_order.order[node];
-            i++;
-        }
-    }
-
-    // score the left order.
-    vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n); // O(p^2) ?
-    double left_order_score = accumulate(left_node_scores.begin(), left_node_scores.end(), 0.0);
-
-    LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n); // O(p)
-    return (left_order_obj);
-}
-
-int prim(UndirectedGraph &g){
-
-    using namespace boost;
-    std::vector<graph_traits<UndirectedGraph>::vertex_descriptor> p(num_vertices(g));
-
-#if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
-    property_map<UndirectedGraph, vertex_distance_t>::type distance = get(vertex_distance, g);
-    property_map<UndirectedGraph, vertex_index_t>::type indexmap = get(vertex_index, g);
-    prim_minimum_spanning_tree(g, *vertices(g).first, &p[0], distance,
-                               weightmap, indexmap, default_dijkstra_visitor());
-#else
-    prim_minimum_spanning_tree(g, &p[0]);
-#endif
-
-    for (size_t i = 0; i != p.size(); ++i)
-        if (p[i] != i)
-            cout << "parent[" << i << "] = " << p[i] << std::endl;
-        else
-            cout << "parent[" << i << "] = no parent" << std::endl;
-
-    return EXIT_SUCCESS;
-}
-
-UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder &ro)
-{
-    using namespace boost;
-    
-    typedef std::pair<int, int> E;
-    const size_t num_nodes = ro.order.size() - ro.n; // Number of hidden nodes.
-    const size_t nedges = (num_nodes * num_nodes - num_nodes)/2;  
-    E edges[nedges];
-    double weights[nedges];
-    // Add edges
-    int cnt = 0;
-    for (size_t i = 0; i < num_nodes-1; i++)
-    {
-        for (size_t j = i+1; j < num_nodes; j++)
-        {
-            edges[cnt] = E(i, j);
-            weights[cnt] = my_weights[ro.order[i]][ro.order[j]];
-            cnt++;
-        }   
-    }
-
-#if defined(BOOST_MSVC) && BOOST_MSVC <= 1300
-    UndirectedGraph g(num_nodes);
-    property_map<UndirectedGraph, edge_weight_t>::type weightmap = get(edge_weight, g);
-    for (std::size_t j = 0; j < sizeof(edges) / sizeof(E); ++j)
-    {
-        graph_traits<UndirectedGraph>::edge_descriptor e;
-        bool inserted;
-        boost::tie(e, inserted) = add_edge(edges[j].first, edges[j].second, g);
-        weightmap[e] = weights[j];
-    }
-#else
-    UndirectedGraph g(edges, edges + sizeof(edges) / sizeof(E), weights, num_nodes);
-#endif
-    return g;
-}
-
-DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro)
-{
-    int N = ro.order.size() - ro.n;
-    DirectedGraph G(N);
-
-    // Create a vector to keep track of all the vertices and enable us
-    // to index them. As a side note, observe that this is not
-    // necessary since Vertex is probably an integral type. However,
-    // this may not be true of arbitrary graphs and I think this code
-    // is a better illustration of a more general case.
-    vector<Vertex> the_vertices;
-    BOOST_FOREACH (Vertex v, vertices(G))
-    {
-        the_vertices.push_back(v);
-    }
-
-    for (int i = 0; i < N; i++)
-    {
-        for (int j = 0; j < N; j++)
-        {
-            // OBS!!! Negative weights as edmond finds maximal matching!
-            add_edge(the_vertices[i],
-                     the_vertices[j],
-                     -myweights[ro.order[i]][ro.order[j]], 
-                     G);
-        }
-    }
-
-    return (G);
-}
-
-vector<Edge> edmonds(DirectedGraph &G)
-{
-    using namespace boost;
-    // This is how we can get a property map that gives the weights of
-    // the edges.
-    property_map<DirectedGraph, edge_weight_t>::type weights =
-        get(edge_weight_t(), G);
-
-    // This is how we can get a property map mapping the vertices to
-    // integer indices.
-    property_map<DirectedGraph, vertex_index_t>::type vertex_indices =
-        get(vertex_index_t(), G);
-
-    // Print the graph (or rather the edges of the graph).
-    // cout << "This is the graph:\n";
-    // BOOST_FOREACH (Edge e, edges(G))
-    // {
-    //     cout << "(" << source(e, G) << ", "
-    //          << target(e, G) << ")\t"
-    //          << get(weights, e) << "\n";
-    // }
-
-    // Find the maximum branching.
-    vector<Edge> branching;
-    edmonds_optimum_branching<true, false, false>(G,
-                                                  vertex_indices,
-                                                  weights,
-                                                  static_cast<Vertex *>(0),
-                                                  static_cast<Vertex *>(0),
-                                                  back_inserter(branching));
-
-    return branching;
-
-    // Print the edges of the maximum branching
-    // cout << "This is the maximum branching (for negative weights)\n";
-    // BOOST_FOREACH (Edge e, branching)
-    // {
-    //     cout << "(" << source(e, G) << ", "
-    //          << target(e, G) << ")\t"
-    //          << get(weights, e) << "\n";
-    // }
-
-    // Compute the weight of the maximum branching.
-    double weight = 0;
-    BOOST_FOREACH (Edge e, branching)
-    {
-        weight += get(weights, e);
-    }
-
-    return -weight; // OBS!!! Negative again as when defining the weights.
-
-    tuple<double, vector<Edge>> result = make_tuple(-weight, branching);
-}
 
 
-
-vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
-{
-    // vector of integers from 0 to p-1
-    vector<int> order(p);
-    iota(order.begin(), order.end(), 0);
-
-    // size_t p = order.size();
-    // size_t n = ro.n;
-    // size_t k = p - n;
-    size_t k = p;
-
-    // create a matrix of scores for all suborders of size k.
-    vector<vector<double>> M(k, vector<double>(k));
-    // create symmetric matrix of scores for all suborders of size k.
-    vector<double> unrestr(k, 0);
-    // working with the hidden nodes here
-    for (size_t i = 0; i < k; i++)
-    {
-        move_element(order, i, 0); // put i in the front.
-
-        unrestr[i] = scoring.score_pos(order, 0);
-        for (size_t j = 0; j < k; j++)
-        {
-            if (i == j)
-            {
-                M[i][j] = unrestr[i];
-                continue;
-            }
-            // put j in the front so that i is at the second place.
-            size_t j_ind = j;
-            if (i > j)
-            {
-                j_ind = j + 1;
-            }
-            move_element(order, j_ind, 0); // +1 if j>i or something like that.
-            M[i][j] = scoring.score_pos(order, 1);
-            // move back j.
-            move_element(order, 0, j_ind);
-        }
-        // move back i.
-        move_element(order, 0, i);
-    }
-
-    // subtract each row by its diagonal elemets.
-
-    for (size_t i = 0; i < k; i++)
-    {
-        for (size_t j = 0; j < k; j++)
-        {
-            M[i][j] -= unrestr[i];
-            assert(M[i][j] <= 0);
-        }
-    }
-
-    // for each element and its transpose, keep the maximal value.
-    for (size_t i = 0; i < k; i++)
-    {
-        for (size_t j = i + 1; j < k; j++)
-        {
-            double m = max(M[i][j], M[j][i]);
-            if (M[i][j] < m)
-            { // maybe approximate here? EPSILON
-                M[i][j] = 0;
-            }
-
-            if (M[j][i] < m)
-            { // maybe approximate here? EPSILON
-                M[j][i] = 0;
-            }
-        }
-    }
-
-    return (M); // should keep track of the order of the nodes.
-}
-
-vector<vector<double>> get_hard_restr_mat(size_t p, OrderScoring &scoring)
-{
-    vector<int> order(p);
-    iota(order.begin(), order.end(), 0);
-
-    // size_t p = ro.order.size();
-    // size_t n = ro.n;
-    // size_t k = p - n;
-    size_t k = p;
-    size_t end_ind = p - 1; // k-1;
-
-    // create a matrix of scores for all suborders of size k.
-    vector<vector<double>> M(k, vector<double>(k));
-    // create symmetric matrix of scores for all suborders of size k.
-    vector<double> allrestr(k, 0);
-    // working with the hidden nodes here
-    for (size_t i = 0; i < k; i++)
-    {
-        move_element(order, i, end_ind); // put i in the front.
-
-        allrestr[i] = scoring.score_pos(order, end_ind);
-        for (size_t j = 0; j < k; j++)
-        {
-            if (i == j)
-            {
-                M[i][j] = allrestr[i];
-                continue;
-            }
-            // put j in the front so that i is at the second place.
-            size_t j_ind = j;
-            if (i < j)
-            {
-                j_ind = j - 1;
-            }
-            move_element(order, j_ind, end_ind);
-            M[i][j] = scoring.score_pos(order, end_ind - 1);
-            // move back j.
-            move_element(order, end_ind, j_ind);
-        }
-        // move back i.
-        move_element(order, end_ind, i);
-    }
-
-    // subtract each row by its diagonal elemets.
-
-    for (size_t i = 0; i < k; i++)
-    {
-        for (size_t j = 0; j < k; j++)
-        {
-            M[i][j] -= allrestr[i];
-            //            assert(M[i][j] >= 0);
-        }
-    }
-
-    return (M); // should keep track of the order of the nodes.
-}
-
-
-vector<int> get_suborder_prim(RightOrder &ro, vector<vector<double>> &M)
-{
-    // Graph hard_rest_graph = get_boost_ugraph(H);
-
-    vector<int> ret(ro.order.size() - ro.n);
-    return (ret);
-}
-
-vector<RightOrder> prune_path(RightOrder &reference_order,
-                              vector<RightOrder> &right_orders,
-                              vector<vector<double>> &M,
-                              vector<vector<double>> &H,
-                              vector<double> &top_scores,
-                              OrderScoring &scoring)
-{
-    vector<RightOrder> kept_right_orders;
-
-    for (auto &ro : right_orders)
-    {
-        // This is actually a right order but now it is.
-        LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
-
-        // Graph loose_rest_graph = get_boost_ugraph(H);
-        // vector<int> suborder = get_suborder_prim(ro, H);
-
-        // print visible nodes in ro
-        // cout << "hidden nodes in ro" << endl;
-        // for (auto it = ro.hidden_begin(); it != ro.hidden_end(); ++it)
-        // {
-        //     cout << *it << " ";
-        // }
-        // cout << endl;
-        // // print visible nodes in ro
-        // cout << "visible nodes in ro" << endl;
-        // for (auto it = ro.begin(); it != ro.end(); ++it)
-        // {
-        //     cout << *it << " ";
-        // }
-        // cout << endl;
-
-        DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro); // need to map to the right nodes somewhere.
-        
-        vector<Edge> min_span_tree_edges  = edmonds(loose_rest_graph);
-
-        // get weight of min spanning tree
-        double min_span_tree_weight = 0;       
-        double hidden_unrestr_sum = 0;
-
-        // Loop over the hidden nodes and sum thier unrestricted scores.
-        for(size_t i = 0; i < ro.order.size()-ro.n; i++)
-        {
-            hidden_unrestr_sum += top_scores[ro.order[i]];
-        }
-        double upper_bound =  + hidden_unrestr_sum;
-
-        cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
-        cout << "min_span_tree_weights " << min_span_tree_weight << endl;        
-        cout << "upper_bound " << upper_bound << endl;
-        cout << "reference_order.order_score " << reference_order.order_score << endl;
-        cout << endl;
-        if(upper_bound <= reference_order.order_score)
-        {
-            cout << "******************************** Edmond Pruning " << ro << endl;
-            continue;
-        } else {
-            kept_right_orders.push_back(ro);
-        }
-
-        UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
-        std::vector<boost::graph_traits<UndirectedGraph>::vertex_descriptor> MST = prim(hard_rest_graph);
-        //double MST_weight = get_graph_weight(MST);
-
-    }
-    return (kept_right_orders);
-}
-
-vector<double> get_unrestricted_vec(size_t p, OrderScoring &scoring)
-{
-    /**
-     * Compute S((x,[...])) for nodes 0,...,p-1.
-     */
-    vector<int> order_tmp(p);
-    iota(order_tmp.begin(), order_tmp.end(), 0);
-    vector<double> top_scores(p);
-    // top_scores has scores for individual nodes.
-    for (size_t i = 0; i < p; i++)
-    {
-        move_element(order_tmp, i, 0);
-        top_scores[i] = scoring.score_pos(order_tmp, 0);
-        move_element(order_tmp, 0, i);
-    }
-    return (top_scores);
-}
 
 tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 {
@@ -968,15 +534,14 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
     RightOrder reference_order = init_right_order(0, scoring);
     // Add all nodes in order a.t.m.
     for (size_t i = 1; i < p; i++)
-    {        
+    {
         reference_order = add_node_in_front(reference_order, 0, scoring);
         update_insertion_scores(reference_order, scoring);
     }
     cout << "Reference order " << reference_order << endl;
     cout << "Reference order score " << reference_order.order_score << endl;
 
-
-    //assert(1==2);
+    // assert(1==2);
 
     size_t orders1 = 0;
     size_t orders2 = 0;
@@ -988,7 +553,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
      */
     for (size_t n = 1; n <= p; n++)
     {
-    
+
         if (n == 1)
         {
             for (size_t node_index = 0; node_index <= p - n; node_index++)
@@ -1085,16 +650,11 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
                 // cout << "Check for gaps in: " << ro << endl;
                 //  This is O(p-n) = O(p)
                 if (has_hidden_gap(ro, top_scores, scoring))
-                {
-                    // assert(has_gap(ro, top_scores, scoring));
                     continue;
-                }
-
-                if (unord_hidden_gap(ro, top_scores, scoring))
-                {
+                
+                if (unord_hidden_gap(ro, top_scores, scoring))                
                     continue;
-                }
-
+                
                 right_orders_tmp.push_back(move(ro));
             }
             right_orders = move(right_orders_tmp);
@@ -1103,7 +663,9 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             // cout << "# orders after has gap prune: " << orders3 << endl;
             // tree estimate of the left side of the orders
 
+            //right_orders = 
             prune_path(reference_order, right_orders, M, H, top_scores, scoring);
+
         }
 
         // cout << "orders of size " << n << endl;
