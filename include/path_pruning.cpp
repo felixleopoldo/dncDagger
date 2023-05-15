@@ -202,7 +202,6 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     }
     double edmond_upper_bound_hidden = min_span_tree_weight + hidden_unrestr_sum;
     double ro_upper_bound = edmond_upper_bound_hidden + ro.order_score;
-    //double ro_upper_bound = min_span_tree_weight + hidden_unrestr_sum + ro.order_score;
 
     /************ Compute Prim lower bound *************/
     double prim_lower_bound = 0.0;
