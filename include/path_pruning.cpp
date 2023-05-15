@@ -168,7 +168,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     // ********** Prim MST **********
     // We set inverse weights, since prime finds the minimum spanning tree
     UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro); 
-    UndirectedGraph prim_tree = prim(hard_rest_graph); // negative weights so we get the MAX spanning tree
+    UndirectedGraph prim_tree = prim(hard_rest_graph); 
     
     property_map<UndirectedGraph, edge_weight_t>::type prim_weights = get(edge_weight_t(), prim_tree);
     cout << "MST_graph" << endl;
