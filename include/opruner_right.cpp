@@ -530,6 +530,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 
     vector<double> top_scores = get_unrestricted_vec(p, scoring);
 
+    vector<double> bottom_scores = all_restr(p, scoring);
     // RightOrder reference
     RightOrder reference_order = init_right_order(0, scoring);
     // Add all nodes in order a.t.m.
@@ -664,8 +665,10 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             // tree estimate of the left side of the orders
 
             //right_orders = 
-            prune_path(reference_order, right_orders, M, H, top_scores, scoring);
-
+            if (n < p-1)  {               
+                //right_orders = 
+                prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            }
         }
 
         // cout << "orders of size " << n << endl;

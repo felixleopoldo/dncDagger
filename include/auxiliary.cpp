@@ -37,7 +37,7 @@ int rand_int_in_range(const size_t &from, const size_t &to)
 
 void print_matrix(vector<vector<double>> &M)
 {
-    cout << setprecision(2);
+    //cout << setprecision(2);
     for (auto &row : M)
     {
         for (auto &el : row)
@@ -47,7 +47,7 @@ void print_matrix(vector<vector<double>> &M)
         
         cout << endl;
     }
-    cout << setprecision(5);
+    //cout << setprecision(5);
 }
 
 
