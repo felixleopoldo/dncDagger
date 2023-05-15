@@ -186,7 +186,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     /********** Hidden nodes put in the same order as in the reference_order **********/
     LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
 
-    // ********* Compute upper bound for ro *****/
+    // ********* Compute upper bound for the current right order (ro) *****/
     // get weight of min spanning tree
     property_map<DirectedGraph, edge_weight_t>::type weights = get(edge_weight_t(), edmond_tree);
     double min_span_tree_weight = 0;
