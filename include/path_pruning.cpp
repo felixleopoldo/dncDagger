@@ -5,8 +5,8 @@
 #include "OrderScoring.h"
 #include "RightOrder.h"
 #include "LeftOrder.h"
-
 #include "path_pruning.h"
+#include <boost/graph/graphviz.hpp>
 
 LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
 {
@@ -49,10 +49,10 @@ UndirectedGraph prim(UndirectedGraph &g)
   {
     if (MST[i] != i)
     {
-      UEdge ed = edge(MST[i], i, g).first;  
+      UEdge ed = edge(MST[i], i, g).first;
       // Take from the original
-      double weight = get(weightmap, ed); //
-      add_edge(i, MST[i], 1.0/weight, MST_graph); // these weights are the originals.
+      double weight = get(weightmap, ed);           //
+      add_edge(i, MST[i], 1.0 / weight, MST_graph); // these weights are the originals.
     }
   }
   return MST_graph;
@@ -60,22 +60,42 @@ UndirectedGraph prim(UndirectedGraph &g)
 
 LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scoring)
 {
-    // Create left order from topological order and score it.
-    typedef vector<Vertex> container;
-    container c;
-    topological_sort(g, std::back_inserter(c));
-    vector<int> top_order;    
-    for (container::reverse_iterator ii = c.rbegin(); ii != c.rend(); ++ii) {
-      top_order.push_back(ro.order[*ii]); // TODO: verify that this is correct.
-    }    
-    top_order.insert(top_order.end(), ro.begin(), ro.end()); // add the ro nodes to the right
-    vector<double> topo_node_scores = scoring.score(top_order, 0, ro.size_hidden()); // O(p^2)?
-    double topo_order_score = accumulate(topo_node_scores.begin(), topo_node_scores.end(), 0.0);
-    LeftOrder topo_left_order = LeftOrder(top_order, topo_order_score, topo_node_scores, ro.size_hidden());
+  // Create left order from topological order and score it.
+  typedef vector<Vertex> container;
+  container c;
+  topological_sort(g, std::back_inserter(c));
+  vector<int> top_order;
+  // for (container::reverse_iterator ii = c.rbegin(); ii != c.rend(); ++ii) {
+  for (container::iterator ii = c.begin(); ii != c.end(); ++ii)
+  {
+    top_order.push_back(ro.order[*ii]); // TODO: verify that this is correct.
+  }
+  top_order.insert(top_order.end(), ro.begin(), ro.end());                         // add the ro nodes to the right
+  vector<double> topo_node_scores = scoring.score(top_order, 0, ro.size_hidden()); // O(p^2)?
+  double topo_order_score = accumulate(topo_node_scores.begin(), topo_node_scores.end(), 0.0);
+  LeftOrder topo_left_order = LeftOrder(top_order, topo_order_score, topo_node_scores, ro.size_hidden());
 
   return topo_left_order;
 }
 
+vector<int> get_toporders(UndirectedGraph &G){
+  vector<vector<int>> toporders;
+}
+
+vector<int> get_topo_order(DirectedGraph &G){
+  vector<int> toporder;
+  // get a sink node
+  // to visit
+  //while (to_visit.size() > 0){
+    // get a sink node
+    // go through the parents and maintain the numerical order?
+
+    // add it to the toporder
+    // remove it from the graph
+    // add its children to the to_visit
+  //}
+  return toporder;
+}
 
 
 DirectedGraph edmonds(DirectedGraph &G)
@@ -158,30 +178,53 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 
   for (auto &ro : right_orders)
   {
- 
+    // The hidden nodes
+    std::vector<std::string> name(ro.size_hidden());
+    for (size_t i = 0; i < ro.size_hidden(); i++)
+    {
+      name[i] = to_string(ro.order[i]);
+    }
+
+    cout << endl;
+    cout << "Considering right order " << ro << endl;
+
     /************* Edmonds ********/
     // Edmond finds MAX spanning tree, so we set negative weights.
-    DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro); 
+    DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro);
     // negative weights so we get the MAX spanning tree
-    DirectedGraph edmond_tree = edmonds(loose_rest_graph); 
+    DirectedGraph edmond_tree = edmonds(loose_rest_graph);
 
     // ********** Prim MST **********
     // We set inverse weights, since prime finds the minimum spanning tree
-    UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro); 
-    UndirectedGraph prim_tree = prim(hard_rest_graph); 
-    
+    UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
+    UndirectedGraph prim_tree = prim(hard_rest_graph);
+
     property_map<UndirectedGraph, edge_weight_t>::type prim_weights = get(edge_weight_t(), prim_tree);
-    cout << "MST_graph" << endl;
-    
+    cout << "prim dot tree" << endl;
+
+    // write_graphviz(cout, prim_tree, make_label_writer(&name[0]));
+
+    cout << "prim tree" << endl;
     BOOST_FOREACH (UEdge e, boost::edges(prim_tree))
-    {   
+    {
       int from = boost::source(e, prim_tree);
       int to = boost::target(e, prim_tree);
-      cout << ro.order[from] << "-" << ro.order[to]<< ": weight " << get(prim_weights, e) << endl;
+      cout << ro.order[from] << "-" << ro.order[to] << ": weight " << get(prim_weights, e) << endl;
     }
 
+    // cout << "edmond dot tree" << endl;
+    // write_graphviz(cout, edmond_tree, make_label_writer(&name[0]));
+    cout << "edmond tree" << endl;
+    property_map<DirectedGraph, edge_weight_t>::type edmond_weights = get(edge_weight_t(), edmond_tree); // there are no weights for this one..
+
+    BOOST_FOREACH (Edge e, boost::edges(edmond_tree))
+    {
+      int from = boost::source(e, edmond_tree);
+      int to = boost::target(e, edmond_tree);
+      cout << ro.order[to] << "<-" << ro.order[from] << ": weight " << get(edmond_weights, e) << endl;
+    }
     /************ Edmond topological ************/
-    LeftOrder edmond_topo = topo_left_order(edmond_tree, ro, scoring);  
+    LeftOrder edmond_topo = topo_left_order(edmond_tree, ro, scoring);
 
     /********** Hidden nodes put in the same order as in the reference_order **********/
     LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
@@ -216,28 +259,26 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
       hard_restree_weight += bottom_scores[ro.order[i]];
     }
     prim_lower_bound += hard_restree_weight;
+    double ro_lower_bound = prim_lower_bound + ro.order_score;
 
     // Get linear extensions of the Prim tree
     // vector<LeftOrder> prim_left_orders = get_all_left_orders(prim_tree, ro, scoring);
 
-
-
     /************ Pruning *************/
-    cout << "right order " << ro << endl;
-    cout << "edmond_topo (hidden)" << edmond_topo << endl;
-//    cout << "hidden nodes " << ro.hidden_nodes << endl;
+    cout << "left order bounds [prim, edmond]" << endl;
+    cout << "[" << prim_lower_bound << ", " << edmond_upper_bound_hidden << "]" << endl;
 
-    cout << "prim_lower_bound (of hidden nodes)" << prim_lower_bound << endl;
-    cout << "topo_order_score (of hidden nodes)" << edmond_topo.order_score << endl;
-    cout << "edmond_upper_bound_hidden " << edmond_upper_bound_hidden << endl;
-    cout << "ro_upper_bound " << ro_upper_bound << endl;
+    cout << "edmond_topo (hidden) " << edmond_topo << endl;
 
-    cout << "topo_order_score + ro.score " << edmond_topo.order_score + ro.order_score<< endl;
-    cout << "hidden_unrestr_sum " << hidden_unrestr_sum << endl;
-    cout << "min_span_tree_weights " << min_span_tree_weight << endl;
+    cout << "extracted left order (of hidden nodes) " << left_order.order_score << endl;
+    cout << "topo_order_score (of hidden nodes) " << edmond_topo.order_score << endl;
+
+    cout << "full order bounds [prim, edmond]"  << endl;
+    cout << "[" << ro_lower_bound << ", " << ro_upper_bound << "]" << endl;
+
+    cout << "edmond_topo (full order) " << edmond_topo.order_score + ro.order_score << endl;
+
     cout << "reference_order.order_score " << reference_order.order_score << endl;
-    
-
 
     if (ro_upper_bound <= reference_order.order_score)
     {
@@ -255,7 +296,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     {
       cout << "Replacing reference order by Edmonds topologocal order" << endl;
       reference_order = ro + edmond_topo;
-    }  
+    }
     if (left_order.order_score + ro.order_score > reference_order.order_score)
     {
       cout << "Replacing reference order by Edmonds topologocal order" << endl;
@@ -263,7 +304,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     }
   }
   // print number of kept right orders and the nomber of right orders
-  cout << "right_orders.size() " << right_orders.size() << endl;  
+  cout << "right_orders.size() " << right_orders.size() << endl;
   cout << "kept_right_orders.size() " << kept_right_orders.size() << endl;
   return (kept_right_orders);
 }
@@ -278,12 +319,12 @@ UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder 
   {
     for (int j = i + 1; j < N; j++)
     {
-      // OBS!!! inverse weights as Prim finds minimal spanning tree, 
+      // OBS!!! inverse weights as Prim finds minimal spanning tree,
       // but we want to maximum spanning tree.
       add_edge(i,
                j,
-               1.0/my_weights[ro.order[i]][ro.order[j]],
-               //my_weights[ro.order[i]][ro.order[j]],
+               1.0 / my_weights[ro.order[i]][ro.order[j]],
+               // my_weights[ro.order[i]][ro.order[j]],
                G);
     }
   }
@@ -325,7 +366,7 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
   // working with the hidden nodes here
   for (size_t i = 0; i < k; i++)
   {
-    move_element(order, i, 0); // put i in the front.
+    move_element(order, i, 0); // put i in the front (i,...)
 
     unrestr[i] = scoring.score_pos(order, 0);
     for (size_t j = 0; j < k; j++)
@@ -335,14 +376,14 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
         M[i][j] = unrestr[i];
         continue;
       }
-      // put j in the front so that i is at the second place.
+      // put j in the front so that i is at the second place (j,i,...)
       size_t j_ind = j;
       if (i > j)
       {
-        j_ind = j + 1;
+        j_ind = j + 1; // +1 if j>i since the indices gets shifted
       }
-      move_element(order, j_ind, 0); // +1 if j>i or something like that.
-      M[i][j] = scoring.score_pos(order, 1);
+      move_element(order, j_ind, 0); // 
+      M[i][j] = scoring.score_pos(order, 1); // score of i in (j,i,...)
       // move back j.
       move_element(order, 0, j_ind);
     }
@@ -351,7 +392,6 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
   }
 
   // subtract each row by its diagonal elemets.
-
   for (size_t i = 0; i < k; i++)
   {
     for (size_t j = 0; j < k; j++)
@@ -386,38 +426,33 @@ vector<vector<double>> get_hard_restr_mat(size_t p, OrderScoring &scoring)
 {
   vector<int> order(p);
   iota(order.begin(), order.end(), 0);
+  size_t end_ind = p - 1;
 
-  // size_t p = ro.order.size();
-  // size_t n = ro.n;
-  // size_t k = p - n;
-  size_t k = p;
-  size_t end_ind = p - 1; // k-1;
-
-  // create a matrix of scores for all suborders of size k.
-  vector<vector<double>> M(k, vector<double>(k));
-  // create symmetric matrix of scores for all suborders of size k.
-  vector<double> allrestr(k, 0);
+  // create a matrix of scores 
+  vector<vector<double>> M(p, vector<double>(p));
+  // vector of unrestriced scores 
+  vector<double> allrestr(p, 0);
   // working with the hidden nodes here
-  for (size_t i = 0; i < k; i++)
+  for (size_t i = 0; i < p; i++)
   {
-    move_element(order, i, end_ind); // put i in the front.
+    move_element(order, i, end_ind); // put i in the back (...,i)
 
     allrestr[i] = scoring.score_pos(order, end_ind);
-    for (size_t j = 0; j < k; j++)
+    for (size_t j = 0; j < p; j++)
     {
       if (i == j)
       {
-        M[i][j] = allrestr[i];
+        M[i][j] = allrestr[i]; // score i in (...,i)
         continue;
       }
-      // put j in the front so that i is at the second place.
+      // put j in the back so that i is at the second last place (...,i,j).
       size_t j_ind = j;
       if (i < j)
       {
         j_ind = j - 1;
       }
       move_element(order, j_ind, end_ind);
-      M[i][j] = scoring.score_pos(order, end_ind - 1);
+      M[i][j] = scoring.score_pos(order, end_ind - 1); // score i in (...,i,j)
       // move back j.
       move_element(order, end_ind, j_ind);
     }
@@ -427,9 +462,9 @@ vector<vector<double>> get_hard_restr_mat(size_t p, OrderScoring &scoring)
 
   // subtract each row by its diagonal elemets.
   // The diagonal will be zero of course.
-  for (size_t i = 0; i < k; i++)
+  for (size_t i = 0; i < p; i++)
   {
-    for (size_t j = 0; j < k; j++)
+    for (size_t j = 0; j < p; j++)
     {
       M[i][j] -= allrestr[i];
       //            assert(M[i][j] >= 0);
