@@ -92,7 +92,7 @@ vector<int> get_topo_order(DirectedGraph &G)
   vector<int> children;
   // first add all the source nodes to the queue
 
-  // These firs are choildredn o god sort of
+  // These first are children o god sort of
   BOOST_FOREACH (Vertex v, vertices(G))
   {
     if (in_degree(v, G) == 0)
@@ -101,7 +101,7 @@ vector<int> get_topo_order(DirectedGraph &G)
     }
   }
   // then order them
-  sort(children.begin(), children.end());
+  sort(children.begin(), children.end(), greater<int>()); // BUG: Maybe reverse?
   // add them to the queue
   for (auto &child : children)
   {
@@ -123,12 +123,12 @@ vector<int> get_topo_order(DirectedGraph &G)
       children.push_back(child);
     }
     // sort them
-    sort(children.begin(), children.end());
+    sort(children.begin(), children.end(), greater<int>()); // BUG: Maybe reverse?
 
     // add them to the queue
     for (auto &child : children)
     {
-      to_visit.push(child);
+      to_visit.push(child); 
     }
   }
   reverse(visited.begin(), visited.end());
