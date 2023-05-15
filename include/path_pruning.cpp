@@ -79,10 +79,47 @@ LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scorin
   return topo_left_order;
 }
 
-vector<vector<int>> get_toporders(UndirectedGraph &G)
+vector<int> get_toporder_utree(UndirectedGraph &G, int n)
 {
-  vector<vector<int>> toporders;
-  return toporders;
+  // get the topological orders of the graph using n as root.
+  vector<int> visited;
+  vector<int> visited_flags(num_vertices(G), 0);
+  queue<int> to_visit;
+  vector<int> children;
+
+  // first add n to the queue
+  to_visit.push(n);
+  
+  // Now visit each od them on order
+  while (to_visit.size() > 0)
+  {
+    // pop from the queue
+    int v = to_visit.front();
+    to_visit.pop();
+    visited_flags[v] = 1;
+    visited.push_back(v);
+
+    // get the children of v and sort them
+    children.clear();
+    BOOST_FOREACH (Vertex child, adjacent_vertices(v, G))
+    {
+      if (visited_flags[child] == 0)
+      {
+        children.push_back(child);
+      }
+
+    }
+    // sort them
+    sort(children.begin(), children.end(), greater<int>()); // BUG: Maybe reverse?
+
+    // add them to the queue
+    for (auto &child : children)
+    {
+      to_visit.push(child); 
+    }
+  }
+  reverse(visited.begin(), visited.end());
+  return visited;
 }
 
 vector<int> get_topo_order(DirectedGraph &G)
@@ -270,6 +307,26 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
       cout << ro.order[i] << " ";
     }
     cout << endl;
+
+
+    /************ Prim topological ************/
+    vector<int> prim_topo = get_toporder_utree(prim_tree, 0);
+    cout << "prim topo order starting at "<< ro.order[0] <<": "  << endl;
+    for (auto &i : prim_topo)
+    {
+      cout << ro.order[i] << " ";
+    }
+    cout << endl;
+    prim_topo = get_toporder_utree(prim_tree, 1);
+    cout << "prim topo order starting at "<< ro.order[1] <<": "  << endl;
+    for (auto &i : prim_topo)
+    {
+      cout << ro.order[i] << " ";
+    }
+    cout << endl;
+
+
+
     /********** Hidden nodes put in the same order as in the reference_order **********/
     LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
 
