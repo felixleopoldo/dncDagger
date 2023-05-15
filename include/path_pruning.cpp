@@ -78,8 +78,9 @@ LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scorin
   return topo_left_order;
 }
 
-vector<int> get_toporders(UndirectedGraph &G){
+vector<vector<int>> get_toporders(UndirectedGraph &G){
   vector<vector<int>> toporders;
+  return toporders;
 }
 
 vector<int> get_topo_order(DirectedGraph &G){
@@ -290,6 +291,13 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
       kept_right_orders.push_back(ro);
     }
 
+    if(approximatelyEqual(prim_lower_bound, edmond_upper_bound_hidden, 0.0000001))
+    {
+      cout << "******************************** Upper bound = lower bound " << endl;
+      cout << "******************************** Prim Pruning " << ro << endl;
+      continue;
+    }
+
     /************** Updating the current best (v*) *************/
 
     if (edmond_topo.order_score + ro.order_score > reference_order.order_score)
@@ -402,17 +410,18 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
   }
 
   // for each element and its transpose, keep the maximal value.
+  double EPSILON = 0.0000001;
   for (size_t i = 0; i < k; i++)
   {
     for (size_t j = i + 1; j < k; j++)
     {
       double m = max(M[i][j], M[j][i]);
-      if (M[i][j] < m)
+      if ( definitelyLessThan(M[i][j], m, EPSILON))
       { // maybe approximate here? EPSILON
         M[i][j] = 0;
       }
 
-      if (M[j][i] < m)
+      if ( definitelyLessThan(M[j][i], m, EPSILON))
       { // maybe approximate here? EPSILON
         M[j][i] = 0;
       }
