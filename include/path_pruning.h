@@ -28,7 +28,7 @@
 typedef boost::property<boost::edge_weight_t, double> EdgeProperty;
 typedef boost::adjacency_list<boost::listS,
                               boost::vecS,
-                              boost::directedS,
+                              boost::bidirectionalS, // OBS bidirectional to provide in_degree
                               boost::no_property,
                               EdgeProperty>
     DirectedGraph;

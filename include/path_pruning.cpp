@@ -7,6 +7,7 @@
 #include "LeftOrder.h"
 #include "path_pruning.h"
 #include <boost/graph/graphviz.hpp>
+#include <queue>
 
 LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
 {
@@ -78,26 +79,61 @@ LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scorin
   return topo_left_order;
 }
 
-vector<vector<int>> get_toporders(UndirectedGraph &G){
+vector<vector<int>> get_toporders(UndirectedGraph &G)
+{
   vector<vector<int>> toporders;
   return toporders;
 }
 
-vector<int> get_topo_order(DirectedGraph &G){
-  vector<int> toporder;
-  // get a sink node
-  // to visit
-  //while (to_visit.size() > 0){
-    // get a sink node
-    // go through the parents and maintain the numerical order?
+vector<int> get_topo_order(DirectedGraph &G)
+{
+  vector<int> visited;
+  queue<int> to_visit;
+  vector<int> children;
+  // first add all the source nodes to the queue
 
-    // add it to the toporder
-    // remove it from the graph
-    // add its children to the to_visit
-  //}
-  return toporder;
+  // These firs are choildredn o god sort of
+  BOOST_FOREACH (Vertex v, vertices(G))
+  {
+    if (in_degree(v, G) == 0)
+    {
+      children.push_back(v);
+    }
+  }
+  // then order them
+  sort(children.begin(), children.end());
+  // add them to the queue
+  for (auto &child : children)
+  {
+    to_visit.push(child);
+  }
+
+  // Now visit each od them on order
+  while (to_visit.size() > 0)
+  {
+    // pop from the queue
+    int v = to_visit.front();
+    to_visit.pop();
+    visited.push_back(v);
+
+    // get the children of v and sort them
+    children.clear();
+    BOOST_FOREACH (Vertex child, adjacent_vertices(v, G))
+    {
+      children.push_back(child);
+    }
+    // sort them
+    sort(children.begin(), children.end());
+
+    // add them to the queue
+    for (auto &child : children)
+    {
+      to_visit.push(child);
+    }
+  }
+  reverse(visited.begin(), visited.end());
+  return visited;
 }
-
 
 DirectedGraph edmonds(DirectedGraph &G)
 {
@@ -226,7 +262,14 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     }
     /************ Edmond topological ************/
     LeftOrder edmond_topo = topo_left_order(edmond_tree, ro, scoring);
-
+    vector<int> edmond_topo2 = get_topo_order(edmond_tree);
+    // print the topological order
+    cout << "edmond topo order: "  << endl;
+    for (auto &i : edmond_topo2)
+    {
+      cout << ro.order[i] << " ";
+    }
+    cout << endl;
     /********** Hidden nodes put in the same order as in the reference_order **********/
     LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
 
@@ -274,7 +317,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     cout << "extracted left order (of hidden nodes) " << left_order.order_score << endl;
     cout << "topo_order_score (of hidden nodes) " << edmond_topo.order_score << endl;
 
-    cout << "full order bounds [prim, edmond]"  << endl;
+    cout << "full order bounds [prim, edmond]" << endl;
     cout << "[" << ro_lower_bound << ", " << ro_upper_bound << "]" << endl;
 
     cout << "edmond_topo (full order) " << edmond_topo.order_score + ro.order_score << endl;
@@ -291,7 +334,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
       kept_right_orders.push_back(ro);
     }
 
-    if(approximatelyEqual(prim_lower_bound, edmond_upper_bound_hidden, 0.0000001))
+    if (approximatelyEqual(prim_lower_bound, edmond_upper_bound_hidden, 0.0000001))
     {
       cout << "******************************** Upper bound = lower bound " << endl;
       cout << "******************************** Prim Pruning " << ro << endl;
@@ -390,7 +433,7 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
       {
         j_ind = j + 1; // +1 if j>i since the indices gets shifted
       }
-      move_element(order, j_ind, 0); // 
+      move_element(order, j_ind, 0);         //
       M[i][j] = scoring.score_pos(order, 1); // score of i in (j,i,...)
       // move back j.
       move_element(order, 0, j_ind);
@@ -416,12 +459,12 @@ vector<vector<double>> get_unrestr_mat(size_t p, OrderScoring &scoring)
     for (size_t j = i + 1; j < k; j++)
     {
       double m = max(M[i][j], M[j][i]);
-      if ( definitelyLessThan(M[i][j], m, EPSILON))
+      if (definitelyLessThan(M[i][j], m, EPSILON))
       { // maybe approximate here? EPSILON
         M[i][j] = 0;
       }
 
-      if ( definitelyLessThan(M[j][i], m, EPSILON))
+      if (definitelyLessThan(M[j][i], m, EPSILON))
       { // maybe approximate here? EPSILON
         M[j][i] = 0;
       }
@@ -437,9 +480,9 @@ vector<vector<double>> get_hard_restr_mat(size_t p, OrderScoring &scoring)
   iota(order.begin(), order.end(), 0);
   size_t end_ind = p - 1;
 
-  // create a matrix of scores 
+  // create a matrix of scores
   vector<vector<double>> M(p, vector<double>(p));
-  // vector of unrestriced scores 
+  // vector of unrestriced scores
   vector<double> allrestr(p, 0);
   // working with the hidden nodes here
   for (size_t i = 0; i < p; i++)
