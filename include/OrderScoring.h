@@ -47,6 +47,8 @@ public:
 
     vector<double> score(const vector<int> &ordering, const size_t &from_orderpos, const size_t &n_elements) const;
 
+    double score_order(const vector<int> &ordering, const size_t &from_orderpos, const size_t &n_elements) const;
+
     /**
      * position is the index in the ordering of the node.
      */

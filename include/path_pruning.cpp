@@ -7,6 +7,7 @@
 #include "LeftOrder.h"
 #include "path_pruning.h"
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/connected_components.hpp>
 #include <queue>
 
 LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderScoring &scoring)
@@ -48,10 +49,12 @@ UndirectedGraph prim(UndirectedGraph &g)
 
   for (size_t i = 0; i != MST.size(); ++i)
   {
+    //cout << i << ": " << MST[i] << endl;
     if (MST[i] != i)
     {
       UEdge ed = edge(MST[i], i, g).first;
       // Take from the original
+
       double weight = get(weightmap, ed);           //
       add_edge(i, MST[i], 1.0 / weight, MST_graph); // these weights are the originals.
     }
@@ -66,12 +69,14 @@ LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scorin
   container c;
   topological_sort(g, std::back_inserter(c));
   vector<int> top_order;
-  // for (container::reverse_iterator ii = c.rbegin(); ii != c.rend(); ++ii) {
+
   for (container::iterator ii = c.begin(); ii != c.end(); ++ii)
   {
-    top_order.push_back(ro.order[*ii]); // TODO: verify that this is correct.
+    top_order.push_back(ro.order[*ii]); 
   }
-  top_order.insert(top_order.end(), ro.begin(), ro.end());                         // add the ro nodes to the right
+
+  // add the ro nodes to the right
+  top_order.insert(top_order.end(), ro.begin(), ro.end()); 
   vector<double> topo_node_scores = scoring.score(top_order, 0, ro.size_hidden()); // O(p^2)?
   double topo_order_score = accumulate(topo_node_scores.begin(), topo_node_scores.end(), 0.0);
   LeftOrder topo_left_order = LeftOrder(top_order, topo_order_score, topo_node_scores, ro.size_hidden());
@@ -79,7 +84,7 @@ LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scorin
   return topo_left_order;
 }
 
-vector<int> get_toporder_utree(UndirectedGraph &G, int n)
+LeftOrder get_toporder_utree(UndirectedGraph &G, int n, RightOrder &ro, OrderScoring &scoring)
 {
   // get the topological orders of the graph using n as root.
   vector<int> visited;
@@ -87,9 +92,34 @@ vector<int> get_toporder_utree(UndirectedGraph &G, int n)
   queue<int> to_visit;
   vector<int> children;
 
-  // first add n to the queue
-  to_visit.push(n);
+  // Note that the there night be many components
+  // BOOST_FOREACH (UEdge e, boost::edges(G))
+  // {
+  //   int from = source(e, G);
+  //   int to = target(e, G);
+  //   std::cout << from << "-" << to << endl;
+  // }
+
+  // one starting from each component, but n should be in the first one.
   
+  vector<int> component(num_vertices(G));
+  int num = connected_components(G, &component[0]);
+  vector<bool> comp_starts(num, false); 
+
+  to_visit.push(n);
+  comp_starts[component[n]] = true;
+
+  for( size_t v = 0; v != num_vertices(G); ++v)
+  {
+    if (comp_starts[component[v]] == false)
+    {
+      to_visit.push(v);
+      comp_starts[component[v]] = true;
+    }
+  } 
+
+  // add vertices to the queue if they have out degree 1 and are in a different component
+
   // Now visit each od them on order
   while (to_visit.size() > 0)
   {
@@ -118,12 +148,28 @@ vector<int> get_toporder_utree(UndirectedGraph &G, int n)
       to_visit.push(child); 
     }
   }
-  reverse(visited.begin(), visited.end());
-  return visited;
+
+  // rename and reverse
+  vector<int> top_order;
+  for (auto &v : visited)
+  {
+    top_order.push_back(ro.order[v]);
+  }
+  reverse(top_order.begin(), top_order.end());
+  
+  // add the ro nodes to the right
+  top_order.insert(top_order.end(), ro.begin(), ro.end()); 
+  
+  vector<double> topo_node_scores = scoring.score(top_order, 0, ro.size_hidden()); // O(p^2)?
+  double topo_order_score = accumulate(topo_node_scores.begin(), topo_node_scores.end(), 0.0);
+  LeftOrder topo_left_order = LeftOrder(top_order, topo_order_score, topo_node_scores, ro.size_hidden());
+
+  return topo_left_order;
 }
 
-vector<int> get_topo_order(DirectedGraph &G)
+LeftOrder get_topo_order(DirectedGraph &G, RightOrder &ro, OrderScoring &scoring)
 {
+  vector<int> top_order;
   vector<int> visited;
   queue<int> to_visit;
   vector<int> children;
@@ -138,7 +184,7 @@ vector<int> get_topo_order(DirectedGraph &G)
     }
   }
   // then order them
-  sort(children.begin(), children.end(), greater<int>()); // BUG: Maybe reverse?
+  sort(children.begin(), children.end(), greater<int>()); 
   // add them to the queue
   for (auto &child : children)
   {
@@ -168,8 +214,20 @@ vector<int> get_topo_order(DirectedGraph &G)
       to_visit.push(child); 
     }
   }
-  reverse(visited.begin(), visited.end());
-  return visited;
+  // rename and reverse
+  for (auto &v : visited)
+  {
+    top_order.push_back(ro.order[v]);
+  }
+  reverse(top_order.begin(), top_order.end());
+
+  // add the ro nodes to the right
+  top_order.insert(top_order.end(), ro.begin(), ro.end()); 
+  vector<double> topo_node_scores = scoring.score(top_order, 0, ro.size_hidden()); // O(p^2)?
+  double topo_order_score = accumulate(topo_node_scores.begin(), topo_node_scores.end(), 0.0);
+  LeftOrder topo_left_order = LeftOrder(top_order, topo_order_score, topo_node_scores, ro.size_hidden());
+
+  return topo_left_order;
 }
 
 DirectedGraph edmonds(DirectedGraph &G)
@@ -230,13 +288,6 @@ DirectedGraph edmonds(DirectedGraph &G)
   // tuple<double, vector<Edge>> result = make_tuple(-weight, branching);
 }
 
-vector<int> get_suborder_prim(RightOrder &ro, vector<vector<double>> &M)
-{
-  // Graph hard_rest_graph = get_boost_ugraph(H);
-
-  vector<int> ret(ro.order.size() - ro.n);
-  return (ret);
-}
 
 vector<RightOrder> prune_path(RightOrder &reference_order,
                               vector<RightOrder> &right_orders,
@@ -252,85 +303,17 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 
   for (auto &ro : right_orders)
   {
-    // The hidden nodes
-    std::vector<std::string> name(ro.size_hidden());
-    for (size_t i = 0; i < ro.size_hidden(); i++)
-    {
-      name[i] = to_string(ro.order[i]);
-    }
 
-    cout << endl;
-    cout << "Considering right order " << ro << endl;
+    //cout << endl << "Considering right order " << ro << endl;
 
     /************* Edmonds ********/
     // Edmond finds MAX spanning tree, so we set negative weights.
     DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro);
+
     // negative weights so we get the MAX spanning tree
     DirectedGraph edmond_tree = edmonds(loose_rest_graph);
 
-    // ********** Prim MST **********
-    // We set inverse weights, since prime finds the minimum spanning tree
-    UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
-    UndirectedGraph prim_tree = prim(hard_rest_graph);
-
-    property_map<UndirectedGraph, edge_weight_t>::type prim_weights = get(edge_weight_t(), prim_tree);
-    cout << "prim dot tree" << endl;
-
-    // write_graphviz(cout, prim_tree, make_label_writer(&name[0]));
-
-    cout << "prim tree" << endl;
-    BOOST_FOREACH (UEdge e, boost::edges(prim_tree))
-    {
-      int from = boost::source(e, prim_tree);
-      int to = boost::target(e, prim_tree);
-      cout << ro.order[from] << "-" << ro.order[to] << ": weight " << get(prim_weights, e) << endl;
-    }
-
-    // cout << "edmond dot tree" << endl;
-    // write_graphviz(cout, edmond_tree, make_label_writer(&name[0]));
-    cout << "edmond tree" << endl;
-    property_map<DirectedGraph, edge_weight_t>::type edmond_weights = get(edge_weight_t(), edmond_tree); // there are no weights for this one..
-
-    BOOST_FOREACH (Edge e, boost::edges(edmond_tree))
-    {
-      int from = boost::source(e, edmond_tree);
-      int to = boost::target(e, edmond_tree);
-      cout << ro.order[to] << "<-" << ro.order[from] << ": weight " << get(edmond_weights, e) << endl;
-    }
-    /************ Edmond topological ************/
-    LeftOrder edmond_topo = topo_left_order(edmond_tree, ro, scoring);
-    vector<int> edmond_topo2 = get_topo_order(edmond_tree);
-    // print the topological order
-    cout << "edmond topo order: "  << endl;
-    for (auto &i : edmond_topo2)
-    {
-      cout << ro.order[i] << " ";
-    }
-    cout << endl;
-
-
-    /************ Prim topological ************/
-    vector<int> prim_topo = get_toporder_utree(prim_tree, 0);
-    cout << "prim topo order starting at "<< ro.order[0] <<": "  << endl;
-    for (auto &i : prim_topo)
-    {
-      cout << ro.order[i] << " ";
-    }
-    cout << endl;
-    prim_topo = get_toporder_utree(prim_tree, 1);
-    cout << "prim topo order starting at "<< ro.order[1] <<": "  << endl;
-    for (auto &i : prim_topo)
-    {
-      cout << ro.order[i] << " ";
-    }
-    cout << endl;
-
-
-
-    /********** Hidden nodes put in the same order as in the reference_order **********/
-    LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
-
-    // ********* Compute upper bound for the current right order (ro) *****/
+    // ********* Compute Edmond upper bound for the current right order (ro) *****/
     // get weight of min spanning tree
     property_map<DirectedGraph, edge_weight_t>::type weights = get(edge_weight_t(), edmond_tree);
     double min_span_tree_weight = 0;
@@ -347,69 +330,81 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     double edmond_upper_bound_hidden = min_span_tree_weight + hidden_unrestr_sum;
     double ro_upper_bound = edmond_upper_bound_hidden + ro.order_score;
 
-    /************ Compute Prim lower bound *************/
-    double prim_lower_bound = 0.0;
-    BOOST_FOREACH (UEdge e, boost::edges(prim_tree))
-    {
-      prim_lower_bound += get(prim_weights, e);
-    }
-    // Add the diagonal element scores
-    double hard_restree_weight = 0.0;
-    for (size_t i = 0; i < ro.size_hidden(); i++)
-    {
-      hard_restree_weight += bottom_scores[ro.order[i]];
-    }
-    prim_lower_bound += hard_restree_weight;
-    double ro_lower_bound = prim_lower_bound + ro.order_score;
-
-    // Get linear extensions of the Prim tree
-    // vector<LeftOrder> prim_left_orders = get_all_left_orders(prim_tree, ro, scoring);
-
-    /************ Pruning *************/
-    cout << "left order bounds [prim, edmond]" << endl;
-    cout << "[" << prim_lower_bound << ", " << edmond_upper_bound_hidden << "]" << endl;
-
-    cout << "edmond_topo (hidden) " << edmond_topo << endl;
-
-    cout << "extracted left order (of hidden nodes) " << left_order.order_score << endl;
-    cout << "topo_order_score (of hidden nodes) " << edmond_topo.order_score << endl;
-
-    cout << "full order bounds [prim, edmond]" << endl;
-    cout << "[" << ro_lower_bound << ", " << ro_upper_bound << "]" << endl;
-
-    cout << "edmond_topo (full order) " << edmond_topo.order_score + ro.order_score << endl;
-
-    cout << "reference_order.order_score " << reference_order.order_score << endl;
-
     if (ro_upper_bound <= reference_order.order_score)
     {
       cout << "******************************** Edmond Pruning " << ro << endl;
       continue;
     }
-    else
-    {
-      kept_right_orders.push_back(ro);
-    }
 
-    if (approximatelyEqual(prim_lower_bound, edmond_upper_bound_hidden, 0.0000001))
-    {
-      cout << "******************************** Upper bound = lower bound " << endl;
-      cout << "******************************** Prim Pruning " << ro << endl;
-      continue;
-    }
+    /************ Edmond topological ************/
+    LeftOrder edmond_topo = get_topo_order(edmond_tree, ro, scoring);
+ 
+
+    // /********** Prim MST **********/
+    // // We set inverse weights, since prime finds the minimum spanning tree
+    // UndirectedGraph hard_rest_graph = get_boost_ugraph(H, ro);
+    // UndirectedGraph prim_tree = prim(hard_rest_graph);
+    
+    // /************ Prim topological ************/
+    // int lowest_vertex_value = 0; 
+    // for (int i=0; i<ro.size_hidden(); i++) {
+    //   if (ro.order[i] < ro.order[lowest_vertex_value]) {
+    //     lowest_vertex_value = i;
+    //   }
+    // }
+
+    // /***************** Prims topological ordering*/
+    // LeftOrder prim_topo = get_toporder_utree(prim_tree, lowest_vertex_value, ro, scoring);
+
+    // /********** Hidden nodes put in the same order as in the reference_order **********/
+    // LeftOrder left_order = extract_leftorder(ro, reference_order, scoring);
+  
+    // /************ Compute Prim lower bound *************/
+    // double prim_lower_bound = 0.0;
+    // property_map<UndirectedGraph, edge_weight_t>::type prim_weights = get(edge_weight_t(), prim_tree);
+    // BOOST_FOREACH (UEdge e, boost::edges(prim_tree))
+    // {
+    //   prim_lower_bound += get(prim_weights, e);
+    // }
+    // // Add the diagonal element scores
+    // double hard_restree_weight = 0.0;
+    // for (size_t i = 0; i < ro.size_hidden(); i++)
+    // {
+    //   hard_restree_weight += bottom_scores[ro.order[i]];
+    // }
+    // prim_lower_bound += hard_restree_weight;
+    // double ro_lower_bound = prim_lower_bound + ro.order_score;
+
+    /************ Pruning *************/
+    // cout << "left order bounds [prim, edmond]" << ": [" << prim_lower_bound << ", " << edmond_upper_bound_hidden << "]" << endl;
+    // cout << "edmond_topo (hidden) " << edmond_topo << endl;
+    // cout << "extracted left order (of hidden nodes) " << left_order.order_score << endl;
+    // cout << "topo_order_score (of hidden nodes) " << edmond_topo.order_score << endl;    // cout << "full order bounds [prim, edmond]" << ": [" << ro_lower_bound << ", " << ro_upper_bound << "]" << endl;
+    // cout << "edmond_topo (full order) " << ro + edmond_topo  << endl;
+
+    // if (approximatelyEqual(prim_lower_bound, edmond_upper_bound_hidden, 0.0000001))
+    // {
+    //   cout << "******************************** Upper bound = lower bound " << endl;
+    //   cout << "******************************** Prim Pruning " << ro << endl;
+    //   continue;
+    // }
 
     /************** Updating the current best (v*) *************/
-
     if (edmond_topo.order_score + ro.order_score > reference_order.order_score)
     {
-      cout << "Replacing reference order by Edmonds topologocal order" << endl;
+      cout << "********************** Replacing reference order by Edmonds topologocal order" << endl;
       reference_order = ro + edmond_topo;
     }
-    if (left_order.order_score + ro.order_score > reference_order.order_score)
-    {
-      cout << "Replacing reference order by Edmonds topologocal order" << endl;
-      reference_order = ro + left_order;
-    }
+
+
+    // if (left_order.order_score + ro.order_score > reference_order.order_score)
+    // {
+    //   cout << "*************************** Replacing reference order by right order  + the extracted left order from reference order" << endl;
+    //   reference_order = ro + left_order;
+    // }
+
+    kept_right_orders.push_back(ro);
+
   }
   // print number of kept right orders and the nomber of right orders
   cout << "right_orders.size() " << right_orders.size() << endl;
@@ -420,7 +415,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder &ro)
 {
   int N = ro.size_hidden();
-  cout << "N " << N << endl;
+  //cout << "N " << N << endl;
   UndirectedGraph G(N);
 
   for (int i = 0; i < N - 1; i++)
@@ -618,3 +613,13 @@ vector<double> all_restr(size_t p, OrderScoring &scoring)
   }
   return (all_restr);
 }
+    // cout << "prim dot tree" << endl;
+        // The hidden nodes
+    // std::vector<std::string> name(ro.size_hidden());
+    // for (size_t i = 0; i < ro.size_hidden(); i++)
+    // {
+    //   name[i] = to_string(ro.order[i]);
+    // }
+
+    // write_graphviz(cout, prim_tree, make_label_writer(&name[0]));
+

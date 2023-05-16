@@ -90,6 +90,11 @@ RightOrder operator+(RightOrder &ro, LeftOrder &lo)
   return c;
 }
 
+RightOrder operator+(LeftOrder &lo, RightOrder &ro)
+{
+  return ro + lo;
+}
+
 ostream &operator<<(ostream &os, const RightOrder &ro)
 {
   size_t p = ro.order.size();
@@ -116,5 +121,6 @@ ostream &operator<<(ostream &os, const RightOrder &ro)
   }
 
   os << ")";
+  os << ": " << ro.order_score;
   return os;
 }

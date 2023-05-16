@@ -277,6 +277,11 @@ vector<double> OrderScoring::score(const vector<int> &ordering, const size_t &fr
   return (orderscores);
 }
 
+double OrderScoring::score_order(const vector<int> &ordering, const size_t &from_orderpos, const size_t &n_elements) const{
+  vector<double> node_scores = score(ordering, from_orderpos, n_elements); // O(p^2)?
+  return accumulate(node_scores.begin(), node_scores.end(), 0.0);
+}
+
 /**
  * position is the index in the ordering of the node.
  */

@@ -43,6 +43,7 @@ public:
 
 
 RightOrder operator+( RightOrder &c1,  LeftOrder &c2);
+RightOrder operator+(LeftOrder &lo, RightOrder &ro);
 ostream &operator<<(ostream &os, const RightOrder &ro);
 
 #endif

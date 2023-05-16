@@ -53,6 +53,8 @@ UndirectedGraph prim(UndirectedGraph &g);
 
 LeftOrder topo_left_order(DirectedGraph &g, RightOrder &ro, OrderScoring &scoring);
 
+LeftOrder get_toporder_utree(UndirectedGraph &G, int n, RightOrder &ro, OrderScoring &scoring);
+
 UndirectedGraph get_boost_ugraph(vector<vector<double>> &my_weights, RightOrder &ro);
 
 DirectedGraph get_boost_dgraph(vector<vector<double>> &myweights, RightOrder &ro);

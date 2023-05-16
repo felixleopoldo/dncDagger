@@ -79,6 +79,7 @@ ostream &operator<<(ostream &os, const LeftOrder &lo)
   {
     os << ")";
   }
+  os << ": " << lo.order_score;
 
   return os;
 }

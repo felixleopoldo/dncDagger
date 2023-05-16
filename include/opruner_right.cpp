@@ -14,8 +14,6 @@ double EPSILON = 0.0000001;
 
 using namespace std;
 
-
-
 /**
  * @brief Swaps two nodes in the order ro.
  * @param lower the lower index
@@ -313,7 +311,6 @@ RightOrder init_right_order(size_t node, OrderScoring &scoring)
  */
 void update_insertion_scores(RightOrder &ro, OrderScoring &scoring)
 {
-
     size_t n = ro.n;
     size_t p = ro.order.size();
 
@@ -532,11 +529,14 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 
     vector<double> bottom_scores = all_restr(p, scoring);
     // RightOrder reference
-    RightOrder reference_order = init_right_order(0, scoring);
+    RightOrder reference_order = init_right_order(p-1, scoring);
     // Add all nodes in order a.t.m.
-    for (size_t i = 1; i < p; i++)
+    for (int i = p-2; i >= 0; i--)
     {
-        reference_order = add_node_in_front(reference_order, 0, scoring);
+        PrintVector(reference_order.order);
+        cout << "Adding node " << i << endl;
+        cout << "to Reference order " << reference_order << endl;
+        reference_order = add_node_in_front(reference_order, i, scoring);
         update_insertion_scores(reference_order, scoring);
     }
     cout << "Reference order " << reference_order << endl;
@@ -666,8 +666,8 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 
             //right_orders = 
             if (n < p-1)  {               
-                //right_orders = 
-                prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+                //prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+                right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
             }
         }
 
@@ -706,11 +706,19 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
         // cout << "after move" << endl;
     }
 
+    // It should only be one here anyways
+    for (auto& rr : right_orders_prev)
+    {
+        cout << rr << endl;
+    }
+    cout << "reference order: " << reference_order << endl;
+    
+    right_orders_prev.push_back(reference_order);
     auto max_ro = max_element(right_orders_prev.begin(),
                               right_orders_prev.end(),
                               [](const RightOrder &a, const RightOrder &b)
                               { return a.order_score < b.order_score; });
-
+    
     // cout << "MAX order " << *max_ro << endl;
 
     return (make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
