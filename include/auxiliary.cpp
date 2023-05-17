@@ -61,7 +61,8 @@ void print_matrix(vector<vector<double>> &M)
  *
  */
 vector<int> unique_sets(const vector<vector<bool>> &mats,
-                        const vector<double> &order_scores, double EPSILON)
+                        const vector<double> &order_scores, 
+                        double EPSILON)
 {
     size_t N = mats.size();
     size_t p = mats[0].size();

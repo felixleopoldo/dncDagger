@@ -28,13 +28,16 @@ bool unord_hidden_gap(const RightOrder &ro, const vector<double> &top_scores, Or
 
 RightOrder init_right_order(size_t node, OrderScoring &scoring);
 
+RightOrder init_right_order(OrderScoring &scoring);
+
 void update_insertion_scores(RightOrder &ro, OrderScoring &scoring);
 
 RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring);
 
 vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_type);
 
-vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders, bool right_type);
+vector<RightOrder> prune_equal_sets(vector<RightOrder> &right_orders, bool right_type);
+
 
 vector<int> no_right_gaps(RightOrder &ro, vector<double> &top_scores, OrderScoring &scoring);
 

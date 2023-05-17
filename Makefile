@@ -5,5 +5,6 @@ INCLUDE=include/auxiliary.cpp include/LeftOrder.cpp include/RightOrder.cpp inclu
 
 
 all: ; c++ -o run_opruner run_opruner.cpp $(INCLUDE) -O3 $(CFLAGS)
+sandbox: ; c++ -o sandbox sandbox.cpp $(INCLUDE) -O3 $(CFLAGS)
 debug: ; c++ -o run_opruner run_opruner.cpp $(INCLUDE) -g $(CFLAGS)
 gprof: ; c++  -o run_opruner run_opruner.cpp $(INCLUDE) -pg -no-pie -fno-builtin $(CFLAGS)

@@ -18,7 +18,7 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   } else if (scoretype == "bde") {
       myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
   }
-  print(plus1it)
+  
   
   ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
@@ -30,6 +30,8 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
 
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, 
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
+
+  print(res$result$score)
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {

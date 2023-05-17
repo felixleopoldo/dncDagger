@@ -267,20 +267,19 @@ bool unord_hidden_gap(const RightOrder &ro,
 
 RightOrder init_right_order(size_t node, OrderScoring &scoring)
 {
+
     size_t p = scoring.numparents.size();
     vector<int> order(p, 0);
     // It all vectors with all the nodes.
     // The makes it easier to keep track of which nodes are used.
-    for (size_t i = 0; i < p; i++)
-    {
-        order[i] = i;
-    }
+    iota(order.begin(), order.end(), 0);
     myswap(node, p - 1, order);
     // score nodes
     vector<double> node_scores = scoring.score(order, p - 1, 1);
     //  score order
     double order_score = node_scores[node];
     RightOrder ro(order, order_score, node_scores, 1);
+
 
     // Set insert node scores...
     size_t top_ind = p - 1;
@@ -306,38 +305,95 @@ RightOrder init_right_order(size_t node, OrderScoring &scoring)
     return (ro);
 }
 
+RightOrder init_right_order(OrderScoring &scoring)
+{
+    size_t p = scoring.numparents.size();
+    // a range from 0 to p-1
+    // The makes it easier to keep track of which nodes are used.
+    vector<int> order(p);
+    iota(order.begin(), order.end(), 0);
+    // score nodes
+    vector<double> node_scores(p, 0);
+    //  score order
+    double order_score = 0;
+    RightOrder ro(order, order_score, node_scores, 0);
+    return (ro);
+}
+
+/**
+ * @brief Adds a node in the front of the right order without updating the insertion scores.
+*/
+RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring)
+{   
+    RightOrder ro(ro_prev); // O(p)
+    ro.n = ro_prev.n + 1;
+    size_t n = ro.n;
+    size_t p = ro.order.size();
+    size_t node = ro_prev.order[index_of_el_to_insert];
+
+    move_element(ro.order, index_of_el_to_insert, p - n);     // put node in the front: ([...],node,a,b,c)
+    double orderscore_new = ro_prev.new_top_scores[node];     // O(1) this is for the whole ro with node added in the front/top.
+    double node_score = orderscore_new - ro_prev.order_score; // O(1)
+
+    ro.node_scores[node] = node_score;
+    ro.order_score = orderscore_new;
+    double order_score_bkp = ro.order_score;
+
+    // Should also update the inserted node order scores.
+    // 1. Remove node from the list, since this is now part of the order.
+    // However, you should run update_insertion_scores before using these.
+    ro.inserted_max_order_scores[node] = 0;
+    ro.best_insert_pos[node] = -10;
+    return (ro);
+}
+
 /**
  * Note that the ro should have the insertions scores etc from its parent when entering this function.
+ * This focuses on the lastly added node (front) in the order.
  */
 void update_insertion_scores(RightOrder &ro, OrderScoring &scoring)
 {
     size_t n = ro.n;
     size_t p = ro.order.size();
 
-    double order_score_bkp = ro.order_score; // I added this
-    size_t node = ro.front();
-    double node_score = ro.node_scores[node];
-
     // If the last one
     if (n == p)
     {
         return;
     }
+    // if (n==0) {
+    //     // Set insert node scores..
+    //     for (size_t i = 0; i < p; i++)
+    //     {
+    //         size_t inserted_node = ro.order[i];
+    //         move_element(ro.order, i, p-1);         
+    //         ro.new_top_scores[inserted_node] = scoring.score_pos(ro.order, p-1);
+    //         ro.inserted_max_order_scores[inserted_node] = ro.new_top_scores[inserted_node];
+    //         move_element(ro.order, p-1, i);  // Move back
+    //         ro.best_insert_pos[inserted_node] = p-1;
+    //     }
+    //     return;
+    // }
 
+    double order_score_bkp = ro.order_score; // I added this
+    size_t node = ro.front();
+    double node_score = ro.node_scores[node];
+
+    // 1. Update the score of the n
     for (size_t i = 0; i < p - n; i++)
     {
-        // Note that inserted_node must be put as child of node when calculating score of node. ([...],node,inserted_node,a,b,c) ?
-        size_t inserted_node = ro.order[i];
-        move_element(ro.order, i, ro.front_ind());                                                      // ([..,inserted_node,..],node,a,b,c) -> ([...],node,inserted_node,a,b,c)
+        // Note that inserted_node must be put as child of node when calculating score of node. 
+        // ([...],node,inserted_node,a,b,c) ?
+        size_t inserted_node = ro.order[i]; 
+        move_element(ro.order, i, ro.front_ind()); // ([..,inserted_node,..],node,a,b,c) -> ([...],node,inserted_node,a,b,c)
         ro.inserted_max_order_scores[inserted_node] += scoring.score_pos(ro.order, ro.front_ind() - 1); // O(p). This can be O(1) if inserted_node is not a plus1 parent of node.
         move_element(ro.order, ro.front_ind(), i);
     }
-
+    
     //  3. Go through all other nodes and compare max inserted score to inserted score
     //     between node and a in ([...],node,a,b,c).
     size_t top_ind = p - n; // order.front_ind()
     assert(top_ind > 0);
-
     size_t new_top_ind = top_ind - 1;
 
     for (size_t i = 0; i <= new_top_ind; i++)
@@ -365,28 +421,7 @@ void update_insertion_scores(RightOrder &ro, OrderScoring &scoring)
     }
 }
 
-RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring)
-{
-    RightOrder ro(ro_prev); // O(p)
-    ro.n = ro_prev.n + 1;
-    size_t n = ro.n;
-    size_t p = ro.order.size();
-    size_t node = ro_prev.order[index_of_el_to_insert];
 
-    move_element(ro.order, index_of_el_to_insert, p - n);     // put node in the front: ([...],node,a,b,c)
-    double orderscore_new = ro_prev.new_top_scores[node];     // O(1) this is for the whole ro with node added in the front/top.
-    double node_score = orderscore_new - ro_prev.order_score; // O(1)
-
-    ro.node_scores[node] = node_score;
-    ro.order_score = orderscore_new;
-    double order_score_bkp = ro.order_score;
-
-    // Should also update the inserted node order scores.
-    // 1. Remove node from the list, since this is now part of the order.
-    ro.inserted_max_order_scores[node] = 0;
-    ro.best_insert_pos[node] = 0;
-    return (ro);
-}
 
 /// @brief Binary array version of sub order.
 /// @param order
@@ -415,7 +450,7 @@ vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_typ
     return (boolvec);
 }
 
-vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
+vector<RightOrder> prune_equal_sets(vector<RightOrder>& right_orders,
                                     bool right_type)
 {
     vector<vector<bool>> boolmat;
@@ -433,6 +468,25 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> right_orders,
     vector<int> pruned_inds = unique_sets(boolmat, order_scores, EPSILON);
     vector<double> pruned_scores;
     vector<RightOrder> kept_ros;
+
+    // list<RightOrder>::iterator i = right_orders.begin();
+    // int ind = 0;
+    
+    // for(int j = 0; j < right_orders.size(); j++){
+        
+    //     ind = pruned_inds[j];
+    //     advance(i, ind);
+
+    // }
+
+    // while (i != items.end()){
+    //     if(ind == 1){
+    //         i = items.erase(i);
+    //     } else {
+    //         ++i;
+    //     }
+
+    // }
 
     for (const auto &ind : pruned_inds)
     {
@@ -507,9 +561,6 @@ vector<int> no_right_gaps(RightOrder &ro,
     return (indices_to_consider);
 }
 
-
-
-
 tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
 {
     size_t p = scoring.numparents.size();
@@ -530,19 +581,17 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
     vector<double> bottom_scores = all_restr(p, scoring);
     // RightOrder reference
     RightOrder reference_order = init_right_order(p-1, scoring);
+    
+    // RightOrder reference_order = init_right_order(scoring);
+    // update_insertion_scores(reference_order, scoring);
+    // add_node_in_front(reference_order, p - 1, scoring);
+    // update_insertion_scores(reference_order, scoring);
     // Add all nodes in order a.t.m.
     for (int i = p-2; i >= 0; i--)
     {
-        PrintVector(reference_order.order);
-        cout << "Adding node " << i << endl;
-        cout << "to Reference order " << reference_order << endl;
         reference_order = add_node_in_front(reference_order, i, scoring);
         update_insertion_scores(reference_order, scoring);
     }
-    cout << "Reference order " << reference_order << endl;
-    cout << "Reference order score " << reference_order.order_score << endl;
-
-    // assert(1==2);
 
     size_t orders1 = 0;
     size_t orders2 = 0;
@@ -554,30 +603,20 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
      */
     for (size_t n = 1; n <= p; n++)
     {
-
+        cout << "n = " << n << endl;
         if (n == 1)
         {
             for (size_t node_index = 0; node_index <= p - n; node_index++)
             {
-
                 RightOrder ro = init_right_order(node_index, scoring);
-                if (!optimal_front(ro, scoring))
-                {
-                    continue;
-                }
+                // RightOrder ro = init_right_order(scoring);
+                // update_insertion_scores(reference_order, scoring);
+                // add_node_in_front(ro, node_index, scoring);
+                // update_insertion_scores(ro, scoring);
+                if (!optimal_front(ro, scoring)) continue;
                 ++orders1;
-
-                if (has_hidden_gap(ro, top_scores, scoring))
-                {
-                    continue;
-                }
-
-                if (unord_hidden_gap(ro, top_scores, scoring))
-                {
-                    // assert(has_gap(ro, top_scores, scoring));
-                    continue;
-                }
-
+                if (has_hidden_gap(ro, top_scores, scoring)) continue;
+                if (unord_hidden_gap(ro, top_scores, scoring)) continue;
                 right_orders.push_back(move(ro));
             }
             orders2 = right_orders.size();
@@ -585,41 +624,28 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
         }
         else
         {
-            // Loop over all the sub orders from the previous round. O( (p CR n-1) )
-            for (RightOrder &prev_order : right_orders_prev)
+            // Loop over all the sub orders from the previous round. 
+            for (RightOrder &prev_order : right_orders_prev) // O( (p CR n-1) )
             {
-                // If some new node is independent of the hidden, we prune all with lower numbers using no_right_gaps
-                // than the maximal one of these.
+                // If some new node is independent of the hidden, we prune all with 
+                // lower numbers using no_right_gaps than the maximal one of these.
                 vector<int> inds_to_consider = no_right_gaps(prev_order, top_scores, scoring); // O(p)
 
-                // PrintVector(inds_to_consider);
-                for (auto node_index : inds_to_consider)
+                for (auto node_index : inds_to_consider) // O(p)
                 {
                     int new_node = prev_order.order[node_index];
-
                     // Check if the new node is optimal at front, is S(([hidden], n_node, visible)) S(([hidden], visible and n)).
                     // If not, don't consider this node for addition.
-                    // This is O(1)
-                    if (!optimal_front(prev_order, new_node, scoring)) // O(1)
-                    {
-                        continue;
-                    }
+                    if (!optimal_front(prev_order, new_node, scoring)) continue; // O(1)
 
                     // the top can be swapped, i.e. S(([hidden],n,m,rest-m)) = S(([hidden],m,n,rest-m))
-                    // This is O(1)
-                    // OBS! Here we already knoiw that new_node is optimal in the front or equly good somewhere else.
-                    // so just have to check if the best insertion position is the second top and that the score at that position is equal.
+                    // OBS! Here we already knoiw that new_node is optimal in the front or equally good somewhere else.
+                    // so just have to check if the best insertion position is the second top and that 
+                    // the score at that position is equal.
                     // If so we check the ordering of the top two nodes.
-                    if (equal_and_unordered_top(prev_order, new_node, scoring)) // O(1)
-                    {
-                        continue;
-                    }
-
-                    // If the new node survived the checks above, we add it.
-                    // Update the scores for inserting other nodes after equal set pruning,
-                    // to avoid O(p).
-                    RightOrder ro = add_node_in_front(prev_order, node_index, scoring); // O(p)
-
+                    if (equal_and_unordered_top(prev_order, new_node, scoring)) continue; // O(1)
+                   
+                    RightOrder ro = add_node_in_front(prev_order, node_index, scoring); // O(p) for copying the order
                     right_orders.push_back(move(ro));
                 }
             }
@@ -628,33 +654,26 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             orders1 = right_orders.size();
             // cout << "# orders after add in front and prune indep front: " << orders1 << endl;
 
-            // For orders with the same nodes, keep only one having the maximal score
-            // O(#particles * p) = O( (p CR n) * n * p) space and time.
-            right_orders = prune_equal_sets(right_orders, true);
+            // For orders with the same nodes, keep only one having the maximal score.            
+            right_orders = prune_equal_sets(right_orders, true); // O(#particles * p) = O( (p CR n) * n * p) space and time.
 
             orders2 = right_orders.size();
 
-            // updated the insertion scores for all the right orders
-            for (RightOrder &ro : right_orders)
-            {
-                update_insertion_scores(ro, scoring);
-            }
+            // update the insertion scores for all the right orders
+            for (RightOrder &ro : right_orders) update_insertion_scores(ro, scoring); // O(p)
+            
             // cout << "# orders after prune equal sets: " << orders2 << endl;
-            //  Remove any order that has gaps.
-
-            vector<RightOrder> right_orders_tmp;
+            
+            // Remove any order that has gaps.
             // After equal set pruning there are O((p CR n)) particles left so
             // this is O((p CR n))
-
+            vector<RightOrder> right_orders_tmp;
             for (RightOrder &ro : right_orders)
             {
                 // cout << "Check for gaps in: " << ro << endl;
                 //  This is O(p-n) = O(p)
-                if (has_hidden_gap(ro, top_scores, scoring))
-                    continue;
-                
-                if (unord_hidden_gap(ro, top_scores, scoring))                
-                    continue;
+                if (has_hidden_gap(ro, top_scores, scoring)) continue;                
+                if (unord_hidden_gap(ro, top_scores, scoring)) continue;
                 
                 right_orders_tmp.push_back(move(ro));
             }
@@ -664,11 +683,17 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             // cout << "# orders after has gap prune: " << orders3 << endl;
             // tree estimate of the left side of the orders
 
-            //right_orders = 
-            if (n < p-1)  {               
-                //prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
-                right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            cout << "right_orders.size() " << right_orders.size() << endl;
+
+
+            prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            if (n == p-2) {
+                cout << " reference_order " << reference_order << endl;
+                break; // The reference order should be optimal.
             }
+
+            cout << "kept_right_orders.size() " << right_orders.size() << endl;
         }
 
         // cout << "orders of size " << n << endl;
@@ -706,22 +731,27 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
         // cout << "after move" << endl;
     }
 
+    //assert(right_orders_prev.size() == 1); // we quite 2 steps before...
     // It should only be one here anyways
-    for (auto& rr : right_orders_prev)
-    {
-        cout << rr << endl;
-    }
+    
+    // for (auto& rr : right_orders_prev)
+    // {
+    //     cout << rr << endl;
+    // }
     cout << "reference order: " << reference_order << endl;
     
+    
+
     right_orders_prev.push_back(reference_order);
-    auto max_ro = max_element(right_orders_prev.begin(),
-                              right_orders_prev.end(),
-                              [](const RightOrder &a, const RightOrder &b)
-                              { return a.order_score < b.order_score; });
+    // auto max_ro = max_element(right_orders_prev.begin(),
+    //                           right_orders_prev.end(),
+    //                           [](const RightOrder &a, const RightOrder &b)
+    //                           { return a.order_score < b.order_score; });
     
     // cout << "MAX order " << *max_ro << endl;
 
-    return (make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
+    //return (make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
+    return (make_tuple(reference_order.order, reference_order.order_score, max_n_particles, tot_n_particles));
 }
 
 // [[Rcpp::plugins(cpp17)]]

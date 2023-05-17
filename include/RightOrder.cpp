@@ -5,14 +5,17 @@ using namespace std;
 RightOrder::RightOrder(vector<int> &order,
                        double order_score,
                        vector<double> &node_scores,
-                       size_t n) : order(order),
-                                   order_score(order_score),
-                                   node_scores(node_scores),
-                                   n(n)
+                       size_t n) : order(order), // O(p)
+                                   order_score(order_score), // O(1)
+                                   node_scores(node_scores), // O(p)
+                                   n(n) // O(1)
 {
-  inserted_max_order_scores = vector<double>(order.size());
-  new_top_scores = vector<double>(order.size());
+  inserted_max_order_scores = vector<double>(order.size()); // O(p)
+  new_top_scores = vector<double>(order.size()); // O(p)
   best_insert_pos = vector<size_t>(order.size());
+  upper_bound = 1.0; // set by edmond
+  upper_bound_hidden = 1.0; // set by edmond
+  
 }
 
 int RightOrder::front() const
