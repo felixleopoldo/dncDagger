@@ -686,7 +686,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             cout << "right_orders.size() " << right_orders.size() << endl;
 
 
-            prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            //prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
             right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
             if (n == p-2) {
                 cout << " reference_order " << reference_order << endl;
@@ -694,6 +694,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             }
 
             cout << "kept_right_orders.size() " << right_orders.size() << endl;
+            if (right_orders.size() == 0) break;
         }
 
         // cout << "orders of size " << n << endl;

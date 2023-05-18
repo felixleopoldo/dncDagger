@@ -235,7 +235,7 @@ DirectedGraph edmonds(DirectedGraph &G)
   // This is how we can get a property map that gives the weights of
   // the edges.
   property_map<DirectedGraph, edge_weight_t>::type weights =
-      get(edge_weight_t(), G);
+      get(edge_weight_t(), G); // O(p^2) or O(1)?
 
   // This is how we can get a property map mapping the vertices to
   // integer indices.
@@ -252,12 +252,13 @@ DirectedGraph edmonds(DirectedGraph &G)
                                                 back_inserter(edmonds_edges));
 
   DirectedGraph cgraph(num_vertices(G));
-  for (auto e : edmonds_edges)
+  for (auto e : edmonds_edges) // O(p)
   {
-    add_edge(source(e, G), target(e, G), cgraph);
+    //Edge e2 = edge(source(e, G), target(e, G), G).first;
+    add_edge(source(e, G), target(e, G), get(weights, e), cgraph);
   }
 
-  return cgraph;
+  return cgraph; // return weights or neg as well
 }
 
 /**
@@ -281,6 +282,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 
   using namespace boost;
   vector<RightOrder> kept_right_orders;
+  
 
   for (auto &ro : right_orders)
   {
@@ -288,7 +290,10 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 
     /************* Edmonds ********/
     // Edmond finds MAX spanning tree, so we set negative weights.
-    DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro); // O(p^2)
+    // Maybe this can be a subgraph of a graph containig all the nodes?
+
+
+    DirectedGraph loose_rest_graph = get_boost_dgraph(M, ro); // negative weights // O(p^2)
 
     // negative weights so we get the MAX spanning tree
     DirectedGraph edmond_tree = edmonds(loose_rest_graph); // O(p^2)
@@ -299,13 +304,15 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
     double min_span_tree_weight = 0;
     BOOST_FOREACH (Edge e, edges(edmond_tree)) // O(p)
     {
+      //cout << "Edge " << e << " weight " << get(weights, e) << endl;
+      // Where are these esge weights set???
       min_span_tree_weight -= get(weights, e); // OBS!!! Negative, again, as when defining the weights.
     }
     // get the unrestricted weight sum
     double hidden_unrestr_sum = 0.0;
-    for (size_t i = 0; i < ro.size_hidden(); i++)
+    for (size_t i = 0; i < ro.size_hidden(); i++) // O(p)
     {
-      hidden_unrestr_sum += top_scores[ro.order[i]];
+      hidden_unrestr_sum += top_scores[ro.order[i]]; // This could be added to the particle
     }
     ro.upper_bound_hidden = min_span_tree_weight + hidden_unrestr_sum;
     ro.upper_bound = ro.upper_bound_hidden + ro.order_score;
