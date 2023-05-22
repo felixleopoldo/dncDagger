@@ -28,10 +28,10 @@ LeftOrder extract_leftorder(RightOrder &ro, RightOrder &reference_order, OrderSc
   }
 
   // score the left order.
-  vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n); // O(p^2) ?
+  vector<double> left_node_scores = scoring.score(left_order, 0, p - ro.n_nodes); // O(p^2) ?
   double left_order_score = accumulate(left_node_scores.begin(), left_node_scores.end(), 0.0);
 
-  LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n); // O(p)
+  LeftOrder left_order_obj(left_order, left_order_score, left_node_scores, p - ro.n_nodes); // O(p)
   return (left_order_obj);
 }
 

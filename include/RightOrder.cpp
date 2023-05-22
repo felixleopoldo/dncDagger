@@ -8,34 +8,35 @@ RightOrder::RightOrder(vector<int> &order,
                        size_t n) : order(order), // O(p)
                                    order_score(order_score), // O(1)
                                    node_scores(node_scores), // O(p)
-                                   n(n) // O(1)
+                                   n_nodes(n) // O(1)
 {
   inserted_max_order_scores = vector<double>(order.size()); // O(p)
   new_top_scores = vector<double>(order.size()); // O(p)
   best_insert_pos = vector<size_t>(order.size());
   upper_bound = 1.0; // set by edmond
   upper_bound_hidden = 1.0; // set by edmond
+  hidden_top_score_sum = 0.0; // set to correct value on init
   
 }
 
 int RightOrder::front() const
 {
-  return order[order.size() - n];
+  return order[order.size() - n_nodes];
 }
 
 size_t RightOrder::front_ind() const
 {
-  return order.size() - n;
+  return order.size() - n_nodes;
 }
 
 size_t RightOrder::size() const
 {
-  return n;
+  return n_nodes;
 }
 
 size_t RightOrder::size_hidden() const
 {
-  return order.size() - n;
+  return order.size() - n_nodes;
 }
 
 vector<int>::reverse_iterator RightOrder::begin()
@@ -45,12 +46,12 @@ vector<int>::reverse_iterator RightOrder::begin()
 
 vector<int>::reverse_iterator RightOrder::end()
 {
-  return order.rbegin() + n;
+  return order.rbegin() + n_nodes;
 }
 
 vector<int>::iterator RightOrder::rbegin()
 {
-  return order.end() - n;
+  return order.end() - n_nodes;
 }
 vector<int>::iterator RightOrder::rend()
 {
@@ -64,19 +65,19 @@ vector<int>::iterator RightOrder::hidden_begin()
 
 vector<int>::iterator RightOrder::hidden_end()
 {
-  return order.begin() + order.size() - n;
+  return order.begin() + order.size() - n_nodes;
 }
 
 RightOrder operator+(RightOrder &ro, LeftOrder &lo)
 {
   vector<int> order;
-  order.reserve(ro.n + lo.n);
+  order.reserve(ro.n_nodes + lo.n);
   order.insert(order.end(), lo.begin(), lo.end());
   order.insert(order.end(), ro.rbegin(), ro.rend());
 
   double order_score = ro.order_score + lo.order_score;
   // This has to be fixe as well
-  size_t n = ro.n + lo.n;
+  size_t n = ro.n_nodes + lo.n;
 
   vector<double> node_scores(n, -1);
   // loop trought all the nodes.
@@ -102,7 +103,7 @@ ostream &operator<<(ostream &os, const RightOrder &ro)
 {
   size_t p = ro.order.size();
 
-  if (ro.n != p)
+  if (ro.n_nodes != p)
   {
     os << "([...],";
   }
@@ -111,7 +112,7 @@ ostream &operator<<(ostream &os, const RightOrder &ro)
     os << "(";
   }
 
-  for (size_t i = p - ro.n; i < p; i++)
+  for (size_t i = p - ro.n_nodes; i < p; i++)
   {
     if (i != p - 1)
     {
