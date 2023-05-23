@@ -26,11 +26,11 @@ bool has_hidden_gap(const RightOrder &ro, const vector<double> &top_scores, Orde
 
 bool unord_hidden_gap(const RightOrder &ro, const vector<double> &top_scores, OrderScoring &scoring);
 
-RightOrder init_right_order(OrderScoring &scoring);
+RightOrder init_right_order(const vector<double> &top_scores, OrderScoring &scoring);
+
+RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, const vector<double> &top_scores, OrderScoring &scoring);
 
 void update_insertion_scores(RightOrder &ro, OrderScoring &scoring);
-
-RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring);
 
 vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_type);
 

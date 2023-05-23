@@ -259,7 +259,7 @@ bool unord_hidden_gap(const RightOrder &ro,
 }
 
 
-RightOrder init_right_order(OrderScoring &scoring)
+RightOrder init_right_order(const vector<double> &top_scores, OrderScoring &scoring)
 {
     size_t p = scoring.numparents.size();
     // a range from 0 to p-1
@@ -271,7 +271,19 @@ RightOrder init_right_order(OrderScoring &scoring)
     //  score order
     double order_score = 0;
     RightOrder ro(order, order_score, node_scores, 0);
+    // unrestrained top score sum, for higher upper bound.
+    ro.hidden_top_score_sum = accumulate(top_scores.begin(), top_scores.end(), 0.0);
+    // cout << "Top scores: ";
+    for (auto &score : top_scores)
+    {
+        cout << score << " ";
+        
+    }
+    cout << endl;
+    cout << "Hidden top score sum: " << ro.hidden_top_score_sum << endl;
 
+
+    // This might not be needed.
     for (size_t i = 0; i < p; i++)
     {
         size_t inserted_node = ro.order[i];
@@ -288,7 +300,7 @@ RightOrder init_right_order(OrderScoring &scoring)
 /**
  * @brief Adds a node in the front of the right order without updating the insertion scores.
 */
-RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, OrderScoring &scoring)
+RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_insert, const vector<double> &top_scores, OrderScoring &scoring)
 {   
     RightOrder ro(ro_prev); // O(p)
     ro.n_nodes = ro_prev.n_nodes + 1;
@@ -302,6 +314,9 @@ RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_in
 
     ro.node_scores[node] = node_score;
     ro.order_score = orderscore_new;    
+
+    // updated the hidden unrestricted sum
+    ro.hidden_top_score_sum = ro_prev.hidden_top_score_sum - top_scores[node];
 
     // Should also update the inserted node order scores.
     // 1. Remove node from the list, since this is now part of the order.
@@ -543,36 +558,25 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
     // cout << "Starting optimization" << endl;
     vector<RightOrder> right_orders;
     vector<RightOrder> right_orders_prev;
-
     vector<vector<double>> M = get_unrestr_mat(p, scoring);
+    vector<vector<double>> H = get_hard_restr_mat(p, scoring);
+    vector<double> top_scores = get_unrestricted_vec(p, scoring);
+    vector<double> bottom_scores = all_restr(p, scoring);
+
     cout << "Matrix loose restr" << endl;
     print_matrix(M);
-
-    vector<vector<double>> H = get_hard_restr_mat(p, scoring);
     cout << "Matrix hard restr" << endl;
     print_matrix(H);
 
-    vector<double> top_scores = get_unrestricted_vec(p, scoring);
-
-    vector<double> bottom_scores = all_restr(p, scoring);
     // RightOrder reference
-        
-    RightOrder reference_order = init_right_order(scoring);
-    reference_order = add_node_in_front(reference_order, p - 1, scoring);
+    RightOrder reference_order = init_right_order(top_scores, scoring);
+    reference_order = add_node_in_front(reference_order, p - 1, top_scores, scoring);
     update_insertion_scores(reference_order, scoring);
-    double oscore = scoring.score_order(reference_order.order, p-1, 1);
-    cout << "Order score " << oscore << endl;
-    cout << "Reference order  " << reference_order << endl;
-    assert(oscore == reference_order.order_score);
     // Add all nodes in order a.t.m.
     for (int i = p-2; i >= 0; i--)
     {
-        reference_order = add_node_in_front(reference_order, i, scoring);
+        reference_order = add_node_in_front(reference_order, i, top_scores, scoring);
         update_insertion_scores(reference_order, scoring);
-        double oscore = scoring.score_order(reference_order.order, i, p-i);
-        cout << "Order score " << oscore << endl;
-        cout << "Reference order " << reference_order << endl;
-        assert(approximatelyEqual(oscore, reference_order.order_score, EPSILON));
     }
 
     size_t orders1 = 0;
@@ -590,8 +594,8 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
         {
             for (size_t node_index = 0; node_index <= p - n_nodes; node_index++)
             {
-                RightOrder ro = init_right_order(scoring);
-                ro = add_node_in_front(ro, node_index, scoring);
+                RightOrder ro = init_right_order(top_scores, scoring);
+                ro = add_node_in_front(ro, node_index, top_scores, scoring);
                 update_insertion_scores(ro, scoring);
                 if (!optimal_front(ro, scoring)) continue;
                 ++orders1;
@@ -625,7 +629,10 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
                     // If so we check the ordering of the top two nodes.
                     if (equal_and_unordered_top(prev_order, new_node, scoring)) continue; // O(1)
                    
-                    RightOrder ro = add_node_in_front(prev_order, node_index, scoring); // O(p) for copying the order
+                    RightOrder ro = add_node_in_front(prev_order, node_index, top_scores, scoring); // O(p) for copying the order 
+                    double upper_bound = ro.order_score + ro.hidden_top_score_sum;
+                    if(definitelyLessThan(upper_bound, reference_order.order_score, EPSILON)) continue; // O(1)
+                    
                     right_orders.push_back(move(ro));
                 }
             }
@@ -664,7 +671,6 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring)
             // tree estimate of the left side of the orders
 
             cout << "right_orders.size() " << right_orders.size() << endl;
-
 
             //prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
             right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
