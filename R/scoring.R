@@ -47,11 +47,6 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
     rownames(H_min) <- var_labels
     rownames(H_max) <- var_labels
 
-    print("rowmaps:")
-    print(rowmaps)
-    # print("scoretable:")
-    # print(scoretable)
-
     for (i in seq(nvars)) {
         var <- rowmaps[[i]]
         print("#############")
@@ -69,19 +64,17 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
         # We exclude each parent in turn and see how the score changes
         for (parent_ind in seq(n_pos_parents)){
             parent <- aliases[[i]][[parent_ind]] # parent to exclude
-            #print(paste("Excluding parent:", parent))
             for (code in var$forward){                
                 
                 # Check if the parent is in the code
                 check <- (code-1) %% 2^(parent_ind)
                 if (check < 2^(parent_ind-1)){
-                    print(paste(labels(aliases[[i]])[[parent_ind]], " is NOT in the code ", code))
-                    code_with_parent <- code + 2^(parent_ind-1)
-                    print(paste("Adding the parent gives the code:", code_with_parent))
-                    # Using the no plus1 score table                                        
                     
-                    score_diff <- scoretable[[i]][[1]][var$backwards[[code_with_parent]]] - scoretable[[i]][[1]][var$backwards[[code]]]
-                    print(paste("The score difference is:", score_diff))                    
+                    # Compute the code with the parent excluded
+                    code_with_parent <- code + 2^(parent_ind-1)                                        
+                    # Using the no plus1 score table, i.e. index 1
+                    score_diff <- scoretable[[i]][[1]][var$backwards[[code_with_parent]]] - scoretable[[i]][[1]][var$backwards[[code]]]                    
+                    # Update the H matrices
                     if (is.na(H_max[i, parent])){                        
                         H_max[i,parent] <- score_diff
                     } else {
@@ -93,8 +86,6 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
                     } else {
                         H_min[i, parent] <- min(H_min[i, parent], score_diff)
                     }
-                 } else { 
-                    print(paste(labels(aliases[[i]])[[parent_ind]], " is in the code ", code))
                  }
             }
         }
@@ -103,38 +94,31 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
         # plus1parents are those parents that are not in the aliases
         plus1parents <- c()
         plus1parent_inds <- c()
-        #print(var_labels)
-        #print(aliases[[i]])
+
         j <- 1
         for (label in var_labels){
-            #print(label)
             if (j == i) {  # skip itself
                 j <- j + 1
                 next
             }
             if (!(label %in% labels(aliases[[i]]))){
                 # label not in aliases so it is a plus1 parent
-                #print(paste(label, " is a plus1 parent"))
                 plus1parents <- c(plus1parents, label)
                 plus1parent_inds <- c(plus1parent_inds, j)
             }
             j <- j + 1
         }
-        #print(plus1parents)
-        #print(plus1parent_inds)
+
         for(j in seq(1, length(plus1parents))){ # Skip the first one since it has no plus1 parents            
             score_diffs <- scoretable[[i]][[j+1]] - scoretable[[i]][[1]] # the first one is the no plus1 score table. Subtracting all at once.
-            #print("score_diffs:")
-            #print(score_diffs)
-            #print(max(score_diffs))
             H_max[i, plus1parent_inds[j]] <- max(score_diffs) # subtract 1 as it start from 2
             H_min[i, plus1parent_inds[j]] <- min(score_diffs)
         }
     }
     print("H_max:")
-    print((H_max <= 0) * 1)
+    print((H_max > 0) * 1)
     print("H_min:")
-    print((H_min <= 0) * 1)
+    print((H_min > 0) * 1)
 }
 
 get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
