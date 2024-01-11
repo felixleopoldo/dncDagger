@@ -109,7 +109,7 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
             j <- j + 1
         }
 
-        for(j in seq(1, length(plus1parents))){ # Skip the first one since it has no plus1 parents            
+        for(j in seq(1, length(plus1parents))){ 
             score_diffs <- scoretable[[i]][[j+1]] - scoretable[[i]][[1]] # the first one is the no plus1 score table. Subtracting all at once.
             H_max[i, plus1parent_inds[j]] <- max(score_diffs) # subtract 1 as it start from 2
             H_min[i, plus1parent_inds[j]] <- min(score_diffs)
