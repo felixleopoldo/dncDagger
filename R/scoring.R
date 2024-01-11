@@ -22,7 +22,119 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   
   ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
+    print("labels:")
+    print(labels(data)[[2]])
+    print("aliases:")
+
+    aliases <- lapply(ret$aliases, function(a) a + 1)
+    print(aliases)
+
+
+    get_diff_matrices(ret$rowmaps, ret$scoretable, aliases, labels(data)[[2]])
+
   return(ret)
+}
+
+
+get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
+
+    nvars <- length(rowmaps)
+
+    H_min = matrix(, nrow = nvars, ncol = nvars)
+    H_max = matrix(, nrow = nvars, ncol = nvars)
+    colnames(H_min) <- var_labels
+    colnames(H_max) <- var_labels
+    rownames(H_min) <- var_labels
+    rownames(H_max) <- var_labels
+
+    print("rowmaps:")
+    print(rowmaps)
+    # print("scoretable:")
+    # print(scoretable)
+
+    for (i in seq(nvars)) {
+        var <- rowmaps[[i]]
+        print("#############")
+        print("var:")
+        print(var_labels[[i]])
+        print("aliases:")
+        print(aliases[[i]])
+        print("forward codes:")
+        print(var$forward)
+
+        # total number of possible parents         
+        n_pos_parents <- length(aliases[[i]])# sqrt(length(var$forward))
+                
+        # For the possible parents, i.e. not plus1 parents
+        # We exclude each parent in turn and see how the score changes
+        for (parent_ind in seq(n_pos_parents)){
+            parent <- aliases[[i]][[parent_ind]] # parent to exclude
+            #print(paste("Excluding parent:", parent))
+            for (code in var$forward){                
+                
+                # Check if the parent is in the code
+                check <- (code-1) %% 2^(parent_ind)
+                if (check < 2^(parent_ind-1)){
+                    print(paste(labels(aliases[[i]])[[parent_ind]], " is NOT in the code ", code))
+                    code_with_parent <- code + 2^(parent_ind-1)
+                    print(paste("Adding the parent gives the code:", code_with_parent))
+                    # Using the no plus1 score table                                        
+                    
+                    score_diff <- scoretable[[i]][[1]][var$backwards[[code_with_parent]]] - scoretable[[i]][[1]][var$backwards[[code]]]
+                    print(paste("The score difference is:", score_diff))                    
+                    if (is.na(H_max[i, parent])){                        
+                        H_max[i,parent] <- score_diff
+                    } else {
+                        H_max[i, parent] <- max(H_max[i, parent], score_diff)
+                    }
+
+                    if (is.na(H_min[i, parent])){                        
+                        H_min[i,parent] <- score_diff
+                    } else {
+                        H_min[i, parent] <- min(H_min[i, parent], score_diff)
+                    }
+                 } else { 
+                    print(paste(labels(aliases[[i]])[[parent_ind]], " is in the code ", code))
+                 }
+            }
+        }
+
+        ## For the plus1 parents        
+        # plus1parents are those parents that are not in the aliases
+        plus1parents <- c()
+        plus1parent_inds <- c()
+        #print(var_labels)
+        #print(aliases[[i]])
+        j <- 1
+        for (label in var_labels){
+            #print(label)
+            if (j == i) {  # skip itself
+                j <- j + 1
+                next
+            }
+            if (!(label %in% labels(aliases[[i]]))){
+                # label not in aliases so it is a plus1 parent
+                #print(paste(label, " is a plus1 parent"))
+                plus1parents <- c(plus1parents, label)
+                plus1parent_inds <- c(plus1parent_inds, j)
+            }
+            j <- j + 1
+        }
+        #print(plus1parents)
+        #print(plus1parent_inds)
+        for(j in seq(1, length(plus1parents))){ # Skip the first one since it has no plus1 parents            
+            score_diffs <- scoretable[[i]][[j+1]] - scoretable[[i]][[1]] # the first one is the no plus1 score table. Subtracting all at once.
+            #print("score_diffs:")
+            #print(score_diffs)
+            #print(max(score_diffs))
+            H_max[i, plus1parent_inds[j]] <- max(score_diffs) # subtract 1 as it start from 2
+            H_min[i, plus1parent_inds[j]] <- min(score_diffs)
+        }
+    }
+    print("H_max:")
+    print((H_max <= 0) * 1)
+    print("H_min:")
+    print((H_min <= 0) * 1)
 }
 
 get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
@@ -31,6 +143,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, 
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
+  print("score from MCMC:")
   print(res$result$score)
 
   ret <- list()
@@ -53,5 +166,23 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$MAP <- MAP
   ret$space <- res$result$endspace
 
+  ret$rowmaps <- res$rowmaps
+  
+  # print(ret)
+
+## For the mapping 
+# n <- nrow(ret$scoretable)
+# updatenodes <- 1:n
+# parenttable <- res$ptab$parenttable
+# numberofparentsvec <- res$ptab$numberofparentsvec
+# parentsmapping(parenttable, numberofparentsvec, n, updatenodes)
+    #print("rowmaps:")
+    #print(res$rowmaps)
+    #get_diff_matrices(res$rowmaps, ret$scoretable)
+    #print(res$rowmaps$backwards)
+
+
+
   return(ret)
 }
+
