@@ -21,7 +21,7 @@ OrderScoring::OrderScoring(
                 potential_plus1_parents(potential_plus1_parents),
                 MAP(MAP),
                 numparents(numparents),
-                scoretable(scoretable),
+                scoretable(scoretable), // this is called bannedscore in R
                 scoresmatrices(scoresmatrices)
 {
 }
@@ -301,8 +301,10 @@ double OrderScoring::score_pos(const vector<int> &ordering, const size_t &positi
                                          // so if no parent are permitted parents, there will only be one element in the last list.
 
     // Whats the difference between scoretable and scorematrices?
-    // scorematrices has the Maximal scores over all parent compinations for each plus1 node.
-    // scoretable has all the maxima scores for evey edge setting for each plus1 node.?
+    // scorematrices (called bannedscore in R) has the Maximal scores over all parent combinations for each plus1 node. (and for each parent setting/eligable parents it is the max over al its subsets?) 
+    // scorematrices[node][parent_conf][plus1parent], so e.g. last (the indexing comes from the get_f_bar_z function) row for each node is for no parents, and all the different plus1 parents in each column.
+    // is the first column for no plus1 parent?
+    // scoretable has all the scores for evey edge setting for each plus1 node.? In R, each matrix is for one plus1 parent?    
     // How do we get the edge setting and why do we care about them, I thought we summed over all of them?
   }
   else
@@ -363,6 +365,15 @@ vector<int> OrderScoring::get_plus1_indices(const int &position, const vector<in
   return (active_plus1_parents_indices);
 }
 
+
+/**
+ * The position is the index in the scoretable of the node.
+ * It should be a number between 0 and 2^(#permitted parents) -1
+ * Its like a binary number, but it is not in numerica order. 
+ * for a set {a,b,c}, f({c}) = 001, f({b}) = 010, f({a})=100. fbar is like the inverse, treating 0 as ones?.
+ * 
+ */
+
 int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) const
 {
   int f_bar_z;
@@ -380,7 +391,7 @@ int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) 
     }
   }
 
-  // Compute f(Z) (the labelling), where Z is the parents of node, accoring toe the paper.
+  // Compute f(Z) (the labelling), where Z is the parents of node, accoring to the paper.
   // I.e. f_bar_z[node] = f(Pa(node))
   if (potential_parents[node].size() == 0 || parent_indices_banned_by_ordering.size() == 0)
   {
@@ -393,7 +404,7 @@ int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) 
     {
       indextmp += pow(2, item); // compute f(Z). add 1 since nodes are labeled from 0.
     }
-    f_bar_z = rowmaps_backwards[node][indextmp]; // I think indextmp is the acutl f_bar_z.
+    f_bar_z = rowmaps_backwards[node][indextmp]; // I think indextmp is the actual f_bar_z.
   }
   return (f_bar_z);
 }
@@ -409,7 +420,7 @@ OrderScoring get_score(Rcpp::List ret)
     // Read numparents
     vector<int> numparents = Rcpp::as<vector<int>>(ret["numparents"]);
 
-    // Read scoretable
+    // Read scoretable. How are these interpreted?
     vector<vector<vector<double>>> scoretable = Rcpp::as<vector<vector<vector<double>>>>(ret["scoretable"]);
 
     // Read parent table
@@ -422,7 +433,7 @@ OrderScoring get_score(Rcpp::List ret)
         parenttable.push_back(m);
     }
 
-    // Read banned score
+    // Read banned score. How are these interpreted?
     Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
     vector<vector<vector<double>>> bannedscore;
     for (size_t i = 0; i < p; i++)

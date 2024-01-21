@@ -39,12 +39,9 @@ vector<RightOrder> prune_equal_sets(vector<RightOrder> &right_orders, bool right
 
 vector<int> no_right_gaps(RightOrder &ro, vector<double> &top_scores, OrderScoring &scoring);
 
-tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring);
+tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring,  vector<RightOrder> initial_right_orders);
 
-// [[Rcpp::plugins(cpp17)]]
 
-// [[Rcpp::export]]
-
-Rcpp::List r_opruner_right(Rcpp::List ret);
+Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::NumericVector initial_right_orders);
 
 #endif

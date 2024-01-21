@@ -15,6 +15,11 @@ if (scoretype =="bge") {
 set.seed(1)
 cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2, iterations=NULL) # from iterativeMCMC
 
-opr <- optimal_order(cpp_friendly_scores)
+
+initial_suborder <- seq(1, floor(ncol(data)/2)) - 1
+print(initial_suborder)
+
+opr <- optimal_order(cpp_friendly_scores, initial_suborder)
 adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
 colnames(adjmat) <- colnames(data)
+print(opr)

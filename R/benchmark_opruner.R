@@ -112,7 +112,7 @@ for (n in ns) {
           ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignores
           
           start <- proc.time()[1]
-          res <- r_opruner_right(ret)
+          #res <- r_opruner_right(ret)
           totaltime <- proc.time()[1] - start
 
           # We run the itsearch here too for comparison of the scores.

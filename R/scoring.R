@@ -22,16 +22,15 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
   
   ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
-    print("labels:")
-    print(labels(data)[[2]])
-    print("aliases:")
-
+    # print("labels:")
+    # print(labels(data)[[2]])
+    # print("aliases:")
     aliases <- lapply(ret$aliases, function(a) a + 1)
-    print(aliases)
+    #print(aliases)
+    diff_matrices <- get_diff_matrices(ret$rowmaps, ret$scoretable, aliases, labels(data)[[2]])
 
-
-    get_diff_matrices(ret$rowmaps, ret$scoretable, aliases, labels(data)[[2]])
-
+    ret$H_min <- diff_matrices$H_min
+    ret$H_max <- diff_matrices$H_max
   return(ret)
 }
 
@@ -49,13 +48,13 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
     for (i in seq(nvars)) {
         var <- rowmaps[[i]]
-        print("#############")
-        print("var:")
-        print(var_labels[[i]])
-        print("aliases:")
-        print(aliases[[i]])
-        print("forward codes:")
-        print(var$forward)
+        # print("#############")
+        # print("var:")
+        # print(var_labels[[i]])
+        # print("aliases:")
+        # print(aliases[[i]])
+        # print("forward hashs:")
+        # print(var$forward)
 
         # total number of possible parents         
         n_pos_parents <- length(aliases[[i]])# sqrt(length(var$forward))
@@ -64,16 +63,16 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
         # We exclude each parent in turn and see how the score changes
         for (parent_ind in seq(n_pos_parents)){
             parent <- aliases[[i]][[parent_ind]] # parent to exclude
-            for (code in var$forward){                
+            for (hash in var$forward){                
                 
-                # Check if the parent is in the code
-                check <- (code-1) %% 2^(parent_ind)
+                # Check if the parent is in the hash
+                check <- (hash-1) %% 2^(parent_ind)
                 if (check < 2^(parent_ind-1)){
                     
-                    # Compute the code with the parent excluded
-                    code_with_parent <- code + 2^(parent_ind-1)                                        
+                    # Compute the hash with the parent excluded
+                    hash_with_parent <- hash + 2^(parent_ind-1)                                        
                     # Using the no plus1 score table, i.e. index 1
-                    score_diff <- scoretable[[i]][[1]][var$backwards[[code_with_parent]]] - scoretable[[i]][[1]][var$backwards[[code]]]                    
+                    score_diff <- scoretable[[i]][[1]][var$backwards[[hash_with_parent]]] - scoretable[[i]][[1]][var$backwards[[hash]]]                    
                     # Update the H matrices
                     if (is.na(H_max[i, parent])){                        
                         H_max[i,parent] <- score_diff
@@ -115,10 +114,11 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
             H_min[i, plus1parent_inds[j]] <- min(score_diffs)
         }
     }
-    print("H_max:")
-    print((H_max > 0) * 1)
-    print("H_min:")
-    print((H_min > 0) * 1)
+    # print("H_max:")
+    # print((H_max > 0) * 1)
+    # print("H_min:")
+    # print((H_min > 0) * 1)
+    return(list(H_min = H_min, H_max = H_max))
 }
 
 get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
@@ -149,23 +149,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$bannedscore <- res$bannedscore
   ret$MAP <- MAP
   ret$space <- res$result$endspace
-
   ret$rowmaps <- res$rowmaps
-  
-  # print(ret)
-
-## For the mapping 
-# n <- nrow(ret$scoretable)
-# updatenodes <- 1:n
-# parenttable <- res$ptab$parenttable
-# numberofparentsvec <- res$ptab$numberofparentsvec
-# parentsmapping(parenttable, numberofparentsvec, n, updatenodes)
-    #print("rowmaps:")
-    #print(res$rowmaps)
-    #get_diff_matrices(res$rowmaps, ret$scoretable)
-    #print(res$rowmaps$backwards)
-
-
 
   return(ret)
 }

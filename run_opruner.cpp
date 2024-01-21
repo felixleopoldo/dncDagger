@@ -84,8 +84,10 @@ int main(int argc, char **argv)
 
     OrderScoring scoring = get_score(ret);
 
+    vector<RightOrder> initial_right_orders = {};
+   
     auto start = high_resolution_clock::now();
-    const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring);
+    const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
