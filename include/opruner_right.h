@@ -42,6 +42,6 @@ vector<int> no_right_gaps(RightOrder &ro, vector<double> &top_scores, OrderScori
 tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring,  vector<RightOrder> initial_right_orders);
 
 
-Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::NumericVector initial_right_orders);
+Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List initial_right_orders);
 
 #endif
