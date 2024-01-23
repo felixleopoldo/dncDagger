@@ -315,10 +315,10 @@ RightOrder add_node_in_front(const RightOrder &ro_prev, size_t index_of_el_to_in
     ro.hidden_top_score_sum = ro_prev.hidden_top_score_sum - top_scores[node];
 
     // Should also update the inserted node order scores.
-    // 1. Remove node from the list, since this is now part of the order.
+    // 1. Remove node from the list, since this is now part of the visible nodes in the order.
     // However, you should run update_insertion_scores before using these.
     ro.inserted_max_order_scores[node] = 0;
-    ro.best_insert_pos[node] = -10;
+    ro.best_insert_pos[node] = -10; 
     ro.new_top_scores[node] = 0;
     return (ro);
 }
@@ -348,8 +348,8 @@ void update_insertion_scores(RightOrder &ro, OrderScoring &scoring)
     // (since this was calculated) top node when it is on top. The hidden nodes has
     // to be pushed in between first.
 
-    size_t top_ind = p - n;
-    size_t new_top_ind = top_ind - 1;
+    size_t top_ind = p - n; // ro.front_ind();
+    size_t new_top_ind = top_ind - 1; // ro.front_ind() - 1;
 
     if (n == 1)
     {
@@ -396,6 +396,8 @@ void update_insertion_scores(RightOrder &ro, OrderScoring &scoring)
             swap_nodes(new_top_ind, top_ind, ro, scoring);                                 // ([...],i,a,b,c) -> ([...],a,i,b,c). This changes ro.order_score.
             double inserted_max_order_score = ro.inserted_max_order_scores[inserted_node]; // this should contain max score of the other positions.
 
+
+            // Note that new_top_ind is not part of the insertion indices.
             if (approximatelyEqual(ro.order_score, inserted_max_order_score, EPSILON) ||
                 definitelyGreaterThan(ro.order_score, inserted_max_order_score, EPSILON))
             {
@@ -591,13 +593,14 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
     if (right_orders_prev.size() == 1)
     {
         nodes_in_initial_order = right_orders_prev[0].n_nodes;
+        cout << right_orders_prev[0] << endl;
     }
-    else
+    if (right_orders_prev.size() > 1)
     {           
         cout << "too many initial orders" << endl;
         exit(1); // This should not happen. should be 1 or 0 elements in the vector.
     }
-    cout << right_orders_prev[0] << endl;
+    
     cout << "nodes_in_initial_order " << nodes_in_initial_order << endl;
     for (size_t n_nodes = nodes_in_initial_order + 1; n_nodes <= p; n_nodes++) // we should check how long the init order is here.
     {
@@ -636,8 +639,12 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
                     int new_node = prev_order.order[node_index];
                     // Check if the new node is optimal at front, is S(([hidden], n_node, visible)) S(([hidden], visible and n)).
                     // If not, don't consider this node for addition.
-                    if (!optimal_front(prev_order, new_node, scoring))
+                    if (!optimal_front(prev_order, new_node, scoring))                        
                         continue; // O(1)
+                    // if ((nodes_in_initial_order > 0) && (n_nodes == nodes_in_initial_order + 1) )
+                    // {
+                    //     as
+                    // }
 
                     // the top can be swapped, i.e. S(([hidden],n,m,rest-m)) = S(([hidden],m,n,rest-m))
                     // OBS! equal_and_unordered_top assumes (correctly) that new_node is optimal in the front or equally good somewhere else.
@@ -648,9 +655,10 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
                         continue; // O(1)
 
                     RightOrder ro = add_node_in_front(prev_order, node_index, top_scores, scoring); // O(p) for copying the order
-                    double upper_bound = ro.order_score + ro.hidden_top_score_sum;
-                    if (definitelyLessThan(upper_bound, reference_order.order_score, EPSILON))
-                        continue; // O(1)
+
+                    // double upper_bound = ro.order_score + ro.hidden_top_score_sum;
+                    // if (definitelyLessThan(upper_bound, reference_order.order_score, EPSILON))
+                    //     continue; // O(1)
 
                     right_orders.push_back(move(ro));
                 }
@@ -670,7 +678,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
             for (RightOrder &ro : right_orders)
                 update_insertion_scores(ro, scoring); // O(p)
 
-            // cout << "# orders after prune equal sets: " << orders2 << endl;
+            cout << "# orders after prune equal sets: " << orders2 << endl;
 
             // Remove any order that has gaps.
             // After equal set pruning there are O((p CR n)) particles left so
@@ -696,12 +704,13 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
             // cout << "right_orders.size() " << right_orders.size() << endl;
             // cout << "reference order " << reference_order << endl;
             // //prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
-            right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
-            if (n_nodes == p - 2)
-            {
-                cout << "reference_order " << reference_order << endl;
-                break; // The reference order should be optimal.
-            }
+            //right_orders = prune_path(reference_order, right_orders, M, H, bottom_scores, top_scores, scoring);
+            
+            // if (n_nodes == p - 2)
+            // {
+            //     cout << "reference_order " << reference_order << endl;
+            //     break; // The reference order should be optimal.
+            // }
 
             cout << "kept_right_orders.size() " << right_orders.size() << endl;
             if (right_orders.size() == 0)
