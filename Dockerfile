@@ -1,8 +1,9 @@
 FROM bpimages/bidag:2.1.3
 
-RUN R -e "install.packages(\"RInside\", repos=\"https://cran.rstudio.com\")" --no-save
-RUN R -e "install.packages(\"Jmisc\")" --no-save
-RUN R -e "install.packages(\"argparser\")" --no-save
+RUN R -e "install.packages(\"RInside\", repos=\"https://cran.rstudio.com\")"
+RUN R -e "install.packages(\"Jmisc\")" 
+RUN R -e "install.packages(\"argparser\")"
+RUN R -e "install.packages(\"igraph\")" 
 
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz
 RUN tar xvf boost_1_82_0.tar.gz

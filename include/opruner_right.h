@@ -36,11 +36,9 @@ vector<bool> order_to_boolvec(const vector<int> &order, size_t n, bool right_typ
 
 vector<RightOrder> prune_equal_sets(vector<RightOrder> &right_orders, bool right_type);
 
-
 vector<int> no_right_gaps(RightOrder &ro, vector<double> &top_scores, OrderScoring &scoring);
 
-tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring,  vector<RightOrder> initial_right_orders);
-
+tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, vector<RightOrder> initial_right_orders);
 
 Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List initial_right_orders);
 

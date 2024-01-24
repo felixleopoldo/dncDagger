@@ -784,6 +784,15 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
     return (make_tuple(reference_order.order, reference_order.order_score, max_n_particles, tot_n_particles));
 }
 
+// Function to print the 
+// index of an element 
+size_t getIndex(vector<int> &v, int K) 
+{ 
+    auto it = find(v.begin(), v.end(), K); 
+    int index = it - v.begin(); 
+    return index;
+} 
+
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]
@@ -793,7 +802,7 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
     OrderScoring scoring = get_score(ret);
 
     cout << "initial right order: " << endl;
-    //cout << r_initial_right_order << endl;
+    // cout << r_initial_right_order << endl;
     cout << "length of initial right order: " << r_initial_right_order.size() << endl;
 
     // if r_initial_right_orders is not empty and contains one list, then use that as the initial right order.
@@ -809,13 +818,17 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
         vector<double> top_scores = get_unrestricted_vec(p, scoring);
 
         RightOrder reference_order = init_right_order(top_scores, scoring);
-        reference_order = add_node_in_front(reference_order, r_initial_right_order[n - 1], top_scores, scoring); // Adding node p-1, i.e.:  <[...], p-1>
+        size_t initial_node_index = getIndex(reference_order.order, r_initial_right_order[n-1]);
+        reference_order = add_node_in_front(reference_order, initial_node_index, top_scores, scoring); // Adding node p-1, i.e.:  <[...], p-1>
         update_insertion_scores(reference_order, scoring);
         // As a reference order, add all nodes in order a.t.m.: <1,2,...,p-1>
 
         for (int i = n - 2; i >= 0; i--)
         {
-            reference_order = add_node_in_front(reference_order, r_initial_right_order[i], top_scores, scoring);
+            //reference_order = add_node_in_front(reference_order, r_initial_right_order[i], top_scores, scoring);
+            // Find the initial node amongs the hidden nodes.
+            initial_node_index = getIndex(reference_order.order, r_initial_right_order[i]);
+            reference_order = add_node_in_front(reference_order, initial_node_index, top_scores, scoring);
             update_insertion_scores(reference_order, scoring);
         }
 
@@ -823,6 +836,7 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
         for (size_t i = 0; i < reference_order.size_hidden(); i++)
         {
             size_t hidden_node = reference_order.order[i];
+            
             //  Make the best inserted score worse than adding it to the front
             reference_order.inserted_max_order_scores[hidden_node] = reference_order.new_top_scores[hidden_node] - 100000;
         }
