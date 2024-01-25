@@ -35,12 +35,13 @@ rmvDAG <- function(trueDAGedges, N) {
 
 set.seed(1)
 # Generate data
-N = 1000
+N = 2000
 p <- 40
-#dag <- randDAG(p, 4, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
-dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+dag <- randDAG(p, 4, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+#dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
 
+colnames(adjmat) <- paste0("X", 1:p)
 print("adjmat:")
 print(adjmat)
 
@@ -63,13 +64,6 @@ data <- data.frame(rmvDAG(weight_mat, N))
 
 
 p <- ncol(data)
-
-print("p:") 
-print(p)
-
-#print("data:")
-#print(head(data.frame(data)))
-#print(data)
 
 
 scoretype <- "bge"
@@ -94,8 +88,7 @@ H_min <- diff_matrices$H_min
 H_max <- diff_matrices$H_max
 
 #initial_suborder <- list(5,1,3)
-initial_suborder <- list()
-
+#initial_suborder <- list()
 # print("initial suborder:")
 # print(initial_suborder)
 
