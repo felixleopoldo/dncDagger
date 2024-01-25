@@ -138,7 +138,7 @@ int main(int argc, char **argv)
     initial_right_orders.push_back(initial_ro);
 
     auto start = high_resolution_clock::now();
-    const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
+    const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);

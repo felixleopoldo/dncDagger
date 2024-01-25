@@ -272,12 +272,12 @@ RightOrder init_right_order(const vector<double> &top_scores, OrderScoring &scor
     // unrestrained top score sum, for higher upper bound.
     ro.hidden_top_score_sum = accumulate(top_scores.begin(), top_scores.end(), 0.0);
     // cout << "Top scores: ";
-    for (auto &score : top_scores)
-    {
-        cout << score << " ";
-    }
-    cout << endl;
-    cout << "Hidden top score sum: " << ro.hidden_top_score_sum << endl;
+    //for (auto &score : top_scores)
+    //{
+    //    cout << score << " ";
+    //}
+    // cout << endl;
+    //cout << "Hidden top score sum: " << ro.hidden_top_score_sum << endl;
 
     // This might not be needed.
     for (size_t i = 0; i < p; i++)
@@ -551,7 +551,7 @@ vector<int> no_right_gaps(RightOrder &ro,
     return (indices_to_consider);
 }
 
-tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, vector<RightOrder> initial_right_orders)
+tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderScoring &scoring, vector<RightOrder> initial_right_orders)
 {
     size_t p = scoring.numparents.size();
     // cout << "Starting optimization" << endl;
@@ -628,11 +628,11 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
             // Loop over all the sub orders from the previous round.
             for (RightOrder &prev_order : right_orders_prev) // O( (p CR n-1) )
             {
-                cout << "prev_order " << prev_order << endl;
+                //cout << "prev_order " << prev_order << endl;
                 // If some new node is independent of the hidden, we prune all with
                 // lower numbers than the maximal one of these, using no_right_gaps.
                 vector<int> inds_to_consider = no_right_gaps(prev_order, top_scores, scoring); // O(p)
-                cout << "inds_to_consider.size() " << inds_to_consider.size() << endl;
+                //cout << "inds_to_consider.size() " << inds_to_consider.size() << endl;
                 for (auto node_index : inds_to_consider) // O(p)
                 {
                     int new_node = prev_order.order[node_index];
@@ -661,7 +661,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
 
                     right_orders.push_back(move(ro));
                 }
-                cout << "right_orders.size() " << right_orders.size() << endl;
+                //cout << "right_orders.size() " << right_orders.size() << endl;
             }
 
             // O(|right_orders_prev| * p) particles. space
@@ -677,7 +677,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
             for (RightOrder &ro : right_orders)
                 update_insertion_scores(ro, scoring); // O(p)
 
-            cout << "# orders after prune equal sets: " << orders2 << endl;
+            //cout << "# orders after prune equal sets: " << orders2 << endl;
 
             // Remove any order that has gaps.
             // After equal set pruning there are O((p CR n)) particles left so
@@ -711,7 +711,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
             //     break; // The reference order should be optimal.
             // }
 
-            cout << "kept_right_orders.size() " << right_orders.size() << endl;
+            //cout << "kept_right_orders.size() " << right_orders.size() << endl;
             if (right_orders.size() == 0)
                 break; // how would this be 0?
         }
@@ -738,6 +738,7 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
         cout << "max scoring sub order " << endl;
         cout << *max_ro << endl;
         cout << "score: " << max_ro->order_score << endl;
+        PrintVector(max_ro->node_scores);
 
         // if right_oder is not empty, tha max order should be set to the max
         // of the right orders and the reference order.
@@ -770,18 +771,19 @@ tuple<vector<int>, double, size_t, size_t> opruner_right(OrderScoring &scoring, 
     // {
     //     cout << rr << endl;
     // }
-    cout << "reference order: " << reference_order << endl;
 
-    right_orders_prev.push_back(reference_order);
-    // auto max_ro = max_element(right_orders_prev.begin(),
-    //                           right_orders_prev.end(),
-    //                           [](const RightOrder &a, const RightOrder &b)
-    //                           { return a.order_score < b.order_score; });
+    //cout << "reference order: " << reference_order << endl;
+    //right_orders_prev.push_back(reference_order);
+    
+    auto max_ro = max_element(right_orders_prev.begin(),
+                              right_orders_prev.end(),
+                              [](const RightOrder &a, const RightOrder &b)
+                              { return a.order_score < b.order_score; });
 
-    // cout << "MAX order " << *max_ro << endl;
+    cout << "MAX order " << *max_ro << endl;
 
-    // return (make_tuple(max_ro->order, max_ro->order_score, max_n_particles, tot_n_particles));
-    return (make_tuple(reference_order.order, reference_order.order_score, max_n_particles, tot_n_particles));
+    return (make_tuple(max_ro->order, max_ro->order_score, max_ro->node_scores, max_n_particles, tot_n_particles));
+    //return (make_tuple(reference_order.order, reference_order.order_score, max_n_particles, tot_n_particles));
 }
 
 // Function to print the 
@@ -804,6 +806,13 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
     cout << "initial right order: " << endl;
     // cout << r_initial_right_order << endl;
     cout << "length of initial right order: " << r_initial_right_order.size() << endl;
+
+    // decrease r_initial_right_order by 1
+    for (int i = 0; i < r_initial_right_order.size(); i++)
+    {
+        r_initial_right_order[i] = r_initial_right_order[i] - 1;
+    }
+
 
     // if r_initial_right_orders is not empty and contains one list, then use that as the initial right order.
     // otherwise, use the empty list.
@@ -848,10 +857,13 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
 
     // Add the initial right orders
 
-    const auto &[order, log_score, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
+    const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
+
+    // Maybe extract the sub order and corresponding score.
 
     Rcpp::List L = Rcpp::List::create(Rcpp::Named("order") = order,
                                       Rcpp::Named("log_score") = log_score,
+                                      Rcpp::Named("node_scores") = node_scores,
                                       Rcpp::Named("max_n_particles") = max_n_particles,
                                       Rcpp::Named("tot_n_particles") = tot_n_particles);
 

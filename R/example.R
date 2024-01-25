@@ -24,28 +24,29 @@ diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_sco
 H_min <- diff_matrices$H_min
 H_max <- diff_matrices$H_max
 
-initial_suborder <- list(5,1,3)
+#initial_suborder <- list(5,1,3)
+initial_suborder <- list()
 
-print("initial suborder:")
-print(initial_suborder)
+# print("initial suborder:")
+# print(initial_suborder)
 
 opr <- optimal_order(cpp_friendly_scores, initial_suborder)
-adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
-colnames(adjmat) <- colnames(data)
+## adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
+# colnames(adjmat) <- colnames(data)
 print(opr)
 
 H_min_adj <- (H_min> 0)*1
 H_max_adj <- (H_max> 0)*1
 
-G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
+#G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
 G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
 G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
 
-print("H_min:")
-print(H_min_adj)
+# print("H_min:")
+# print(H_min_adj)
 
-print("H_max:")
-print(H_max_adj)
+# print("H_max:")
+# print(H_max_adj)
 
 # Compontents of H_min. Possible component in G.
 print("Components of H_min:")
@@ -66,24 +67,31 @@ n_components <- igraph::components(G_H_min)$no
 
 for (component_id1 in seq(n_components)) {
     component1 <- seq(1, p)[membership == component_id1]
-    vertices1 <- igraph::V(G_opt)[membership == component_id1]$name
+    initial_suborder <- seq(1, p)[-component1]
 
-    initial_suborder <- seq(1, p)[-component1]-1
-
-    print("initial suborder:")
-    print(initial_suborder)
-    # Run order search for the nodes in component_id1
+    # Run order search for the nodes in component_id1, with al the orher nodes as initial suborder, i.e
+    # possible parents. Then check to which component the parents belong to.
     tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
-    copmonent1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
 
+    print("optimal suborder:")
+    print(tmp$suborder)
+    #print("optimal score:")
+    #print(tmp$log_score)
+    #print("node scores:")
+    #print(tmp$node_scores)
+    
+    print("suborder cond score:")
+    print(tmp$suborder_cond_score)
+
+    copmonent1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
+    G_opt <- igraph::graph_from_adjacency_matrix(copmonent1_adjmat, mode="directed")
+    vertices1 <- igraph::V(G_opt)[membership == component_id1]$name
+    
     # Now check to which component the parents belong to
     for (component_id2 in seq(n_components)) {    
         if (component_id1 == component_id2) next
 
-        # Run order search for the nodes in component_id1 having
-        # parents in component_id2 as possible parents.
-        # This should only run once actually.
-
+        # Get the edges between the two components
         vertices2 <- igraph::V(G_opt)[membership == component_id2]$name
         between_edges <- igraph::E(G_opt)[vertices1 %<-% vertices2]
 
@@ -93,19 +101,21 @@ for (component_id1 in seq(n_components)) {
             print(igraph::as_ids(between_edges))
             print("merging groups")
             #membership[membership == component_id2] <- component_id1
+        } else {
+            print("no edges between groups")
         }
     }
 }
 
-print("edges between groups")
-print(igraph::E(G_opt)[1:6 %->% 7:16])
-print(igraph::E(G_opt)[1:6 %<-% 7:16])
+# print("edges between groups")
+# print(igraph::E(G_opt)[1:6 %->% 7:16])
+# print(igraph::E(G_opt)[1:6 %<-% 7:16])
 
-print(igraph::as_ids(igraph::E(G_opt)[1:6 %<-% 7:16]))
-print(igraph::as_ids(igraph::E(G_opt)[1:6 %--% 7:16]))
-print(igraph::as_ids(igraph::E(G_opt)[1:6 %->% 7:16]))
+# print(igraph::as_ids(igraph::E(G_opt)[1:6 %<-% 7:16]))
+# print(igraph::as_ids(igraph::E(G_opt)[1:6 %--% 7:16]))
+# print(igraph::as_ids(igraph::E(G_opt)[1:6 %->% 7:16]))
 
-print(igraph::E(G_opt))
+# print(igraph::E(G_opt))
 
 ## For the components of H_max run the following:
 
