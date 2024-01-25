@@ -58,10 +58,12 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
         # total number of possible parents         
         n_pos_parents <- length(aliases[[i]])# sqrt(length(var$forward))
-                
+        
         # For the possible parents, i.e. not plus1 parents
         # We exclude each parent in turn and see how the score changes
         for (parent_ind in seq(n_pos_parents)){
+            # if no possible parents, skip
+            if(n_pos_parents == 0) next # since seq is weird
             parent <- aliases[[i]][[parent_ind]] # parent to exclude
             for (hash in var$forward){                
                 
