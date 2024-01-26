@@ -592,7 +592,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
     if (right_orders_prev.size() == 1)
     {
         nodes_in_initial_order = right_orders_prev[0].n_nodes;
-        cout << right_orders_prev[0] << endl;
+        //cout << right_orders_prev[0] << endl;
     }
     if (right_orders_prev.size() > 1)
     {
@@ -600,10 +600,10 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
         exit(1); // This should not happen. should be 1 or 0 elements in the vector.
     }
 
-    cout << "nodes_in_initial_order " << nodes_in_initial_order << endl;
+    //cout << "nodes_in_initial_order " << nodes_in_initial_order << endl;
     for (size_t n_nodes = nodes_in_initial_order + 1; n_nodes <= p; n_nodes++) // we should check how long the init order is here.
     {
-        cout << "n = " << n_nodes << endl;
+        //cout << "n = " << n_nodes << endl;
         if (n_nodes == 1)
         {
             for (size_t node_index = 0; node_index <= p - n_nodes; node_index++)
@@ -735,10 +735,10 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
                                   [](const RightOrder &a, const RightOrder &b)
                                   { return a.order_score < b.order_score; });
 
-        cout << "max scoring sub order " << endl;
-        cout << *max_ro << endl;
-        cout << "score: " << max_ro->order_score << endl;
-        PrintVector(max_ro->node_scores);
+        //cout << "max scoring sub order " << endl;
+        //cout << *max_ro << endl;
+        //cout << "score: " << max_ro->order_score << endl;
+        //PrintVector(max_ro->node_scores);
 
         // if right_oder is not empty, tha max order should be set to the max
         // of the right orders and the reference order.
@@ -780,7 +780,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
                               [](const RightOrder &a, const RightOrder &b)
                               { return a.order_score < b.order_score; });
 
-    cout << "MAX order " << *max_ro << endl;
+    //cout << "MAX order " << *max_ro << endl;
 
     return (make_tuple(max_ro->order, max_ro->order_score, max_ro->node_scores, max_n_particles, tot_n_particles));
     //return (make_tuple(reference_order.order, reference_order.order_score, max_n_particles, tot_n_particles));
@@ -803,9 +803,9 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
 {
     OrderScoring scoring = get_score(ret);
 
-    cout << "initial right order: " << endl;
+    //cout << "initial right order: " << endl;
     // cout << r_initial_right_order << endl;
-    cout << "length of initial right order: " << r_initial_right_order.size() << endl;
+    //cout << "length of initial right order: " << r_initial_right_order.size() << endl;
 
     // decrease r_initial_right_order by 1
     for (int i = 0; i < r_initial_right_order.size(); i++)
@@ -853,7 +853,7 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
         initial_right_orders.push_back(reference_order);
     }
 
-    cout << "initial right orders: " << initial_right_orders.size() << endl;
+    //cout << "initial right orders: " << initial_right_orders.size() << endl;
 
     // Add the initial right orders
 

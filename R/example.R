@@ -35,8 +35,8 @@ rmvDAG <- function(trueDAGedges, N) {
 
 set.seed(1)
 # Generate data
-N = 2000
-p <- 40
+N = 500
+p <- 20
 dag <- randDAG(p, 4, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
@@ -52,6 +52,8 @@ print(G_true)
 print("components:")
 print(igraph::components(G_true))
 
+# Also ge the optimal estiamted DAG to check the componets
+
 weight_mat <- adjmat
 n_edges <- sum(adjmat)
 weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = 0.25, ub = 1)
@@ -62,9 +64,7 @@ data <- data.frame(rmvDAG(weight_mat, N))
 # # #filename <- "data/asiadata_double.csv"
 # data <- read.csv(filename, check.names = FALSE)
 
-
 p <- ncol(data)
-
 
 scoretype <- "bge"
 bgepar <- list(am=1, aw=NULL)
@@ -138,8 +138,10 @@ optimal_components <- list()
 # Go through the components of H_min
 #for (component_id1 in seq(n_components)) {
 component_id1 <- 1
+
+component_score_sum <- 0    
 while (component_id1 <= n_components) {
-    
+
     component1 <- seq(1, p)[membership == component_id1]
     initial_suborder <- seq(1, p)[-component1]
 
@@ -147,14 +149,17 @@ while (component_id1 <= n_components) {
     # possible parents. Then check to which component the parents belong to.
     tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
 
-    print("optimal suborder:")
+    print("optimal suborder and score:")
     print(tmp$suborder)
+    # print suborder score
+    print(tmp$suborder_cond_score)
 
     copmonent1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
     G_opt <- igraph::graph_from_adjacency_matrix(copmonent1_adjmat, mode="directed")
     vertices1 <- igraph::V(G_opt)[membership == component_id1]$name
     
     # Now check to which component the parents belong to
+    merged_components <- c()
     for (component_id2 in seq(n_components)) {    
         if (component_id1 == component_id2) next
 
@@ -166,15 +171,30 @@ while (component_id1 <= n_components) {
             print("edges between groups")
             print(igraph::as_ids(between_edges))
             print("merging groups")
-            #n_components <- n_components - 1
-            #membership[membership == component_id2] <- component_id1
+            n_components <- n_components - 1
+            membership[membership == component_id2] <- component_id1
+            merged_components <- c(merged_components, component_id2)
         } else {
+
             print("no edges between these groups")
         }
     }
-    component_id1 <- component_id1 + 1
-
+    if (length(merged_components)){
+        print("rerun order search")
+        # print the merged components
+        print(merged_components)
+        # merge them and rerun, since the new ones may have parents outside. 
+    } else {
+        print("no edges between groups")
+        # go to the next component
+        component_score_sum <- component_score_sum + tmp$suborder_cond_score
+        component_id1 <- component_id1 + 1
+    }
+    #component_id1 <- component_id1 + 1
 }
+print("Sum of the individual components scores:")
+print(component_score_sum)
+
 
 
 # print(igraph::as_ids(igraph::E(G_opt)[1:6 %<-% 7:16]))
