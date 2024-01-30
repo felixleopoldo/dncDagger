@@ -601,6 +601,9 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
     }
 
     //cout << "nodes_in_initial_order " << nodes_in_initial_order << endl;
+    // print p
+    //cout << "p = " << p << endl;
+
     for (size_t n_nodes = nodes_in_initial_order + 1; n_nodes <= p; n_nodes++) // we should check how long the init order is here.
     {
         //cout << "n = " << n_nodes << endl;
@@ -764,6 +767,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
         // cout << "after move" << endl;
     }
 
+    cout << endl;
     // assert(right_orders_prev.size() == 1); // we quite 2 steps before...
     //  It should only be one here anyways
 
