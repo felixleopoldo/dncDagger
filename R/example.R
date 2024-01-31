@@ -37,7 +37,7 @@ set.seed(1)
 # Generate data
 N = 100
 p <- 32
-dag <- randDAG(p, 3, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+dag <- randDAG(p, 2, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
 
@@ -212,7 +212,6 @@ get_cycles <- function(g) {
 #print("Sum of the individual components scores:")
 #print(component_score_sum)
 membership <- igraph::components(G_H_min)$membership
-#n_components <- igraph::components(G_H_min)$no
 
 adjmat_compdep <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
 
@@ -221,43 +220,56 @@ adjmat_compdep <- component_dependence(membership, bidag_scores, cpp_friendly_sc
 print("Component dependence graph:")
 
 G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
+
 print(igraph::E(G_compdep))
 
 Cycles <- get_cycles(G_compdep)
 print("Cycles:")
 print(Cycles)
 
-# Make the cycle components bidirected. And take out those components.
-n_components <- max(membership)
-adjmat_compdep2 <- matrix(0, n_components, n_components)
-print("G_compdep2:")
-print(adjmat_compdep2)
-for (cycle in Cycles) {
-    print("cycle:")
-    print(cycle)
-    # Create edges in both directions for elements in the cycle
-    for (i in seq(1, length(cycle))) {
-        for (j in seq(1, length(cycle))) {
-            if (i == j) next
-            #print(paste(i, j))
-            #print(paste(cycle[i], cycle[j]))
-            adjmat_compdep2[cycle[i], cycle[j]] <- 1
-            adjmat_compdep2[cycle[j], cycle[i]] <- 1
+
+merged_neig_cycles <- function(adjmat_compdep2){
+
+
+    # Make the cycle components bidirected. And take out those components.
+    n_components <- ncol(adjmat_compdep2)
+    #n_components <- max(membership) change this to the above.
+    adjmat_compdep2 <- matrix(0, n_components, n_components)
+    print("G_compdep2:")
+    print(adjmat_compdep2)
+    for (cycle in Cycles) {
+        print("cycle:")
+        print(cycle)
+        # Create edges in both directions for elements in the cycle
+        for (i in seq(1, length(cycle))) {
+            for (j in seq(1, length(cycle))) {
+                if (i == j) next
+                #print(paste(i, j))
+                #print(paste(cycle[i], cycle[j]))
+                adjmat_compdep2[cycle[i], cycle[j]] <- 1
+                adjmat_compdep2[cycle[j], cycle[i]] <- 1
+            }
         }
     }
+    print("adjmat_compdep2:")
+    print(adjmat_compdep2)
+    # This is just to get the new merged components, where the cycles are merged.
+    G_compdep2 <- igraph::graph_from_adjacency_matrix(adjmat_compdep2, mode="undirected")
+    membership_comp <- igraph::components(G_compdep2)$membership
+
+    return(membership_comp)
 }
-print("adjmat_compdep2:")
-print(adjmat_compdep2)
-# This is just to get the new merged components, where the cycles are merged.
-G_compdep2 <- igraph::graph_from_adjacency_matrix(adjmat_compdep2, mode="undirected")
-membership_comp <- igraph::components(G_compdep2)$membership
+
+membership_comp <- merged_neig_cycles(adjmat_compdep)
 print("membership:")
 print(membership_comp)
 n_merged_components <- max(membership_comp)
-
+n_components <- length(membership_comp)
 
 ## DAG for the merged components.
 merged_components_adjmat <- matrix(0, n_merged_components, n_merged_components)
+
+
 
 # Now fill in with the non cycle edges in adjmat_compdep2
 # Go through edges in the G_compdep.
