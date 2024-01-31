@@ -31,105 +31,6 @@ rmvDAG <- function(trueDAGedges, N) {
   data
 }
 
-
-
-set.seed(1)
-# Generate data
-N = 100
-p <- 32
-dag <- randDAG(p, 2, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
-#dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
-adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
-
-colnames(adjmat) <- paste0("X", 1:p)
-
-G_true <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
-
-print("G_true:")
-print(G_true)
-print("components:")
-print(igraph::components(G_true))
-
-# Also ge the optimal estiamted DAG to check the componets
-
-weight_mat <- adjmat
-n_edges <- sum(adjmat)
-weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = 0.25, ub = 1)
-data <- data.frame(rmvDAG(weight_mat, N))
-
-# filename <- "data/p20n300gaussdata.csv"
-# # filename <- "data/asiadata.csv"
-# # #filename <- "data/asiadata_double.csv"
-# data <- read.csv(filename, check.names = FALSE)
-
-p <- ncol(data)
-
-scoretype <- "bge"
-bgepar <- list(am=1, aw=NULL)
-
-if (scoretype =="bge") {
-    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
-} else if (scoretype == "bde") {
-    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
-}
-
-set.seed(1)
-print("getting cpp friendly bidag scores")
-cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2, iterations=NULL) # from iterativeMCMC
-
-# This is now working if aliases is empty
-aliases <- lapply(cpp_friendly_scores$aliases, function(a) a + 1)
-
-print("Creating diff matrices")
-diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, labels(data)[[2]])
-H_min <- diff_matrices$H_min
-H_max <- diff_matrices$H_max
-
-#initial_suborder <- list(5,1,3)
-#initial_suborder <- list()
-# print("initial suborder:")
-# print(initial_suborder)
-
-# opr <- optimal_order(cpp_friendly_scores, initial_suborder)
-# ## adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
-# # colnames(adjmat) <- colnames(data)
-# print(opr)
-
-H_min_adj <- (H_min> 0)*1
-H_max_adj <- (H_max> 0)*1
-
-#G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
-G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
-G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
-
-# print("H_min:")
-# print(H_min_adj)
-
-# print("H_max:")
-# print(H_max_adj)
-
-# Compontents of H_min. Possible component in G.
-print("Components of H_min:")
-print(igraph::components(G_H_min))
-
-# Compontents of H_max. Ome componetn of this may contain several componets of G.
-print("Components of H_max:")
-print(igraph::components(G_H_max))
-
-# Should be able to run order opt on suborder.
-
-
-
-#print("membership:")
-#print(membership)
-
-
-# Run order search on each component from H_min and see which components in Hmin
-# That the parents belong to
-
-# Fact: If a components exists in H_min then it is a component or a sub component in H_max.
-optimal_components <- list()
-
 # TODO: This should take the membership vector, not the graph
 component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) {
     # Vector of component numbers
@@ -197,7 +98,7 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
 }
 
 get_cycles <- function(g) {
-    g <- G_compdep
+    #g <- G_compdep
     Cycles = NULL
     for(v1 in igraph::V(g)) {
         for(v2 in igraph::neighbors(g, v1, mode="out")) {
@@ -208,35 +109,18 @@ get_cycles <- function(g) {
     return(Cycles)
 }
 
-
-#print("Sum of the individual components scores:")
-#print(component_score_sum)
-membership <- igraph::components(G_H_min)$membership
-
-adjmat_compdep <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
-
-# merge components that are dependent on each other
-
-print("Component dependence graph:")
-
-G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
-
-print(igraph::E(G_compdep))
-
-Cycles <- get_cycles(G_compdep)
-print("Cycles:")
-print(Cycles)
-
-
 merged_neig_cycles <- function(adjmat_compdep2){
+    G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep2, mode="directed")
+    Cycles <- get_cycles(G_compdep)
+    print("Cycles:")
+    print(Cycles)
 
 
     # Make the cycle components bidirected. And take out those components.
     n_components <- ncol(adjmat_compdep2)
     #n_components <- max(membership) change this to the above.
     adjmat_compdep2 <- matrix(0, n_components, n_components)
-    print("G_compdep2:")
-    print(adjmat_compdep2)
+
     for (cycle in Cycles) {
         print("cycle:")
         print(cycle)
@@ -260,68 +144,180 @@ merged_neig_cycles <- function(adjmat_compdep2){
     return(membership_comp)
 }
 
-membership_comp <- merged_neig_cycles(adjmat_compdep)
-print("membership:")
-print(membership_comp)
-n_merged_components <- max(membership_comp)
-n_components <- length(membership_comp)
+merged_component_dependencies <- function(adjmat_compdep, membership_comp){
+    n_merged_components <- max(membership_comp)
+    n_components <- length(membership_comp)
 
-## DAG for the merged components.
-merged_components_adjmat <- matrix(0, n_merged_components, n_merged_components)
+    ## DAG for the merged components.
+    merged_components_adjmat <- matrix(0, n_merged_components, n_merged_components)
 
+    # Now fill in with the non cycle edges in adjmat_compdep2
+    # Go through edges in the G_compdep.
 
+    for (i in seq(1, n_components)) {
+        for (j in seq(1, n_components)) {
+            #print(paste(i, j))
+            # check if the edge i->j or i<-j exists in G_compdep
+            if ((adjmat_compdep[i, j] == 0) && (adjmat_compdep[j,i]==0)) next
+            if (i == j) next
+            merged_i <- membership_comp[i]
+            merged_j <- membership_comp[j]    
+            #print("merged components:")
+            #print(paste(merged_i, merged_j))
+            if (merged_i == merged_j) next # same merged component, ie no edge
 
-# Now fill in with the non cycle edges in adjmat_compdep2
-# Go through edges in the G_compdep.
+            # Here we know that i and j are not merged
+            if ((adjmat_compdep[i, j] == 1) && (adjmat_compdep[j,i]==0)) {
+                merged_components_adjmat[merged_i, merged_j] <- 1
+            }
 
-for (i in seq(1, n_components)) {
-    for (j in seq(1, n_components)) {
-        #print(paste(i, j))
-        # check if the edge i->j or i<-j exists in G_compdep
-        if ((adjmat_compdep[i, j] == 0) && (adjmat_compdep[j,i]==0)) next
-        if (i == j) next
-        merged_i <- membership_comp[i]
-        merged_j <- membership_comp[j]    
-        #print("merged components:")
-        #print(paste(merged_i, merged_j))
-        if (merged_i == merged_j) next # same merged component, ie no edge
-
-        # Here we know that i and j are not merged
-        if ((adjmat_compdep[i, j] == 1) && (adjmat_compdep[j,i]==0)) {
-            merged_components_adjmat[merged_i, merged_j] <- 1
+            if((adjmat_compdep[i, j] == 0) && (adjmat_compdep[j,i]==1)) {
+                merged_components_adjmat[merged_j, merged_i] <- 1
+            }
+            # if not both i and j are in the same component, 
+            # check the new components of i and j and add the 
         }
-
-        if((adjmat_compdep[i, j] == 0) && (adjmat_compdep[j,i]==1)) {
-            merged_components_adjmat[merged_j, merged_i] <- 1
-        }
-        # if not both i and j are in the same component, 
-        # check the new components of i and j and add the 
     }
+
+    print("merged_components_adjmat:")
+    print(merged_components_adjmat)
+    merged_components_graph <- igraph::graph_from_adjacency_matrix(merged_components_adjmat, mode="directed")
+
+    return(merged_components_graph)
 }
 
-print("merged_components_adjmat:")
-print(merged_components_adjmat)
-merged_components_graph <- igraph::graph_from_adjacency_matrix(merged_components_adjmat, mode="directed")
-
-sorted_compnents <- igraph::topo_sort(merged_components_graph, mode= "in")
-print("sorted_compnents:")
-print(sorted_compnents)
-
-# TODO: Still need the directed part for the order!
-# check for the edges that are not part of a cycle and add these too
-
-# Now, go trough the nodes in the original graph, and check their components
-# and cchek in the merged components which components they belong to.
-
-ultimate_membership <- rep(0, p)
-for (i in seq(1, p)) {    
-    #print(paste("node:", i))    
-    original_component <- membership[i]
-    merged_component <- membership_comp[original_component]
-    ultimate_membership[i] <- merged_component
+merged_components_membership <- function(membership, membership_comp){
+    # Translates the membership vector of the original graph to the new merged components
+    ultimate_membership <- rep(0, p)
+    for (i in seq(1, p)) {    
+        original_component <- membership[i]
+        merged_component <- membership_comp[original_component]
+        ultimate_membership[i] <- merged_component
+    }
+    return(ultimate_membership)
 }
-print("ultimate_membership:")
-print(ultimate_membership)
+
+
+set.seed(1)
+# Generate data
+N = 100
+p <- 32
+dag <- randDAG(p, 2, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+#dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
+
+colnames(adjmat) <- paste0("X", 1:p)
+
+G_true <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
+
+print("G_true:")
+print(G_true)
+print("components:")
+print(igraph::components(G_true))
+
+# Also ge the optimal estiamted DAG to check the componets
+
+weight_mat <- adjmat
+n_edges <- sum(adjmat)
+weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = 0.25, ub = 1)
+data <- data.frame(rmvDAG(weight_mat, N))
+
+# filename <- "data/p20n300gaussdata.csv"
+# filename <- "data/asiadata.csv"
+# filename <- "data/asiadata_double.csv"
+# data <- read.csv(filename, check.names = FALSE)
+
+p <- ncol(data)
+
+scoretype <- "bge"
+bgepar <- list(am=1, aw=NULL)
+
+if (scoretype =="bge") {
+    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
+} else if (scoretype == "bde") {
+    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
+}
+
+set.seed(1)
+print("getting cpp friendly bidag scores")
+cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2, iterations=NULL) # from iterativeMCMC
+
+# This is now working if aliases is empty
+aliases <- lapply(cpp_friendly_scores$aliases, function(a) a + 1)
+
+print("Creating diff matrices")
+diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, labels(data)[[2]])
+H_min <- diff_matrices$H_min
+H_max <- diff_matrices$H_max
+
+
+# opr <- optimal_order(cpp_friendly_scores, initial_suborder)
+# ## adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
+#G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
+# # colnames(adjmat) <- colnames(data)
+# print(opr)
+
+H_min_adj <- (H_min> 0)*1
+H_max_adj <- (H_max> 0)*1
+
+
+G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
+G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
+# print("H_min:")
+# print(H_min_adj)
+# print("H_max:")
+# print(H_max_adj)
+
+# Compontents of H_min. Possible component in G.
+print("Components of H_min:")
+print(igraph::components(G_H_min))
+
+# Compontents of H_max. Ome componetn of this may contain several componets of G.
+print("Components of H_max:")
+print(igraph::components(G_H_max))
+
+
+# Run order search on each component from H_min and see which components in Hmin
+# That the parents belong to
+
+#print("Sum of the individual components scores:")
+#print(component_score_sum)
+
+membership <- igraph::components(G_H_min)$membership
+div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores) {
+
+    # Get the component dependence graph
+    adjmat_compdep <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
+    G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
+    print(igraph::E(G_compdep))
+
+    # Merge components that are dependent on each other in a cycle and neigboring cycles.
+    print("Component dependence graph:")
+    # This is for the graph of comopnents. So its the new components membership after merging the cycles.
+    membership_comp <- merged_neig_cycles(adjmat_compdep)
+    print("membership:")
+    print(membership_comp)
+
+    merged_components_graph <- merged_component_dependencies(adjmat_compdep, membership_comp)
+
+    sorted_components <- igraph::topo_sort(merged_components_graph, mode= "in")
+    print("sorted_components:")
+    print(sorted_components)
+
+    # TODO: Still need the directed part for the order!
+    # check for the edges that are not part of a cycle and add these too
+
+    # Now, go trough the nodes in the original graph, and check their components
+    # and check in the merged components which components they belong to.
+    ultimate_membership <- merged_components_membership(membership, membership_comp)
+    print("ultimate_membership:")
+    print(ultimate_membership)
+
+}
+
+div_n_conquer(membership, bidag_scores, cpp_friendly_scores)
+# Remains to iterate and is no cycles, output the final order in the topological order
+# sorted_components.
 
 
 # Remove the remaining directed edges
