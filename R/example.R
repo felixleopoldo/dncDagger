@@ -44,6 +44,8 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
 
     # Adjacentcy matrix for the component dependence
     comp_dep <- matrix(0, n_components, n_components)
+    # list of order for each component
+    opt_sub_orders <- list()
 
     while (component_id1 <= n_components) {
 
@@ -55,6 +57,7 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
         print("calculating optimal order for suborder:")
         print(component1)
         tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
+        opt_sub_orders[[component_id1]] <- list("suborder"=tmp$suborder, score=tmp$suborder_cond_score)
 
         print("optimal suborder and score:")
         print(tmp$suborder)
@@ -92,8 +95,8 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
         
     }
 
-    return(comp_dep)
-    
+    # note that opt_sub_orders will only be valied after the las round when all the merging is done.
+    return(list("comp_dep"=comp_dep, "opt_sub_orders"=opt_sub_orders)) 
 
 }
 
@@ -112,8 +115,8 @@ get_cycles <- function(g) {
 merged_neig_cycles <- function(adjmat_compdep2){
     G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep2, mode="directed")
     Cycles <- get_cycles(G_compdep)
-    print("Cycles:")
-    print(Cycles)
+    #print("Cycles:")
+    #print(Cycles)
 
 
     # Make the cycle components bidirected. And take out those components.
@@ -122,8 +125,8 @@ merged_neig_cycles <- function(adjmat_compdep2){
     adjmat_compdep2 <- matrix(0, n_components, n_components)
 
     for (cycle in Cycles) {
-        print("cycle:")
-        print(cycle)
+        #print("cycle:")
+        #print(cycle)
         # Create edges in both directions for elements in the cycle
         for (i in seq(1, length(cycle))) {
             for (j in seq(1, length(cycle))) {
@@ -286,36 +289,89 @@ print(igraph::components(G_H_max))
 membership <- igraph::components(G_H_min)$membership
 div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores) {
 
-    # Get the component dependence graph
-    adjmat_compdep <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
+    # Get the component dependence graph    
+    ret <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
+    adjmat_compdep <- ret$comp_dep
     G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
+    print("Component dependence graph before possible merging:")
     print(igraph::E(G_compdep))
 
     # Merge components that are dependent on each other in a cycle and neigboring cycles.
-    print("Component dependence graph:")
     # This is for the graph of comopnents. So its the new components membership after merging the cycles.
+    print("Component dependence graph:")
     membership_comp <- merged_neig_cycles(adjmat_compdep)
     print("membership:")
     print(membership_comp)
-
+    
+    # Get dependency graph for the merged components
     merged_components_graph <- merged_component_dependencies(adjmat_compdep, membership_comp)
-
-    sorted_components <- igraph::topo_sort(merged_components_graph, mode= "in")
-    print("sorted_components:")
-    print(sorted_components)
-
-    # TODO: Still need the directed part for the order!
-    # check for the edges that are not part of a cycle and add these too
 
     # Now, go trough the nodes in the original graph, and check their components
     # and check in the merged components which components they belong to.
     ultimate_membership <- merged_components_membership(membership, membership_comp)
     print("ultimate_membership:")
     print(ultimate_membership)
-
+    
+    # Could be done aboe but like this we shold be able to verify that the merging is correct.
+    # Here we can chag if there where no merged components, i.e. no cycles.
+    # By checking if the number of components is the same as the number of merged components.
+    if (max(membership_comp) == length(membership_comp)) {
+        print("No cycles, returning the original order")
+        return(list("membership"=membership, 
+                    "merged_components_graph"= G_compdep, 
+                    "no_cycles"=TRUE,
+                    "component_order"=ret))
+    }
+    
+    return(list("membership"=ultimate_membership,
+                "merged_components_graph"= merged_components_graph,
+                "no_cycles"=FALSE,
+                "component_order"=NULL))
 }
 
-div_n_conquer(membership, bidag_scores, cpp_friendly_scores)
+concat_suborders <- function(ultimate_membership, merged_components_graph, component_order){
+    ## Paste the pieaces of suborders acccording to the topological order of merged components.    
+    sorted_components <- igraph::topo_sort(merged_components_graph, mode= "in")
+    print("sorted_components:")
+    print(sorted_components)
+
+    full_order <- c()
+    total_score <- 0
+    for (comp_id in sorted_components) {
+
+        suborder <- component_order$opt_sub_orders[[comp_id]]$suborder
+
+        print(paste("suborder:", comp_id))
+        print(suborder)
+        print("score:")
+        print(component_order$opt_sub_orders[[comp_id]]$score)
+        full_order <- c(full_order, suborder) #maybe the other way around
+        total_score <- total_score + component_order$opt_sub_orders[[comp_id]]$score
+    }
+    return(list("order"=full_order, "score"=total_score))
+}
+
+
+round <- 1
+while (TRUE) {   
+    print(paste("############# Round ",round," #################"))
+    ret <- div_n_conquer(membership, bidag_scores, cpp_friendly_scores)
+    ultimate_membership <- ret$membership
+    merged_components_graph <- ret$merged_components_graph
+    if (ret$no_cycles) { # no cycles to merge.
+        res <- concat_suborders(ultimate_membership, merged_components_graph, ret$component_order)
+        print("optorder:")
+        print(res$order)
+        print(res$score)
+        break
+    }
+    membership <- ultimate_membership # Update the membership to the new merged components
+    round <- round + 1
+}
+
+
+
+
 # Remains to iterate and is no cycles, output the final order in the topological order
 # sorted_components.
 
