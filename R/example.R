@@ -35,7 +35,7 @@ rmvDAG <- function(trueDAGedges, N) {
 component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) {
     # Vector of component numbers
     n_components <- max(membership)
-
+    print(paste("n_components:", n_components))
     # Go through the components of H_min
     #for (component_id1 in seq(n_components)) {
     component_id1 <- 1
@@ -54,7 +54,7 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
 
         # Run order search for the nodes in component_id1, with al the orher nodes as initial suborder, i.e
         # possible parents. Then check to which component the parents belong to.
-        print("calculating optimal order for suborder:")
+        print(paste("******* calculating optimal order for suborder:", component_id1, "********"))
         print(component1)
         tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
         opt_sub_orders[[component_id1]] <- list("suborder"=tmp$suborder, score=tmp$suborder_cond_score)
@@ -81,13 +81,8 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores) 
             if (length(between_edges) > 0) {
                 comp_dep[component_id2, component_id1] <- 1 # i.e. it is at least one edge/parent from comp 2 to 1
                 # There are edges from component2 to component1
-                print("components:")
-                print(paste(component_id1,":"))
-                print(component1)
-                print(paste(component_id2, ":"))
+                print(paste("Edges from component:", component_id2))
                 print(component2)
-                
-                print("The edges between the two components are:")
                 print(between_edges)
             } 
         }
@@ -138,8 +133,8 @@ merged_neig_cycles <- function(adjmat_compdep2){
             }
         }
     }
-    print("adjmat_compdep2:")
-    print(adjmat_compdep2)
+    #print("adjmat_compdep2:")
+    #print(adjmat_compdep2)
     # This is just to get the new merged components, where the cycles are merged.
     G_compdep2 <- igraph::graph_from_adjacency_matrix(adjmat_compdep2, mode="undirected")
     membership_comp <- igraph::components(G_compdep2)$membership
@@ -191,11 +186,16 @@ merged_component_dependencies <- function(adjmat_compdep, membership_comp){
 
 merged_components_membership <- function(membership, membership_comp){
     # Translates the membership vector of the original graph to the new merged components
+    print("Determin new node memberships in the merged components:")
     ultimate_membership <- rep(0, p)
     for (i in seq(1, p)) {    
+        #print(paste("node:", i))
         original_component <- membership[i]
+        #print(paste("original_component:", original_component))
         merged_component <- membership_comp[original_component]
+        #print(paste("merged_component:", merged_component))
         ultimate_membership[i] <- merged_component
+        #print(paste("ultimate_membership:", ultimate_membership[i]))
     }
     return(ultimate_membership)
 }
@@ -204,7 +204,7 @@ merged_components_membership <- function(membership, membership_comp){
 set.seed(1)
 # Generate data
 N = 100
-p <- 32
+p <- 16
 dag <- randDAG(p, 2, method ="interEr", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(p, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
@@ -227,8 +227,8 @@ data <- data.frame(rmvDAG(weight_mat, N))
 
 # filename <- "data/p20n300gaussdata.csv"
 # filename <- "data/asiadata.csv"
-# filename <- "data/asiadata_double.csv"
-# data <- read.csv(filename, check.names = FALSE)
+#filename <- "data/asiadata_double.csv"
+#data <- read.csv(filename, check.names = FALSE)
 
 p <- ncol(data)
 
@@ -253,8 +253,11 @@ diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_sco
 H_min <- diff_matrices$H_min
 H_max <- diff_matrices$H_max
 
-
+# initial_suborder <- c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,25,26,27,28,29,30,31) +1 
 # opr <- optimal_order(cpp_friendly_scores, initial_suborder)
+# print("optimal sub order:")
+# print(opr$suborder)
+
 # ## adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
 #G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
 # # colnames(adjmat) <- colnames(data)
@@ -291,6 +294,7 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores) {
 
     # Get the component dependence graph    
     ret <- component_dependence(membership, bidag_scores, cpp_friendly_scores)
+    #print(ret)
     adjmat_compdep <- ret$comp_dep
     G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
     print("Component dependence graph before possible merging:")
@@ -300,7 +304,7 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores) {
     # This is for the graph of comopnents. So its the new components membership after merging the cycles.
     print("Component dependence graph:")
     membership_comp <- merged_neig_cycles(adjmat_compdep)
-    print("membership:")
+    print("membership after merging:")
     print(membership_comp)
     
     # Get dependency graph for the merged components
@@ -354,6 +358,7 @@ concat_suborders <- function(ultimate_membership, merged_components_graph, compo
 
 round <- 1
 while (TRUE) {   
+    # node 24 is missing .... It was in component 8 at the beginning.
     print(paste("############# Round ",round," #################"))
     ret <- div_n_conquer(membership, bidag_scores, cpp_friendly_scores)
     ultimate_membership <- ret$membership
@@ -363,6 +368,7 @@ while (TRUE) {
         print("optorder:")
         print(res$order)
         print(res$score)
+        print(length(res$order))
         break
     }
     membership <- ultimate_membership # Update the membership to the new merged components

@@ -593,6 +593,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
     {
         nodes_in_initial_order = right_orders_prev[0].n_nodes;
         //cout << right_orders_prev[0] << endl;
+        //PrintVector(right_orders_prev[0].order);
     }
     if (right_orders_prev.size() > 1)
     {
@@ -639,6 +640,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
                 for (auto node_index : inds_to_consider) // O(p)
                 {
                     int new_node = prev_order.order[node_index];
+                    //cout << "new_node " << new_node << endl;
                     // Check if the new node is optimal at front, is S(([hidden], n_node, visible)) S(([hidden], visible and n)).
                     // If not, don't consider this node for addition.
                     if (!optimal_front(prev_order, new_node, scoring))
@@ -700,7 +702,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
             right_orders = move(right_orders_tmp);
 
             orders3 = right_orders.size();
-            // cout << "# orders after has gap prune: " << orders3 << endl;
+            //cout << "# orders after has gap prune: " << orders3 << endl;
             // tree estimate of the left side of the orders
 
             // cout << "right_orders.size() " << right_orders.size() << endl;
@@ -745,15 +747,16 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
 
         // if right_oder is not empty, tha max order should be set to the max
         // of the right orders and the reference order.
-        if (right_orders.size() > 0)
-        {
-            if (definitelyGreaterThan(reference_order.order_score, max_ro->order_score, EPSILON))
-            {
-                // reference_order = *max_ro;
-                *max_ro = reference_order;
-                // reference_order = *max_ro;
-            }
-        }
+        // if (right_orders.size() > 0)
+        // {
+        //     if (definitelyGreaterThan(reference_order.order_score, max_ro->order_score, EPSILON))
+        //     {
+        //         // reference_order = *max_ro;
+        //         cout << "Using refeterence order as max order" << endl;
+        //         *max_ro = reference_order;
+        //         // reference_order = *max_ro;
+        //     }
+        // }
 
         // check correct score
         vector<double> sc = scoring.score(max_ro->order, p - n_nodes, n_nodes); // Take only the last n elements in the vector
@@ -803,19 +806,19 @@ size_t getIndex(vector<int> &v, int K)
 
 // [[Rcpp::export]]
 
-Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
+Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::NumericVector r_initial_right_order)
 {
     OrderScoring scoring = get_score(ret);
 
     //cout << "initial right order: " << endl;
-    // cout << r_initial_right_order << endl;
-    //cout << "length of initial right order: " << r_initial_right_order.size() << endl;
-
+    
     // decrease r_initial_right_order by 1
     for (int i = 0; i < r_initial_right_order.size(); i++)
-    {
+    {        
         r_initial_right_order[i] = r_initial_right_order[i] - 1;
+        //cout << r_initial_right_order[i] << " ";   
     }
+    //cout << endl;
 
 
     // if r_initial_right_orders is not empty and contains one list, then use that as the initial right order.
@@ -857,7 +860,12 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
         initial_right_orders.push_back(reference_order);
     }
 
-    //cout << "initial right orders: " << initial_right_orders.size() << endl;
+    // cout << "initial right orders: " << initial_right_orders.size() << endl;
+    // cout << "initial right orders: " << endl;
+    // for (auto &ro : initial_right_orders)
+    // {
+    //     cout << ro << endl;
+    // }
 
     // Add the initial right orders
 

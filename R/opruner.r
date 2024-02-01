@@ -14,7 +14,15 @@ optimal_order <- function(cpp_friendly_scores, initial_sub_order){
     ret$suborder_cond_score <- 0
     ret$order <- ret$order + 1 # since c++ enumerate nodes from 0    
     p <- length(ret$node_scores)
-    suborder <- ret$order[1:(p-length(initial_sub_order))]
+    suborder <- ret$order[1:(p-length(initial_sub_order))] # The suborder is the firs part of the order
+    # print(paste("optimal_order: suborder:"))
+    # print(paste(suborder))
+    # print(paste("optimal_order: initial_sub_order:"))
+    # print(paste(initial_sub_order))
+    # print("optimal order")
+    # print(ret$order)
+    # #initial_sub_order
+
     for (node in suborder) {
         ret$suborder_cond_score <- ret$suborder_cond_score + ret$node_scores[node]
     } 
