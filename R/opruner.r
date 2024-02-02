@@ -10,6 +10,8 @@ sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
 
 
 optimal_order <- function(cpp_friendly_scores, initial_sub_order){
+
+    # Check if the initial suborder is empty
     ret <- r_opruner_right(cpp_friendly_scores, initial_sub_order)
     ret$suborder_cond_score <- 0
     ret$order <- ret$order + 1 # since c++ enumerate nodes from 0    

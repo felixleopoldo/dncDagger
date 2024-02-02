@@ -806,21 +806,14 @@ size_t getIndex(vector<int> &v, int K)
 
 // [[Rcpp::export]]
 
-Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::NumericVector r_initial_right_order)
+Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
 {
     OrderScoring scoring = get_score(ret);
 
     //cout << "initial right order: " << endl;
     
     // decrease r_initial_right_order by 1
-    for (int i = 0; i < r_initial_right_order.size(); i++)
-    {        
-        r_initial_right_order[i] = r_initial_right_order[i] - 1;
-        //cout << r_initial_right_order[i] << " ";   
-    }
-    //cout << endl;
-
-
+    
     // if r_initial_right_orders is not empty and contains one list, then use that as the initial right order.
     // otherwise, use the empty list.
 
@@ -828,6 +821,10 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::NumericVector r_initial_right_o
 
     if (r_initial_right_order.size() > 0)
     {
+        for (int i = 0; i < r_initial_right_order.size(); i++)
+        {        
+            r_initial_right_order[i] = r_initial_right_order[i] - 1;        
+        }    
 
         size_t p = scoring.numparents.size();    // total number of nodes
         size_t n = r_initial_right_order.size(); // number of nodes in the initial sub order
