@@ -770,7 +770,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
         // cout << "after move" << endl;
     }
 
-    cout << endl;
+    //cout << endl;
     // assert(right_orders_prev.size() == 1); // we quite 2 steps before...
     //  It should only be one here anyways
 

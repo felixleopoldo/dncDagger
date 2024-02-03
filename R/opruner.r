@@ -47,12 +47,12 @@ dnc <- function(cpp_friendly_scores, bidag_scores) {
     #print("Creating diff matrices")
     diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, labels(data)[[2]])
     H_min <- diff_matrices$H_min
-    H_max <- diff_matrices$H_max
+    #H_max <- diff_matrices$H_max
     p <- nrow(H_min)
     H_min_adj <- (H_min> 0)*1
-    H_max_adj <- (H_max> 0)*1
+    #H_max_adj <- (H_max> 0)*1
     G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
-    G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
+    #G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
     # print("H_min:")
     # print(H_min_adj)
     # print("H_max:")
@@ -185,11 +185,13 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
         # If we have a new component, calculate the optimal order for it
         if (component1_exists==FALSE) {
             print("Calculating optimal order for new component")
-            tmp <- optimal_order(cpp_friendly_scores, initial_suborder)        
+            tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
+            print("done")    
             max_n_particles <- max(max_n_particles, tmp$max_n_particles)
             tot_n_particles <- tot_n_particles + tmp$tot_n_particles
+            print("Calculating optimal DAG for new component")
             component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
-
+            print("done")
             G_opt <- igraph::graph_from_adjacency_matrix(component1_adjmat, mode="directed")            
             # Now, remove iuncoming nodes to all nodes except for those in the component.
             # Then we can paste the all together in the end.
@@ -205,10 +207,9 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
                                                     "dag"=G_opt,
                                                     "subadjmat"=component1_adjmat)
         
-            #print("optimal suborder and score:")
-            #print(tmp$suborder)
-            # print suborder score
-            #print(tmp$suborder_cond_score)
+            print("optimal suborder and score:")
+            print(tmp$suborder)            
+            print(tmp$suborder_cond_score)
         } else {
             print("Component already exists")
         }
