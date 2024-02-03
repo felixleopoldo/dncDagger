@@ -1,46 +1,50 @@
 library("Rcpp")
 library("Jmisc")
 library("pcalg")
-library("ggplot2")
-library("testit")
+#library("ggplot2")
+#library("testit")
 library(argparser)
 source("R/scoring.R")
+source("R/opruner.r")
 
-# This function generates Gaussian data from a DAG
-# following the topological order.
-rmvDAG <- function(trueDAGedges, N) {
-  trueDAG <- 1 * (trueDAGedges != 0) # the edge presence in the DAG
-  n <- ncol(trueDAG) # number of variables
-  data <- matrix(0, nrow = N, ncol = n) # to store the simulated data
-  top_order <- rev(BiDAG:::DAGtopartition(n, trueDAG)$permy) # go down order
-  for (jj in top_order) {
-    parents <- which(trueDAG[, jj] == 1) # find parents
-    lp <- length(parents) # number of parents
-    if (lp == 0) {
-      # no parents
-      data[, jj] <- 0
-    } else if (lp == 1) {
-      # one parent
-      data[, jj] <- data[, parents] * trueDAGedges[parents, jj]
-    } else {
-      # more than one parent
-      data[, jj] <- colSums(t(data[, parents]) * trueDAGedges[parents, jj])
-    }
-    # add random noise
-    data[, jj] <- data[, jj] + rnorm(N)
-  }
-  data
-}
+# # This function generates Gaussian data from a DAG
+# # following the topological order.
+# rmvDAG <- function(trueDAGedges, N) {
+#   trueDAG <- 1 * (trueDAGedges != 0) # the edge presence in the DAG
+#   n <- ncol(trueDAG) # number of variables
+#   data <- matrix(0, nrow = N, ncol = n) # to store the simulated data
+#   top_order <- rev(BiDAG:::DAGtopartition(n, trueDAG)$permy) # go down order
+#   for (jj in top_order) {
+#     parents <- which(trueDAG[, jj] == 1) # find parents
+#     lp <- length(parents) # number of parents
+#     if (lp == 0) {
+#       # no parents
+#       data[, jj] <- 0
+#     } else if (lp == 1) {
+#       # one parent
+#       data[, jj] <- data[, parents] * trueDAGedges[parents, jj]
+#     } else {
+#       # more than one parent
+#       data[, jj] <- colSums(t(data[, parents]) * trueDAGedges[parents, jj])
+#     }
+#     # add random noise
+#     data[, jj] <- data[, jj] + rnorm(N)
+#   }
+#   data
+# }
 
-wFUN <- function(m, lb, ub) {
-  # This function gives edges weights between the bounds
-  # with both positive and negative signs
-  runif(m, lb, ub) * sample(c(-1, 1), m, replace = TRUE)
-}
+# wFUN <- function(m, lb, ub) {
+#   # This function gives edges weights between the bounds
+#   # with both positive and negative signs
+#   runif(m, lb, ub) * sample(c(-1, 1), m, replace = TRUE)
+# }
 
-Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
+# Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
 
-sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
+# sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
+
+# Example usage:
+# $ script R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
 
 p <- arg_parser("Order pruning")
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
@@ -52,7 +56,7 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(25, 25) # Number of nodes
+ns <- seq(20, 20) # Number of nodes 
 ds <- seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
@@ -109,25 +113,29 @@ for (n in ns) {
           filename <- paste("data/", datastr, ".csv", sep="")
           write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
           set.seed(1)
-          ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignores
+          ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignored
           
-          start <- proc.time()[1]
-          #res <- r_opruner_right(ret)
+          start <- proc.time()[1]          
+          #res <- optimal_order(ret, list())
+          res <- dnc(ret, ret$bidag_scores)
+
           totaltime <- proc.time()[1] - start
+          print("Total time")
+          print(as.numeric(totaltime))
 
           # We run the itsearch here too for comparison of the scores.
           # itsearch is not guraranteed to be optimal but foor these small scale
           # graphs it seems to usually be.
           #set.seed(1) # This is just for iterative MCMC and will be overwritten
-          #data <- read.csv(filename, check.names = FALSE)
-          #myscore <- scoreparameters(scoretype = "bge", data, bgepar = list(am = 0.1))
-          #itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE) 
-          #itscore <- itres$result$score
-          #print("Score from iterative MCMC")
-          #print(itscore)
+            #   data <- read.csv(filename, check.names = FALSE)
+            #   myscore <- scoreparameters(scoretype = scoretype, data, bgepar = list(am = am, aw=aw))
+            #   itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE, plus1it = NULL, iterations = NULL) 
+            #   itscore <- itres$result$score
+            #   print("Score from iterative MCMC")
+            #   print(itscore)
 
           print("Score from order pruner")
-          print(res$log_score)
+          print(res$score)
           df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
                           totaltime = c(as.numeric(totaltime)), 
                           max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 

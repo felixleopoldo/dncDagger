@@ -39,16 +39,16 @@ optimal_dag <- function(bidag_scores, space, order) {
   return(omcmc$DAG)
 }
 
-dnc <- function(cpp_friendly_scores) {
-
+dnc <- function(cpp_friendly_scores, bidag_scores) {
+    #bidag_scores <- cpp_friendly_scores$bidag_scores
     # This is now working if aliases is empty
     aliases <- lapply(cpp_friendly_scores$aliases, function(a) a + 1)
 
-    print("Creating diff matrices")
+    #print("Creating diff matrices")
     diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, labels(data)[[2]])
     H_min <- diff_matrices$H_min
     H_max <- diff_matrices$H_max
-
+    p <- nrow(H_min)
     H_min_adj <- (H_min> 0)*1
     H_max_adj <- (H_max> 0)*1
     G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
@@ -59,28 +59,30 @@ dnc <- function(cpp_friendly_scores) {
     # print(H_max_adj)
 
     # Compontents of H_min. Possible component in G.
-    print("Components of H_min:")
-    print(igraph::components(G_H_min))
+    #print("Components of H_min:")
+    #print(igraph::components(G_H_min))
 
     # Compontents of H_max. Ome componetn of this may contain several componets of G.
-    print("Components of H_max:")
-    print(igraph::components(G_H_max))
+    #print("Components of H_max:")
+    #print(igraph::components(G_H_max))
 
     # Run order search on each component from H_min and see which components in Hmin
     # That the parents belong to
-
-    #print("Sum of the individual components scores:")
-    #print(component_score_sum)
 
     membership <- igraph::components(G_H_min)$membership
 
     round <- 1
     opt_sub_orders <- NULL
-    while (TRUE) {   
+    max_n_particles <- 0
+    tot_n_particles <- 0
+
+    while (TRUE) {
         print(paste("############# Round ",round," #################"))
         ret <- div_n_conquer(membership, bidag_scores, cpp_friendly_scores, opt_sub_orders)
         ultimate_membership <- ret$membership
         merged_components_graph <- ret$merged_components_graph
+        max_n_particles <- max(max_n_particles, ret$max_n_particles)
+        tot_n_particles <- tot_n_particles + ret$tot_n_particles
         
         if (ret$no_cycles) { # no cycles to merge.
             res <- concat_suborders(ultimate_membership, merged_components_graph, ret$component_order)
@@ -89,10 +91,12 @@ dnc <- function(cpp_friendly_scores) {
             for (suborder in ret$opt_sub_orders) {
                 full_adjmat <- full_adjmat + suborder$subadjmat
             }
-            fulldag <- igraph::graph_from_adjacency_matrix(full_adjmat, mode="directed")
+            #fulldag <- igraph::graph_from_adjacency_matrix(full_adjmat, mode="directed")
             
             res$adjmat <- full_adjmat
-            res$dag <- fulldag
+            #res$dag <- fulldag
+            res$max_n_particles <- max_n_particles
+            res$tot_n_particles <- tot_n_particles
             return(res)            
         }
 
@@ -136,20 +140,24 @@ rmvDAG <- function(trueDAGedges, N) {
 # TODO: This should take the membership vector, not the graph
 component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, input_opt_suborders=NULL) {
     # Vector of component numbers
+    p <- length(membership)
     n_components <- max(membership)
     #print(paste("n_components:", n_components))
     #print(input_opt_suborders)
     # Go through the components of H_min
-    #for (component_id1 in seq(n_components)) {
+
     component_id1 <- 1
 
-    component_score_sum <- 0    
+    component_score_sum <- 0
 
     # Adjacentcy matrix for the component dependence
     comp_dep <- matrix(0, n_components, n_components)
     # list of order for each component
     opt_sub_orders <- list()
     opt_sub_orders[[1]] <- 1234
+
+    max_n_particles <- 0
+    tot_n_particles <- 0
     while (component_id1 <= n_components) {
 
         component1 <- seq(1, p)[membership == component_id1]
@@ -164,23 +172,11 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
         component1_exists <- FALSE
         if (!is.null(input_opt_suborders)) {
             # Go through all the components in input_opt_suborders and check if they are component1
-            #print("--------- Checking if component exists in input_opt_suborders")            
+            print("--------- Checking if component exists in input_opt_suborders")            
             for (comp_id in seq(1, length(input_opt_suborders))) {
-               #print(paste("input_opt_suborders[[comp_id]]$suborder:"))
-               # print(sort(input_opt_suborders[[comp_id]]$suborder))                
-                
                 if (setequal(input_opt_suborders[[comp_id]]$suborder, component1)) {
-                    #print("Found component in input_opt_suborders")
-                    # print(input_opt_suborders[[comp_id]]$suborder)
-                    # print(input_opt_suborders[[comp_id]]$score)
-                    # print(opt_sub_orders)
-                    # print(paste("component_id1:", component_id1))
-                    
-
-                    # print(opt_sub_orders)
-                    # print("trying to assign")
+                    print("Found component in input_opt_suborders")
                     opt_sub_orders[[component_id1]] <- input_opt_suborders[[comp_id]]
-
                     component1_exists <- TRUE
                     break
                 }
@@ -188,10 +184,11 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
         }
         # If we have a new component, calculate the optimal order for it
         if (component1_exists==FALSE) {
+            print("Calculating optimal order for new component")
             tmp <- optimal_order(cpp_friendly_scores, initial_suborder)        
-            
-            component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order) #suborder?
-        
+            max_n_particles <- max(max_n_particles, tmp$max_n_particles)
+            tot_n_particles <- tot_n_particles + tmp$tot_n_particles
+            component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
 
             G_opt <- igraph::graph_from_adjacency_matrix(component1_adjmat, mode="directed")            
             # Now, remove iuncoming nodes to all nodes except for those in the component.
@@ -212,6 +209,8 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
             #print(tmp$suborder)
             # print suborder score
             #print(tmp$suborder_cond_score)
+        } else {
+            print("Component already exists")
         }
 
         # In any case we have to evaluate where the potential parents come from, 
@@ -224,6 +223,9 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
             if (component_id1 == component_id2) next
             component2 <- seq(1, p)[membership == component_id2]
             # Get the edges between the two components
+
+            # This may be slow
+            # WEhere is G_opt dedined????
             vertices2 <- igraph::V(G_opt)[membership == component_id2]$name
             between_edges <- igraph::E(G_opt)[vertices1 %<-% vertices2]
 
@@ -240,7 +242,10 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
     }
 
     # note that opt_sub_orders will only be valied after the las round when all the merging is done.
-    return(list("comp_dep"=comp_dep, "opt_sub_orders"=opt_sub_orders)) 
+    return(list("comp_dep"=comp_dep, 
+                "opt_sub_orders"=opt_sub_orders, 
+                "max_n_particles"=max_n_particles, 
+                "tot_n_particles"=tot_n_particles)) 
 
 }
 
@@ -261,7 +266,6 @@ merged_neig_cycles <- function(adjmat_compdep2){
     Cycles <- get_cycles(G_compdep)
     #print("Cycles:")
     #print(Cycles)
-
 
     # Make the cycle components bidirected. And take out those components.
     n_components <- ncol(adjmat_compdep2)
@@ -335,7 +339,8 @@ merged_component_dependencies <- function(adjmat_compdep, membership_comp){
 
 merged_components_membership <- function(membership, membership_comp){
     # Translates the membership vector of the original graph to the new merged components
-    print("Determin new node memberships in the merged components:")
+    #print("Determin new node memberships in the merged components:")
+    p <- length(membership)
     ultimate_membership <- rep(0, p)
     for (i in seq(1, p)) {    
         #print(paste("node:", i))
@@ -354,6 +359,7 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores, input_o
     # Get the component dependence graph    
     ret <- component_dependence(membership, bidag_scores, cpp_friendly_scores, input_opt_suborders=input_opt_suborders)
     #print(ret)
+    
     adjmat_compdep <- ret$comp_dep
     G_compdep <- igraph::graph_from_adjacency_matrix(adjmat_compdep, mode="directed")
     print("Component dependence graph before possible merging:")
@@ -361,7 +367,7 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores, input_o
 
     # Merge components that are dependent on each other in a cycle and neigboring cycles.
     # This is for the graph of comopnents. So its the new components membership after merging the cycles.
-    print("Component dependence graph:")
+    #print("Component dependence graph:")
     membership_comp <- merged_neig_cycles(adjmat_compdep)
     print("membership after merging:")
     print(membership_comp)
@@ -372,42 +378,46 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores, input_o
     # Now, go trough the nodes in the original graph, and check their components
     # and check in the merged components which components they belong to.
     ultimate_membership <- merged_components_membership(membership, membership_comp)
-    print("ultimate_membership:")
-    print(ultimate_membership)
+    #print("ultimate_membership:")
+    #print(ultimate_membership)
     
     # Could be done aboe but like this we shold be able to verify that the merging is correct.
     # Here we can chag if there where no merged components, i.e. no cycles.
     # By checking if the number of components is the same as the number of merged components.
     if (max(membership_comp) == length(membership_comp)) {
-        print("No cycles, returning the original order")
+        #print("No cycles, returning the original order")
         return(list("membership"=membership, 
                     "merged_components_graph"= G_compdep, 
                     "no_cycles"=TRUE,
                     "component_order"=ret,
-                    "opt_sub_orders"=ret$opt_sub_orders))
+                    "opt_sub_orders"=ret$opt_sub_orders,
+                    "max_n_particles"=ret$max_n_particles,
+                    "tot_n_particles"=ret$tot_n_particles))
     }
     
     return(list("membership"=ultimate_membership,
                 "merged_components_graph"= merged_components_graph,
                 "no_cycles"=FALSE,
                 "component_order"=NULL,
-                "opt_sub_orders"=ret$opt_sub_orders))
+                "opt_sub_orders"=ret$opt_sub_orders,
+                "max_n_particles"=ret$max_n_particles,
+                "tot_n_particles"=ret$tot_n_particles))
 }
 
 concat_suborders <- function(ultimate_membership, merged_components_graph, component_order){
     ## Paste the pieaces of suborders acccording to the topological order of merged components.    
     sorted_components <- igraph::topo_sort(merged_components_graph, mode= "in")
-    print("sorted_components:")
-    print(sorted_components)
+    #print("sorted_components:")
+    #print(sorted_components)
 
     full_order <- c()
     total_score <- 0
     for (comp_id in sorted_components) {
         suborder <- component_order$opt_sub_orders[[comp_id]]$suborder
-        print(paste("suborder:", comp_id))
-        print(suborder)
-        print("score:")
-        print(component_order$opt_sub_orders[[comp_id]]$score)
+        #print(paste("suborder:", comp_id))
+        #print(suborder)
+        #print("score:")
+        #print(component_order$opt_sub_orders[[comp_id]]$score)
         full_order <- c(full_order, suborder) #maybe the other way around
         total_score <- total_score + component_order$opt_sub_orders[[comp_id]]$score
     }

@@ -10,17 +10,15 @@ setwd(wd)
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
                       bgepar = list(am = 1, aw = NULL),
                       bdepar = list(chi = 0.5, edgepf = 2), plus1it=NULL, iterations=NULL) {
-  MAP <- TRUE
+    MAP <- TRUE
 
-  data <- read.csv(filename, check.names = FALSE)
-  if (scoretype =="bge") {
-      myscore <- scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
-  } else if (scoretype == "bde") {
-      myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
-  }
-  
-  
-  ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
+    data <- read.csv(filename, check.names = FALSE)
+    if (scoretype =="bge") {
+        myscore <- scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
+    } else if (scoretype == "bde") {
+        myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
+    }
+    ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
     # print("labels:")
     # print(labels(data)[[2]])
@@ -31,7 +29,8 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
 
     ret$H_min <- diff_matrices$H_min
     ret$H_max <- diff_matrices$H_max
-  return(ret)
+    ret$bidag_scores <- myscore
+    return(ret)
 }
 
 
@@ -152,6 +151,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$MAP <- MAP
   ret$space <- res$result$endspace
   ret$rowmaps <- res$rowmaps
+  #ret$bidag_scores # put it in here too
 
   return(ret)
 }

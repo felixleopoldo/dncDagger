@@ -107,13 +107,13 @@ int main(int argc, char **argv)
 
     vector<RightOrder> initial_right_orders = {};
     
-    RightOrder initial_ro = init_right_order(top_scores, scoring);
-    initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
-    update_insertion_scores(initial_ro, scoring);
-    initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
-    update_insertion_scores(initial_ro, scoring);
-    initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
-    update_insertion_scores(initial_ro, scoring);
+    //RightOrder initial_ro = init_right_order(top_scores, scoring);
+    // initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
+    // update_insertion_scores(initial_ro, scoring);
+    // initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
+    // update_insertion_scores(initial_ro, scoring);
+    // initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
+    // update_insertion_scores(initial_ro, scoring);
     // initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
     // update_insertion_scores(initial_ro, scoring);
 
@@ -122,20 +122,19 @@ int main(int argc, char **argv)
     // Manipulate the best insertion position to be the last position:
     // Set the best insertion position to be the last position
     // Set inserted_max_order_scores to be the same as new_top_scores
-    for (size_t i = 0; i < initial_ro.size_hidden(); i++)
-    {
-        size_t hidden_node = initial_ro.order[i];
-        // initial_ro.best_insert_pos[hidden_node] = initial_ro.front_ind()-1;
-        //  Make the best inserted score worse than adding it to the front
-        initial_ro.inserted_max_order_scores[hidden_node] = initial_ro.new_top_scores[hidden_node] - 100000;
-        cout << "hidden node: " << hidden_node << endl;
+    // for (size_t i = 0; i < initial_ro.size_hidden(); i++)
+    // {
+    //     size_t hidden_node = initial_ro.order[i];
+    //     // initial_ro.best_insert_pos[hidden_node] = initial_ro.front_ind()-1;
+    //     // Make the best inserted score worse than adding it to the front
+    //     initial_ro.inserted_max_order_scores[hidden_node] = initial_ro.new_top_scores[hidden_node] - 100000;
+    //     cout << "hidden node: " << hidden_node << endl;
+    //     cout << initial_ro.best_insert_pos[hidden_node] << endl;
+    //     cout << initial_ro.new_top_scores[hidden_node] << endl;
+    //     cout << initial_ro.inserted_max_order_scores[hidden_node] << endl;
+    // }
 
-        cout << initial_ro.best_insert_pos[hidden_node] << endl;
-        cout << initial_ro.new_top_scores[hidden_node] << endl;
-        cout << initial_ro.inserted_max_order_scores[hidden_node] << endl;
-    }
-
-    initial_right_orders.push_back(initial_ro);
+    // initial_right_orders.push_back(initial_ro);
 
     auto start = high_resolution_clock::now();
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
