@@ -22,39 +22,53 @@ print(igraph::components(G_true))
 weight_mat <- adjmat
 n_edges <- sum(adjmat)
 weight_mat[which(weight_mat == 1)] <- wFUN(n_edges, lb = 0.25, ub = 1)
-data <- data.frame(rmvDAG(weight_mat, N))
-
+dataset <- data.frame(rmvDAG(weight_mat, N))
+write.csv(dataset, "data/testing.csv", row.names=FALSE)
 #filename <- "data/p20n300gaussdata.csv"
 #filename <- "data/asiadata.csv"
 #filename <- "data/asiadata_double.csv"
-#data <- read.csv(filename, check.names = FALSE)
-ndim <- ncol(data)
-
-scoretype <- "bge"
-bgepar <- list(am=1, aw=NULL)
-
-if (scoretype =="bge") {
-    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data, bgepar = bgepar)
-} else if (scoretype == "bde") {
-    bidag_scores <- BiDAG::scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
-}
+filename <- "data/n=20d=0_seed=1_lb=0.25_ub=1_N=300.csv"
+#filename <- "data/testing.csv"
+data <- read.csv(filename, check.names = FALSE)
+ndim <- ncol(dataset)
 
 set.seed(1)
 print("getting cpp friendly bidag scores")
-cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2, iterations=NULL) # from iterativeMCMC
+# cpp_friendly_scores <- get_plus1_score_essentials_for_cpp(bidag_scores, plus1it=2, iterations=NULL) # from iterativeMCMC
 
+cpp_friendly_scores <- get_scores(filename, scoretype="bge", 
+                            bgepar=list(am=0.1, aw=NULL), 
+                            bdepar=list(chi=0.5, edgepf=2), # one of these should be ignored
+                            plus1it=2)
+
+# print("running optimal order pruning")
 # initial_suborder <- c()
+# start <- proc.time()[1]
 # opr <- optimal_order(cpp_friendly_scores, initial_suborder)
 # print("optimal order:")
 # print(opr)
-# adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, opr$order)
+# adjmat <- optimal_dag(cpp_friendly_scores$bidag_scores, cpp_friendly_scores$space, opr$order)
 # G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
+# totaltime <- as.numeric(proc.time()[1] - start)
+# print("opruner: Total time")
+# print(totaltime)
+
 # print("G_opt:")
 # print(G_opt)
 # # colnames(adjmat) <- colnames(data)
 # print(opr)
+start <- proc.time()[1]  
+print("running dnc")
+res <- dnc(cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
+print("dnc: Total time")
+totaltime <- as.numeric(proc.time()[1] - start)
+print(totaltime)
 
-res <- dnc(cpp_friendly_scores, bidag_scores)
+print("Time spent on finding the optimal DAG")
+print(res$tot_order_to_dag_time)
+
+print("Total time after subtraction")
+print(totaltime - res$tot_order_to_dag_time)
 
 print(res)
 dag <- igraph::graph_from_adjacency_matrix(res$adjmat, mode="directed")

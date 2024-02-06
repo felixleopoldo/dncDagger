@@ -30,6 +30,7 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
     ret$H_min <- diff_matrices$H_min
     ret$H_max <- diff_matrices$H_max
     ret$bidag_scores <- myscore
+    ret$labels <- labels(data)[[2]]
     return(ret)
 }
 

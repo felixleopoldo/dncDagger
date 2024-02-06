@@ -111,18 +111,24 @@ for (n in ns) {
           data <- rmvDAG(trueDAGedges, N)
           colnames(data) <- seq(n)
           filename <- paste("data/", datastr, ".csv", sep="")
+          print(filename)
           write.table(data, file = filename, row.names = FALSE, quote = FALSE, col.names = TRUE, sep = ",")
           set.seed(1)
-          ret <- get_scores(filename, scoretype=scoretype, bgepar=list(am=am, aw=aw), bdepar=list(chi=chi, edgepf=edgepf)) # one of these should be ignored
+          ret <- get_scores(filename, scoretype=scoretype, 
+                            bgepar=list(am=am, aw=aw), 
+                            bdepar=list(chi=chi, edgepf=edgepf), # one of these should be ignored
+                            plus1it=2) 
           
-          start <- proc.time()[1]          
-          #res <- optimal_order(ret, list())
-          res <- dnc(ret, ret$bidag_scores)
-
-          totaltime <- proc.time()[1] - start
+          start <- proc.time()[1] 
+          print("running optimal order pruning")         
+          res <- optimal_order(ret, c())
+          totaltime <- as.numeric(proc.time()[1] - start)
+          #res <- dnc(ret, ret$bidag_scores)
+           #totaltime <- as.numeric(proc.time()[1] - start) - res$tot_order_to_dag_time
+           #print("varav Total order to dag time")
+           #print(res$tot_order_to_dag_time)
           print("Total time")
-          print(as.numeric(totaltime))
-
+          print(totaltime)
           # We run the itsearch here too for comparison of the scores.
           # itsearch is not guraranteed to be optimal but foor these small scale
           # graphs it seems to usually be.
@@ -134,10 +140,10 @@ for (n in ns) {
             #   print("Score from iterative MCMC")
             #   print(itscore)
 
-          print("Score from order pruner")
-          print(res$score)
+          #print("Score from order pruner")
+          #print(res$score)
           df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
-                          totaltime = c(as.numeric(totaltime)), 
+                          totaltime = c(totaltime), 
                           max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
                           scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
                           edgepf=c(edgepf))
