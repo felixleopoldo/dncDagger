@@ -40,6 +40,47 @@ optimal_dag <- function(bidag_scores, space, order) {
   return(omcmc$DAG)
 }
 
+structure_components <- function(isolated_comp_membership, separable_comp_membership){
+    isocomps <- list()
+    membership <- separable_comp_membership
+    for (i in seq(1, max(isolated_comp_membership))) {
+        nodes <- which(isolated_comp_membership == i)
+        isocomps[[i]] <- list()
+        isocomps[[i]]$nodes <- nodes
+        isocomps[[i]]$subcompids <- c()
+        isocomps[[i]]$subcomps <- list()
+        isocomps[[i]]$connected <- FALSE
+    }
+
+    # Find the sub components in H_min
+    #print("Finding super components for:")               
+    for (j in seq(1, max(membership))) {
+        # Check if all the same
+        subnodes <- which(membership == j)
+        
+        
+        if(length(unique(isolated_comp_membership[subnodes])) == 1) {
+            isocompid <- isolated_comp_membership[subnodes][1]            
+            isocomps[[isocompid]]$subcompids <- c(j, isocomps[[isocompid]]$subcompids)
+
+            k <- length(isocomps[[isocompid]]$subcomps)  
+
+            isocomps[[isocompid]]$subcomps[[k+1]] <- list("nodes" = subnodes,
+                                                          "score" = NULL, 
+                                                          "opt_adjmat" = NULL, 
+                                                          "subadjmat" = NULL, 
+                                                          "suborder" = NULL)
+            
+
+            # Check if it is the same, ie the component is isolated and connected.
+            if(length(subnodes) == length(isocomps[[isocompid]]$nodes)){
+                isocomps[[isocompid]]$connected <- TRUE
+            }
+        }
+    }
+    return(isocomps)
+}
+
 dnc <- function(cpp_friendly_scores, bidag_scores) {
     #bidag_scores <- cpp_friendly_scores$bidag_scores
     # This is now working if aliases is empty
@@ -71,16 +112,53 @@ dnc <- function(cpp_friendly_scores, bidag_scores) {
     # That the parents belong to
 
     membership <- igraph::components(G_H_min)$membership
+    isolated_comp_membership <- igraph::components(G_H_max)$membership
 
     round <- 1
     opt_sub_orders <- NULL
     max_n_particles <- 0
     tot_n_particles <- 0
     tot_order_to_dag_time <- 0
+    
 
+    # Order the components in H_min after the isolated components.
+    start <- proc.time()[1]
+    isocomps <- structure_components(isolated_comp_membership, membership)
+    totaltime <- as.numeric(proc.time()[1] - start)
+    print("Total time for finding super components:")
+    print(totaltime)
+
+    start <- proc.time()[1]
+    todagtime <- 0
+    tot_order_time <- 0
+    for (i in seq(1, length(isocomps))) {
+        print(paste("Component:", i))    
+        xx <- component_dependence2(isocomps[[i]], bidag_scores, cpp_friendly_scores)        
+        isocomps[[i]] <- xx$isocomp
+        todagtime <- todagtime + xx$tot_order_to_dag_time
+        tot_order_time <- tot_order_time + xx$tot_order_time
+    }
+    totaltime <- as.numeric(proc.time()[1] - start)
+
+    print("Total time for component dependence:")
+    print(totaltime)
+    print("Total time for order to dag:")
+    print(todagtime)
+    print("subtracted time")
+    print(totaltime - todagtime)
+    print("tot get order time")
+    print(tot_order_time)
+    print("returned")
+    #print(xx)
+    return()
     while (TRUE) {
         print(paste("############# Round ",round," #################"))
-        ret <- div_n_conquer(membership, bidag_scores, cpp_friendly_scores, opt_sub_orders)
+        for (i in seq(1, length(isocomps))) {
+            print(paste("Component:", i))
+            print(isocomps[[i]])
+        }
+
+        ret <- div_n_conquer(membership, isolated_comp_membership, bidag_scores, cpp_friendly_scores, opt_sub_orders)
         ultimate_membership <- ret$membership
         merged_components_graph <- ret$merged_components_graph
         max_n_particles <- max(max_n_particles, ret$max_n_particles)
@@ -89,6 +167,7 @@ dnc <- function(cpp_friendly_scores, bidag_scores) {
         tot_order_to_dag_time <- tot_order_to_dag_time + ret$tot_order_to_dag_time
         
         if (ret$no_cycles) { # no cycles to merge.
+            # Concatenate subboorder according to the DAG of component dependencies
             res <- concat_suborders(ultimate_membership, merged_components_graph, ret$component_order)
             # join the sub matrices
             full_adjmat <- matrix(0, p, p)
@@ -142,10 +221,89 @@ rmvDAG <- function(trueDAGedges, N) {
   data
 }
 
+component_dependence2 <- function(isocomp, bidag_scores, cpp_friendly_scores) {
+
+    p <- bidag_scores$n
+    components <- isocomp$subcomps
+    n_components <- length(components)
+    component_id1 <- 1
+    component_score_sum <- 0
+
+    # Adjacentcy matrix for the component dependence
+    comp_dep <- matrix(0, n_components, n_components)
+    # list of order for each component
+    max_n_particles <- 0
+    tot_n_particles <- 0
+    tot_order_to_dag_time <- 0
+    tot_order_time <- 0
+
+    for (component_id1 in seq(1, n_components)) {
+        component1 <- components[[component_id1]] #copy
+        initial_suborder <- seq(1, p)[-component1$nodes] #not in optimal order
+
+        # Run order search for the nodes in component_id1, with al the orher nodes as initial suborder, i.e
+        # possible parents. Then check to which component the parents belong to.
+        #print(paste("******* calculating optimal order for suborder:", component_id1, "********"))
+        #print(component1)
+        
+        # If we have a new component, calculate the optimal order for it
+        if (is.null(component1$score)) { #Dont forget to restor to NULL when components are merged!
+            #print("Calculating optimal order for new component")
+            start <- proc.time()[1]
+            tmp <- optimal_order(cpp_friendly_scores, initial_suborder) # TODO: It seems like i should make this faster, perhaps by now scoring the initial nodes.
+            totaltime <- as.numeric(proc.time()[1] - start)
+            tot_order_time <- tot_order_time + totaltime
+
+            max_n_particles <- max(max_n_particles, tmp$max_n_particles)
+            tot_n_particles <- tot_n_particles + tmp$tot_n_particles
+            
+            start <- proc.time()[1]
+            #component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order)
+            component1_adjmat <- matrix(0, nrow=p, ncol=p)
+            totaltime <- as.numeric(proc.time()[1] - start)
+            tot_order_to_dag_time <- tot_order_to_dag_time + totaltime
+            
+            # Now, remove iuncoming nodes to all nodes except for those in the component.
+            # Then we can paste the all together in the end.
+            subadjmat <- component1_adjmat
+            # remove all edges not leadning to compnent one
+            # This also means that edges from the outsi into the component is alllowed.
+            subadjmat[, -component1$nodes] <- 0        
+            components[[component_id1]]$score <- tmp$suborder_cond_score
+            components[[component_id1]]$opt_adjmat <- component1_adjmat
+            components[[component_id1]]$subadjmat <- subadjmat
+            components[[component_id1]]$suborder <- tmp$suborder                                            
+        } 
+
+        # In any case we have to evaluate where the potential parents come from, 
+        # as the component ids might have been renamed.
+        # Check if connected component somewhere.
+        for (component_id2 in seq(n_components)) {
+            if (isocomp$connected) break # Connected component, no need to check for dependencies
+            if (component_id1 == component_id2) next            
+            # Get the edges between the two components
+            if(any(component1$opt_adjmat[components[[component_id2]]$nodes, component1$nodes]) > 0) {
+                comp_dep[component_id2, component_id1] <- 1 # i.e. it is at least one edge/parent from comp 2 to 1
+            }
+        }
+    }
+
+    isocomp$comp_dep <- comp_dep
+    isocomp$subcomps <- components
+    # note that opt_sub_orders will only be valied after the las round when all the merging is done.
+
+    return(list("isocomp" = isocomp,
+                "max_n_particles"=max_n_particles,
+                "tot_n_particles"=tot_n_particles,
+                "tot_order_time"=tot_order_time,
+                "tot_order_to_dag_time"=tot_order_to_dag_time))
+}
+
 # TODO: This should take the membership vector, not the graph
 component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, input_opt_suborders=NULL) {
     # Vector of component numbers
     p <- length(membership)
+    
     n_components <- max(membership)
     #print(paste("n_components:", n_components))
     #print(input_opt_suborders)
@@ -163,6 +321,7 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
     tot_n_particles <- 0
     tot_order_to_dag_time <- 0
 
+    
     while (component_id1 <= n_components) {
 
         component1 <- seq(1, p)[membership == component_id1]
@@ -190,7 +349,12 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
         # If we have a new component, calculate the optimal order for it
         if (component1_exists==FALSE) {
             #print("Calculating optimal order for new component")
+            start <- proc.time()[1]  
             tmp <- optimal_order(cpp_friendly_scores, initial_suborder)
+            totaltime <- as.numeric(proc.time()[1] - start)
+            print("Total time to get order")
+            print(totaltime)
+           
             #print("done")    
             max_n_particles <- max(max_n_particles, tmp$max_n_particles)
             tot_n_particles <- tot_n_particles + tmp$tot_n_particles
@@ -233,13 +397,14 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
         
         # Now check to which component the parents belong to
         merged_components <- c()
-        for (component_id2 in seq(n_components)) {    
+
+        # Here I only have to look at the components in the same isolated component.
+        for (component_id2 in seq(n_components)) {
             if (component_id1 == component_id2) next
-            component2 <- seq(1, p)[membership == component_id2]
+            component2 <- seq(1, p)[membership == component_id2]            
             # Get the edges between the two components
 
             # This may be slow
-            # WEhere is G_opt dedined????
             vertices2 <- igraph::V(G_opt)[membership == component_id2]$name
             between_edges <- igraph::E(G_opt)[vertices1 %<-% vertices2]
 
@@ -368,7 +533,7 @@ merged_components_membership <- function(membership, membership_comp){
     return(ultimate_membership)
 }
 
-div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores, input_opt_suborders=NULL) {
+div_n_conquer <- function(membership, isolated_comp_membership, bidag_scores, cpp_friendly_scores, input_opt_suborders=NULL) {
     
     # Get the component dependence graph
     print("Calculating component dependence")
@@ -397,7 +562,7 @@ div_n_conquer <- function(membership, bidag_scores, cpp_friendly_scores, input_o
     #print("ultimate_membership:")
     #print(ultimate_membership)
     
-    # Could be done aboe but like this we shold be able to verify that the merging is correct.
+    # Could be done aboe but like this we should be able to verify that the merging is correct.
     # Here we can chag if there where no merged components, i.e. no cycles.
     # By checking if the number of components is the same as the number of merged components.
     if (max(membership_comp) == length(membership_comp)) {
