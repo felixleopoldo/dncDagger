@@ -11,7 +11,7 @@ RightOrder::RightOrder(vector<int> &order,
                                    n_nodes(n) // O(1)
 {
   inserted_max_order_scores = vector<double>(order.size()); // O(p)
-  new_top_scores = vector<double>(order.size()); // O(p)
+  new_top_scores = vector<double>(order.size(), 0); // O(p)
   best_insert_pos = vector<size_t>(order.size());
   upper_bound = 1.0; // set by edmond
   upper_bound_hidden = 1.0; // set by edmond

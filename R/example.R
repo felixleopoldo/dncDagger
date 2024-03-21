@@ -3,9 +3,10 @@ source("R/opruner.r")
 
 set.seed(2)
 # Generate data
-N = 100
+N = 50
 ndim <- 32
 dag <- randDAG(ndim, 3, method ="interEr", par1=8, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+#dag <- randDAG(ndim, 3, method ="interEr", par1=2, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
 
@@ -27,8 +28,8 @@ write.csv(dataset, "data/testing.csv", row.names=FALSE)
 #filename <- "data/p20n300gaussdata.csv"
 #filename <- "data/asiadata.csv"
 #filename <- "data/asiadata_double.csv"
-filename <- "data/n=20d=0_seed=1_lb=0.25_ub=1_N=300.csv"
-#filename <- "data/testing.csv"
+#filename <- "data/n=20d=0_seed=1_lb=0.25_ub=1_N=300.csv"
+filename <- "data/testing.csv"
 data <- read.csv(filename, check.names = FALSE)
 ndim <- ncol(dataset)
 
@@ -59,7 +60,7 @@ cpp_friendly_scores <- get_scores(filename, scoretype="bge",
 # print(opr)
 start <- proc.time()[1]  
 print("running dnc")
-res <- dnc(cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
+res <- dnc2(cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
 print("dnc: Total time")
 totaltime <- as.numeric(proc.time()[1] - start)
 print(totaltime)
@@ -70,7 +71,7 @@ print(res$tot_order_to_dag_time)
 print("Total time after subtraction")
 print(totaltime - res$tot_order_to_dag_time)
 
-print(res)
+#print(res)
 dag <- igraph::graph_from_adjacency_matrix(res$adjmat, mode="directed")
 png("dnc.png")
 plot(dag)

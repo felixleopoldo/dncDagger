@@ -241,32 +241,46 @@ tuple<double, double> OrderScoring::swap_nodes(int nodea_index, int nodeb_index,
 
 vector<double> OrderScoring::score(const vector<int> &ordering, const size_t &from_orderpos, const size_t &n_elements) const
 {
-  size_t n = ordering.size();
+  size_t n = ordering.size(); // n is p :)
   vector<double> orderscores = vector<double>(n, 0.0); // O(p)           // orderscores <- vector("double", n)
   vector<int> active_plus1_parents_indices;            // active_plus1_parents_indices < -vector("list", n)
   int f_bar_z;
 
+  // Go through the node not banned by ordering.
   for (size_t position = from_orderpos; position < from_orderpos + n_elements; ++position)
   {
     int node = ordering[position];
     if (position == n - 1)
     {
-      // no parents allowed, i.e.only first row, only first list
+      // no parents allowed, i.e. only first row, only first list
       orderscores[node] = scoretable[node][0][0]; // orderscores[node] <- scoretable [[node]][[1]][1, 1]
     }
     else
     {
-      f_bar_z = get_f_bar_z(position, ordering);
-      active_plus1_parents_indices = get_plus1_indices(position, ordering);
+      // This should get the right row, based on the allowed/not allowed parents.
+      f_bar_z = get_f_bar_z(position, ordering); 
+      // Get the plus1 nodes, i.e., not allowed nodes, but that are still allowed by ordering.
+      active_plus1_parents_indices = get_plus1_indices(position, ordering); // index 0, for no plus 1 parent si always included here!
+      // Fin the max/sum score among the orderingallowed plus1 parent, or no plus1 parent.
       vector<double> plus1_parents_scores(active_plus1_parents_indices.size());
-      for (size_t j = 0; j < plus1_parents_scores.size(); j++)
+      for (size_t j = 0; j < plus1_parents_scores.size(); j++) 
       {
+        // j=0 is for no plus1 parents.
         plus1_parents_scores[j] = scoresmatrices[node][f_bar_z][active_plus1_parents_indices[j]]; // allowedscorelist is in numerical order
       }
 
       if (MAP == true)
       {
-        orderscores[node] = *max_element(plus1_parents_scores.begin(), plus1_parents_scores.end());
+        auto max_el = max_element(plus1_parents_scores.begin(), plus1_parents_scores.end());
+        orderscores[node] = *max_el; //max_element(plus1_parents_scores.begin(), plus1_parents_scores.end());
+        // get the active plus1parent        
+        int plus1_parent_ind = std::distance(plus1_parents_scores.begin(), max_el);
+        // handle if the index is 0, since then there is no plus1 parent.
+        size_t plus1_parent = potential_plus1_parents[node][active_plus1_parents_indices[plus1_parent_ind]];
+        vector<size_t> plus1_parents;
+        if (plus1_parent != 0) { // 0 represents no plus1parent
+            plus1_parents.push_back(plus1_parent);
+        }
       }
       else
       {
@@ -284,6 +298,7 @@ double OrderScoring::score_order(const vector<int> &ordering, const size_t &from
 
 /**
  * position is the index in the ordering of the node.
+ * Maybe we cab in the MAP=True case make a similar function to get the optimal DAG.
  */
 double OrderScoring::score_pos(const vector<int> &ordering, const size_t &position) const
 {
@@ -382,17 +397,24 @@ int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) 
   // potential_parents has the banned nodes for node.
   // bannednodes is a filtered version of potential_parents, removing the nodes after in the ordering.
   // it only purose is to compute f_bar_z[node], i.e. f(Z)
+
+  // When I write banned, I mean banned, by the ordering, from the potential ones.(?)
   vector<int> parent_indices_banned_by_ordering; // Index in the banned_parents[node] vector.
+  vector<int> active_parents; // A vector containing the parents we are talking about.
+  // See for each potential parent, if it is banned by the ordering or not.
   for (size_t j = 0; j < potential_parents[node].size(); j++)
   {
-    if (find(ordering.begin(), ordering.begin() + position + 1, potential_parents[node][j]) != ordering.begin() + position + 1)
+    // check if potential_parents[node][j] is banned by the ordering.
+    if (find(ordering.begin(), ordering.begin() + position + 1, potential_parents[node][j]) != ordering.begin() + position + 1) 
     {
       parent_indices_banned_by_ordering.push_back(j); // This has inly ints. It for computing f(Z)
+    } else {
+        active_parents.push_back(potential_parents[node][j]); // add the node as parent.
     }
   }
 
-  // Compute f(Z) (the labelling), where Z is the parents of node, accoring to the paper.
-  // I.e. f_bar_z[node] = f(Pa(node))
+  // Compute f(Z) (the labelling), where Z is the (banned?) parents of node, accoring to the paper.
+  // I.e. f_bar_z[node] = f(Pa(node)). Shouldnt it be the banned ones?
   if (potential_parents[node].size() == 0 || parent_indices_banned_by_ordering.size() == 0)
   {
     f_bar_z = 0; // all parents allowed f(null) = 0
@@ -408,7 +430,44 @@ int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) 
   }
   return (f_bar_z);
 }
-//};
+
+
+// /**
+//  * The position is the index in the scoretable of the node.
+//  * It should be a number between 0 and 2^(#permitted parents) -1
+//  * Its like a binary number, but it is not in numerica order. 
+//  * for a set {a,b,c}, f({c}) = 001, f({b}) = 010, f({a})=100. fbar is like the inverse, treating 0 as ones?.
+//  * 
+//  */
+
+// vector<int> OrderScoring::get_opt_edges(const int &position, const vector<int> &ordering) const
+// {
+//   int f_bar_z;
+//   const int node = ordering[position];
+//   // Find the banned scores before in the ordering. (Double banned?)
+//   // potential_parents has the banned nodes for node.
+//   // bannednodes is a filtered version of potential_parents, removing the nodes after in the ordering.
+//   // it only purose is to compute f_bar_z[node], i.e. f(Z)
+
+//   // When I write banned, I mean banned, by the ordering, from the potential ones.(?)
+//   vector<int> parent_indices_banned_by_ordering; // Index in the banned_parents[node] vector.
+//   vector<int> active_parents; // A vector containing the parents we are talking about.
+//   // See for each potential parent, if it is banned by the ordering or not.
+//   for (size_t j = 0; j < potential_parents[node].size(); j++)
+//   {
+//     // check if potential_parents[node][j] is banned by the ordering.
+//     if (find(ordering.begin(), ordering.begin() + position + 1, potential_parents[node][j]) != ordering.begin() + position + 1) 
+//     {
+//       parent_indices_banned_by_ordering.push_back(j); // This has inly ints. It for computing f(Z)
+//     } else {
+//         active_parents.push_back(potential_parents[node][j]); // add the node as parent.
+//     }
+//   }
+
+//   return (active_parents);
+// }
+
+
 
 OrderScoring get_score(Rcpp::List ret)
 {
@@ -433,7 +492,11 @@ OrderScoring get_score(Rcpp::List ret)
         parenttable.push_back(m);
     }
 
-    // Read banned score. How are these interpreted?
+    // Read banned score, or max matrices. How are these interpreted?
+    // For each node, the columns should be determined by the alowed/banned parents
+    // through fbarz or fz. 
+    // The columns are for all the plus1 parents. First column is for no plus1 parent.
+    // Would be nice if this also contained the actual parents in some way!
     Rcpp::List bannedscoreR = Rcpp::as<Rcpp::List>(ret["bannedscore"]);
     vector<vector<vector<double>>> bannedscore;
     for (size_t i = 0; i < p; i++)

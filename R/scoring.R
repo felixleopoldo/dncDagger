@@ -34,6 +34,24 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
     return(ret)
 }
 
+# get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
+#     # get the non banned parents in some way
+#     poss_non_banned_plus1_parents <- c(1,2,3,4,5)
+#     non_banned_parents <- c(1,2,3) #lapply(aliases, function(a) a + 1)
+#     poss_non_banned_plus1_parents <- c(7,3,9)    
+#     f_bar_z <- c() # the row in the summed score table
+#     # get the column (i.e. plus1 parent) that gives the max score
+#     # Use this to find the row in the $maxrow table  
+
+#     #mapfit$scoretable$maxmatrices
+
+#     #The $maxrow parts contain the index of the row with the highest score (in the original score tables), when the parent set corresponding to the row in that table is excluded due to the order constraint.
+
+#     #The $maxmatrix parts contain the maximum score, and the columns correspond to the case with no additional parents, and then with each one included. To get the DAG, you would need to check which parents from the search space are allowed from the order to get the row of the $maxmatrix table, then which plus1 parents are allowed (as columns), find the max amongst those columns and then get the row from the same entry in the $maxrow part.
+
+
+
+# }
 
 get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
@@ -154,6 +172,8 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$rowmaps <- res$rowmaps
   #ret$bidag_scores # put it in here too
 
+  #print("max matrices/banned scores:")
+  #print(ret$bannedscore) 
   return(ret)
 }
 

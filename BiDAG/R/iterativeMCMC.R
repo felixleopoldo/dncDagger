@@ -291,7 +291,8 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
     attr(result$scoretable, "class") <- "MCMCscoretab"
   }
     )
- 
+    
+  # This part is added by Felix. it is needed in cpp for computing the order score tables.
   ret <- list()
   if (MAP == TRUE) {
     ret$bannedscore <- maxmatrices$maxmatrix
