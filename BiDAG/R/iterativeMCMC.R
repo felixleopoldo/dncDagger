@@ -300,10 +300,12 @@ iterativeMCMCplus1 <- function(param, iterations, stepsave, plus1it = NULL, MAP 
     ret$bannedscore <- bannedscore
   }
 
+
   ret$plus1lists <- plus1lists
   ret$rowmaps <- rowmaps
   ret$ptab <- ptab  
   ret$result <- result # This was previuosly return(result) //Felix
+  ret$maxmatrices <- maxmatrices # This should be used for finding best DAGs
 
   return(ret)
 }

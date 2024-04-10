@@ -16,13 +16,17 @@ OrderScoring::OrderScoring(
     vector<vector<int>> potential_plus1_parents,
     vector<vector<vector<double>>> scoretable,
     vector<vector<vector<double>>> scoresmatrices,
+    vector<vector<vector<double>>> maxmatrix,
+    vector<vector<vector<int>>> maxrow,
     bool MAP) : potential_parents(potential_parents),
                 rowmaps_backwards(rowmaps_backwards),
                 potential_plus1_parents(potential_plus1_parents),
                 MAP(MAP),
                 numparents(numparents),
                 scoretable(scoretable), // this is called bannedscore in R
-                scoresmatrices(scoresmatrices)
+                scoresmatrices(scoresmatrices),
+                maxmatrix(maxmatrix),
+                maxrow(maxrow)
 {
 }
 
@@ -258,7 +262,7 @@ vector<double> OrderScoring::score(const vector<int> &ordering, const size_t &fr
     else
     {
       // This should get the right row, based on the allowed/not allowed parents.
-      f_bar_z = get_f_bar_z(position, ordering); 
+      f_bar_z = get_f_bar_z(position, ordering);
       // Get the plus1 nodes, i.e., not allowed nodes, but that are still allowed by ordering.
       active_plus1_parents_indices = get_plus1_indices(position, ordering); // index 0, for no plus 1 parent si always included here!
       // Fin the max/sum score among the orderingallowed plus1 parent, or no plus1 parent.
@@ -472,6 +476,7 @@ int OrderScoring::get_f_bar_z(const int &position, const vector<int> &ordering) 
 OrderScoring get_score(Rcpp::List ret)
 {
 
+
     // Read MAP flag
     bool MAP = Rcpp::as<int>(ret["MAP"]);
     // cout << "MAP:" << MAP << endl;
@@ -491,6 +496,46 @@ OrderScoring get_score(Rcpp::List ret)
         Rcpp::IntegerMatrix m = Rcpp::as<Rcpp::IntegerMatrix>(parenttableR[i]);
         parenttable.push_back(m);
     }
+
+
+    // Read max matrices.
+    // For each node, the columns should be determined by the alowed/banned parents
+    // through fbarz or fz. 
+    // The columns are for all the plus1 parents. First column is for no plus1 parent.
+    // Would be nice if this also contained the actual parents in some way!
+    Rcpp::List maxmatrixR = Rcpp::as<Rcpp::List>(ret["maxmatrix"]);
+    vector<vector<vector<double>>> maxmatrix;
+    for (size_t i = 0; i < p; i++)
+    {
+        Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(maxmatrixR[i]);
+        vector<vector<double>> mat(m.rows(), vector<double>(m.cols()));
+        for (int j = 0; j < m.rows(); j++)
+        {
+            for (int k = 0; k < m.cols(); k++)
+            {
+                mat[j][k] = m(j, k);
+            }
+        }
+        maxmatrix.push_back(mat);
+    }  
+
+    // Read maxrows.
+   
+    Rcpp::List maxrowR = Rcpp::as<Rcpp::List>(ret["maxrow"]);
+    vector<vector<vector<int>>> maxrow;
+    for (size_t i = 0; i < p; i++)
+    {
+        Rcpp::NumericMatrix m = Rcpp::as<Rcpp::NumericMatrix>(maxrowR[i]);
+        vector<vector<int>> mat(m.rows(), vector<int>(m.cols()));
+        for (int j = 0; j < m.rows(); j++)
+        {
+            for (int k = 0; k < m.cols(); k++)
+            {
+                mat[j][k] = m(j, k);
+            }
+        }
+        maxrow.push_back(mat);
+    }    
 
     // Read banned score, or max matrices. How are these interpreted?
     // For each node, the columns should be determined by the alowed/banned parents
@@ -557,6 +602,8 @@ OrderScoring get_score(Rcpp::List ret)
                          plus1listsparents,
                          scoretable,
                          bannedscore,
+                         maxmatrix,
+                         maxrow,
                          MAP);
 
     return (scoring);

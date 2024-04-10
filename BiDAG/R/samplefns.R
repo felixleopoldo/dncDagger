@@ -16,7 +16,7 @@ samplescoreplus1.max<-function(matsize,samplenodes,scores,plus1lists,maxmatrices
       krow<-maxmatrices$maxrow[[i]][scores$therow[i],abslist]
       parentrow<-plus1lists$aliases[[i]][abslist,c(1,parenttable[[i]][krow,!is.na(parenttable[[i]][krow,])]+1)] #take right parent set
       parentset<-parentrow[which(parentrow>0)] # removing NAs
-      incidence[parentset,i]<-1 # fill in elements of the adjacency matrix
+      incidence[parentset,i] <- 1 # fill in elements of the adjacency matrix
       sampledscore<-sampledscore+scoretable[[i]][[abslist]][krow]
     }
   }

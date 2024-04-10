@@ -23,15 +23,9 @@ public:
     vector<int> numparents;
     vector<vector<vector<double>>> scoretable;
     vector<vector<vector<double>>> scoresmatrices;
+    vector<vector<vector<double>>> maxmatrix;
+    vector<vector<vector<int>>> maxrow;
 
-    OrderScoring(
-        vector<vector<int>> potential_parents,
-        vector<int> numparents,
-        vector<Rcpp::IntegerVector> rowmaps_backwards,
-        vector<vector<int>> potential_plus1_parents,
-        vector<vector<vector<double>>> scoretable,
-        vector<vector<vector<double>>> scoresmatrices,
-        bool MAP); 
 
     /**
      * Re-calculation scores after swapping up node_a so that (a, b) -> (b, a).
@@ -40,10 +34,17 @@ public:
      *
      * Returns: (nodea_score, nodeb_score)
      */
+    OrderScoring(vector<vector<int>> potential_parents, 
+    vector<int> numparents, 
+    vector<Rcpp::IntegerVector> rowmaps_backwards, vector<vector<int>> potential_plus1_parents, 
+    vector<vector<vector<double>>> scoretable, 
+    vector<vector<vector<double>>> scoresmatrices, 
+    vector<vector<vector<double>>> maxmatrix, 
+    vector<vector<vector<int>>> maxrow, 
+    bool MAP);
     tuple<double, double> swap_nodes(int nodea_index, int nodeb_index,
                                      vector<int> &ordering,
                                      const vector<double> &node_scores);
-  
 
     vector<double> score(const vector<int> &ordering, const size_t &from_orderpos, const size_t &n_elements) const;
 

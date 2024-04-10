@@ -170,6 +170,16 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$MAP <- MAP
   ret$space <- res$result$endspace
   ret$rowmaps <- res$rowmaps
+  #    print("maxmatrices")
+  ret$maxmatrices <- res$maxmatrices
+  ret$maxmatrix <- res$maxmatrices$maxmatrix
+  print(res$maxmatrices$maxrow )
+  ret$maxrow <- lapply(res$maxmatrices$maxrow, function(a) a - 1)
+  
+  print("max matrix:")
+    print(ret$maxmatrix)
+    print("max rows:")
+    print(ret$maxrow)
   #ret$bidag_scores # put it in here too
 
   #print("max matrices/banned scores:")

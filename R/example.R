@@ -1,6 +1,6 @@
 source("R/scoring.R")
 source("R/opruner.r") 
-
+library(bench)
 set.seed(2)
 # Generate data
 N = 50
@@ -59,24 +59,31 @@ cpp_friendly_scores <<- get_scores(filename, scoretype="bge",
 # # colnames(adjmat) <- colnames(data)
 # print(opr)
 Rprof()
-start <- proc.time()[1]  
-print("running dnc")
 bidag_scores <<- cpp_friendly_scores$bidag_scores
-res <- dnc2()#cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
-print("dnc: Total time")
-totaltime <- as.numeric(proc.time()[1] - start)
+start <- proc.time()
+print("running dnc")
+
+isocomps <<- list()
+#isocomps <- dnc2()#cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
+dnc2()#cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
+# bm = bench::mark(
+#   dnc2()
+# )[c("expression", "min", "median", "itr/sec", "n_gc")]
+print("dnc2: Total time")
+totaltime <- proc.time() - start
 print(totaltime)
 
 print("Time spent on finding the optimal DAG")
-print(res$tot_order_to_dag_time)
+print(isocomps$tot_order_to_dag_time)
 
 print("Total time after subtraction")
-print(totaltime - res$tot_order_to_dag_time)
+print(totaltime - isocomps$tot_order_to_dag_time)
 
 print("Tot get order time")
-print(res$tot_order_time)
+print(isocomps$tot_order_time)
 
-dag <- igraph::graph_from_adjacency_matrix(res$adjmat, mode="directed")
+dag <- igraph::graph_from_adjacency_matrix(isocomps$adjmat, mode="directed")
 png("dnc.png")
 plot(dag)
 dev.off() 
+

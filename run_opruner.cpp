@@ -25,6 +25,24 @@ std::vector<std::string> split(std::string s, std::string delimiter)
     return res;
 }
 
+/**
+ * Get DAG associated with order.
+*/
+vector<vector<int>> get_dag(const vector<int> &order, const OrderScoring &scoring)
+{
+    vector<vector<int>> dag(scoring.numparents.size(), vector<int>(scoring.numparents.size(), 0));
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        int node = order[i];
+        
+        // What should we do now ?:)
+        scoring.maxmatrix[node];
+        scoring.maxrow[node];
+
+    }
+    return dag;
+}
+
 int main(int argc, char **argv)
 {
     std::string datafilename;
@@ -139,6 +157,10 @@ int main(int argc, char **argv)
     auto start = high_resolution_clock::now();
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
+    // Get the DAG associated with order
+    vector<vector<int>> dag = get_dag(order, scoring);
+
+
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
 }
