@@ -374,7 +374,7 @@ vector<RightOrder> prune_path(RightOrder &reference_order,
 
         /************ Prim topological ************/
         int lowest_vertex_value = 0;
-        for (int i = 0; i < ro.size_hidden(); i++)
+        for (size_t i = 0; i < ro.size_hidden(); i++)
         {
             if (ro.order[i] < ro.order[lowest_vertex_value])
             {

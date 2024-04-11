@@ -178,8 +178,8 @@ dnc2 <- function() {
     aliases <- lapply(cpp_friendly_scores$aliases, function(a) a + 1)
     var_labels <- cpp_friendly_scores$labels
     #print("Creating diff matrices")
-    print("Scoretables")
-    print(cpp_friendly_scores$scoretable)
+    #print("Scoretables")
+    #print(cpp_friendly_scores$scoretable)
     diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, var_labels)
     H_min <- diff_matrices$H_min
     H_max <- diff_matrices$H_max
@@ -255,7 +255,7 @@ dnc2 <- function() {
     print(isocomps$tot_order_to_dag_time)
     print("subtracted time")
     print(proc.time() - starttot - isocomps$tot_order_to_dag_time)
-    return()
+    #return()
     # The divide and conquer procedure should, operate individually ion eas isolated component.
     print("************** Starting divide and conquer. Going through the isolated components and get the internal component dependencies.")
     #print("number of isocomps")
@@ -561,7 +561,7 @@ component_dependence <- function(membership, bidag_scores, cpp_friendly_scores, 
 }
 
 get_cycles <- function(g) {
-    #g <- G_compdep
+    
     Cycles = NULL
     for(v1 in igraph::V(g)) {
         for(v2 in igraph::neighbors(g, v1, mode="out")) {

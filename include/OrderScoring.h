@@ -25,7 +25,7 @@ public:
     vector<vector<vector<double>>> scoresmatrices;
     vector<vector<vector<double>>> maxmatrix;
     vector<vector<vector<int>>> maxrow;
-
+    vector<vector<vector<int>>> parenttable;
 
     /**
      * Re-calculation scores after swapping up node_a so that (a, b) -> (b, a).
@@ -36,12 +36,15 @@ public:
      */
     OrderScoring(vector<vector<int>> potential_parents, 
     vector<int> numparents, 
-    vector<Rcpp::IntegerVector> rowmaps_backwards, vector<vector<int>> potential_plus1_parents, 
+    vector<Rcpp::IntegerVector> rowmaps_backwards, 
+    vector<vector<int>> potential_plus1_parents, 
     vector<vector<vector<double>>> scoretable, 
     vector<vector<vector<double>>> scoresmatrices, 
     vector<vector<vector<double>>> maxmatrix, 
     vector<vector<vector<int>>> maxrow, 
+    vector<vector<vector<int>>> parenttable, 
     bool MAP);
+
     tuple<double, double> swap_nodes(int nodea_index, int nodeb_index,
                                      vector<int> &ordering,
                                      const vector<double> &node_scores);
@@ -55,11 +58,17 @@ public:
      */
     double score_pos(const vector<int> &ordering, const size_t &position) const;
 
+    vector<int> get_opt_parents(const vector<int> &ordering, const size_t &position) const;
+
     double sum_log_probs(const vector<double> &log_probs) const;
 
     vector<int> get_plus1_indices(const int &position, const vector<int> &ordering) const;
 
-    int get_f_bar_z(const int &position, const vector<int> &ordering) const;
+    tuple<vector<int>, vector<int>> get_active_and_banned(const int &position, const vector<int> &ordering) const;
+
+    //int get_f_bar_z(const int node, const vector<int> & parent_indices_banned_by_ordering) const;
+    int get_f_bar_z(const int &, const vector<int> & ordering) const;
+
 };
 
 

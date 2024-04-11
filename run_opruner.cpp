@@ -27,18 +27,19 @@ std::vector<std::string> split(std::string s, std::string delimiter)
 
 /**
  * Get DAG associated with order.
-*/
+ */
 vector<vector<int>> get_dag(const vector<int> &order, const OrderScoring &scoring)
 {
-    vector<vector<int>> dag(scoring.numparents.size(), vector<int>(scoring.numparents.size(), 0));
+    size_t p = scoring.numparents.size();
+    vector<vector<int>> dag(p, vector<int>(p, 0));
     for (size_t i = 0; i < order.size(); i++)
     {
         int node = order[i];
-        
-        // What should we do now ?:)
-        scoring.maxmatrix[node];
-        scoring.maxrow[node];
-
+        vector<int> parents = scoring.get_opt_parents(order, i);
+        for (size_t j = 0; j < parents.size(); j++)
+        {
+            dag[parents[j]][node] = 1;
+        }
     }
     return dag;
 }
@@ -124,16 +125,16 @@ int main(int argc, char **argv)
     vector<double> top_scores = get_unrestricted_vec(p, scoring);
 
     vector<RightOrder> initial_right_orders = {};
-    
-    //RightOrder initial_ro = init_right_order(top_scores, scoring);
-    // initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
-    // update_insertion_scores(initial_ro, scoring);
-    // initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
-    // update_insertion_scores(initial_ro, scoring);
-    // initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
-    // update_insertion_scores(initial_ro, scoring);
-    // initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
-    // update_insertion_scores(initial_ro, scoring);
+
+    // RightOrder initial_ro = init_right_order(top_scores, scoring);
+    //  initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
+    //  update_insertion_scores(initial_ro, scoring);
+    //  initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
+    //  update_insertion_scores(initial_ro, scoring);
+    //  initial_ro = add_node_in_front(initial_ro, 3, top_scores, scoring);
+    //  update_insertion_scores(initial_ro, scoring);
+    //  initial_ro = add_node_in_front(initial_ro, 1, top_scores, scoring);
+    //  update_insertion_scores(initial_ro, scoring);
 
     // For each of the hidden nodes, we want to set the best
     // insertion position to be the last position.
@@ -157,9 +158,31 @@ int main(int argc, char **argv)
     auto start = high_resolution_clock::now();
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
-    // Get the DAG associated with order
-    vector<vector<int>> dag = get_dag(order, scoring);
 
+    // print the order
+    cout << "Order: ";
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        cout << order[i] << " ";
+    }
+    cout << endl;
+    // Get the DAG associated with order
+    // for each node in order, get the parents
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        int node = order[i];
+        vector<int> parents = scoring.get_opt_parents(order, i);
+        cout << "Node: " << node << endl;
+        cout << "Parents: ";
+        for (size_t j = 0; j < parents.size(); j++)
+        {
+            cout << parents[j] << " ";
+        }
+        cout << endl;
+    }
+
+    //vector<vector<int>> dag = get_dag(order, scoring);
+    
 
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
