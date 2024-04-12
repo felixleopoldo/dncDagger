@@ -149,8 +149,6 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
 
   print("score from MCMC:")
   print(res$result$score)
-  print("DAG")
-  print(res$result$DAG)
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
@@ -172,30 +170,28 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$MAP <- MAP
   ret$space <- res$result$endspace
   ret$rowmaps <- res$rowmaps
-  #    print("maxmatrices")
   ret$maxmatrices <- res$maxmatrices
-  ret$maxmatrix <- res$maxmatrices$maxmatrix
-  
+  ret$maxmatrix <- res$maxmatrices$maxmatrix    
   ret$maxrow <- lapply(res$maxmatrices$maxrow, function(a) a - 1)
   
-    print("Info for node 3")
-    print("scoretable:")
-    print("adjacency")
-    print(res$result$scoretable$adjacency)
-    print("tables")
-    print(res$result$scoretable$tables[[3]])
-    print("aliases")
-    print(ret$aliases[[3]])
-    print("parenttable")
-    print(ret$parenttable[[3]])
-    print("maxmatrix")
-    print(ret$maxmatrix[[3]])
-    print("maxrow")
-    print(ret$maxrow[[3]]) 
-    print("rowmaps")
-    print(ret$rowmaps[[3]])
-    print("rowmaps_backwards")
-    print(ret$rowmaps_backwards[[3]])
+    # print("Info for node 3")
+    # print("scoretable:")
+    # print("adjacency")
+    # print(res$result$scoretable$adjacency)
+    # print("tables")
+    # print(res$result$scoretable$tables[[3]])
+    # print("aliases")
+    # print(ret$aliases[[3]])
+    # print("parenttable")
+    # print(ret$parenttable[[3]])
+    # print("maxmatrix")
+    # print(ret$maxmatrix[[3]])
+    # print("maxrow")
+    # print(ret$maxrow[[3]]) 
+    # print("rowmaps")
+    # print(ret$rowmaps[[3]])
+    # print("rowmaps_backwards")
+    # print(ret$rowmaps_backwards[[3]])
 
   #ret$bidag_scores # put it in here too
 

@@ -803,6 +803,59 @@ size_t getIndex(vector<int> &v, int K)
     return index;
 }
 
+
+/**
+ * Get DAG associated with order.
+ */
+vector<vector<int>> order_to_dag(const vector<int> &order, const OrderScoring &scoring)
+{
+    size_t p = scoring.numparents.size();
+    vector<vector<int>> dag(p, vector<int>(p, 0));
+    for (size_t i = 0; i < order.size(); i++)
+    {
+        int node = order[i];
+        vector<int> parents = scoring.get_opt_parents(order, i);
+        for (size_t j = 0; j < parents.size(); j++)
+        {
+            dag[parents[j]][node] = 1;
+        }
+    }
+    return dag;
+}
+
+
+// [[Rcpp::plugins(cpp17)]]
+
+// [[Rcpp::export]]
+
+Rcpp::NumericMatrix r_order_to_dag(Rcpp::List cpp_friendly_scores, Rcpp::NumericVector order)
+{
+    OrderScoring scoring = get_score(cpp_friendly_scores);
+
+    // convert order to vector
+    vector<int> order_vec = Rcpp::as<vector<int>>(order);
+    // decrement order by 1
+    for (size_t i = 0; i < order_vec.size(); i++)
+    {
+        order_vec[i] = order_vec[i] - 1;
+    }
+    // get DAG from order
+    size_t p = order.size();
+    vector<vector<int>> dag = order_to_dag(order_vec, scoring);
+    // convert dag to Rcpp matrix
+    Rcpp::NumericMatrix dag_mat(p, p);
+    for (size_t i = 0; i < p; i++)
+    {
+        for (size_t j = 0; j < dag[i].size(); j++)
+        {
+            dag_mat(i, j) = dag[i][j];
+        }
+    }
+
+    return (dag_mat);
+}
+
+
 // [[Rcpp::plugins(cpp17)]]
 
 // [[Rcpp::export]]

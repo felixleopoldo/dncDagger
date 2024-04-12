@@ -4,9 +4,9 @@ library(bench)
 set.seed(2)
 # Generate data
 N = 50
-ndim <- 8
-#dag <- randDAG(ndim, 3, method ="interEr", par1=5, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
-dag <- randDAG(ndim, 3, method ="interEr", par1=2, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+ndim <- 40
+dag <- randDAG(ndim, 3, method ="interEr", par1=5, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+#dag <- randDAG(ndim, 3, method ="interEr", par1=2, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
 
@@ -69,6 +69,14 @@ dnc2()#cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
 # bm = bench::mark(
 #   dnc2()
 # )[c("expression", "min", "median", "itr/sec", "n_gc")]
+
+
+print("Joint order")
+print(isocomps$order)
+print("Joint DAG")
+dag1 <- r_order_to_dag(cpp_friendly_scores, isocomps$order)
+
+
 print("dnc2: Total time")
 totaltime <- proc.time() - start
 print(totaltime)
@@ -82,8 +90,8 @@ print(totaltime - isocomps$tot_order_to_dag_time)
 print("Tot get order time")
 print(isocomps$tot_order_time)
 
-dag <- igraph::graph_from_adjacency_matrix(isocomps$adjmat, mode="directed")
-png("dnc.png")
-plot(dag)
-dev.off() 
+# dag <- igraph::graph_from_adjacency_matrix(isocomps$adjmat, mode="directed")
+# png("dnc.png")
+# plot(dag)
+# dev.off() 
 

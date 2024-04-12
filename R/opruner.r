@@ -294,10 +294,11 @@ dnc2 <- function() {
 
     # Print and concat the whole isocomp
     #print("Concatenating the suborders of each isolated component")
+    isocomps$order <<- c()
     isocomp_score <- 0
     for (i in seq(1, max(isolated_comp_membership))) {
         # Concatenate subboorder according to the DAG of component dependencies
-        #print(paste("Concatenating isocomp:",i))
+        ##print(paste("Concatenating isocomp:",i))
         res <- concat_suborders2(isocomps[[i]]) # returns joined isocomp order and score
         #print("concat suborders done")
         # join the sub matrices
@@ -309,21 +310,24 @@ dnc2 <- function() {
             isocomps$tot_order_to_dag_time <<- isocomps$tot_order_to_dag_time + sc$tot_order_to_dag_time
             isocomps$max_n_particles <<- max(isocomps$max_n_particles, sc$max_n_particles)
         }
-
+        
         res$adjmat <- full_adjmat
         isocomp_score <- isocomp_score + res$score
-
+        isocomps$order <<- c(isocomps$order, res$order)
+       
     }
+
     print("tot score")
     print(isocomp_score)
 
-    print("Total time for dnc:")
-    print(proc.time() - starttot)
-    print("Total time for order to dag:")
-    print(isocomps$tot_order_to_dag_time)
-    print("subtracted time")
-    print(proc.time() - starttot - isocomps$tot_order_to_dag_time)
-    #return(isocomps)
+    isocomps$score <<- isocomp_score
+    # print("Total time for dnc:")
+    # print(proc.time() - starttot)
+    # print("Total time for order to dag:")
+    # print(isocomps$tot_order_to_dag_time)
+    # print("subtracted time")
+    # print(proc.time() - starttot - isocomps$tot_order_to_dag_time)
+    # #return(isocomps)
 }
 
 wFUN <- function(m, lb, ub) {
@@ -363,7 +367,7 @@ component_dependence2 <- function(isocomp_id) {
     p <- bidag_scores$n
     #components <- isocomp$subcomps
     n_components <- length(isocomps[[isocomp_id]]$subcomps)
-    print(paste("Number of sub components:", n_components))
+    #print(paste("Number of sub components:", n_components))
     component_id1 <- 1
     component_score_sum <- 0
 
@@ -379,7 +383,7 @@ component_dependence2 <- function(isocomp_id) {
         # component the parents belong to.         
         # If we have a new component, calculate the optimal order for it.
         if (is.null(isocomps[[isocomp_id]]$subcomps[[component_id1]]$score)) { # Dont forget to restor to NULL when components are merged!
-            print("Calculating optimal order for new component")
+            #print("Calculating optimal order for new component")
             
             # TODO: It seems like i should make this faster, perhaps by now scoring the initial nodes.
             start1 <- proc.time()
@@ -387,7 +391,8 @@ component_dependence2 <- function(isocomp_id) {
             totaltime1 <- proc.time() - start1
 
             start2 <- proc.time()
-            component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order) # component1_adjmat <- matrix(0, nrow=p, ncol=p)
+            #component1_adjmat <- optimal_dag(bidag_scores, cpp_friendly_scores$space, tmp$order) # component1_adjmat <- matrix(0, nrow=p, ncol=p)
+            component1_adjmat <- r_order_to_dag(cpp_friendly_scores, tmp$order)
             totaltime2 <- proc.time() - start2
 
             # Store the "cost" for finding the suborder and DAG

@@ -25,24 +25,7 @@ std::vector<std::string> split(std::string s, std::string delimiter)
     return res;
 }
 
-/**
- * Get DAG associated with order.
- */
-vector<vector<int>> get_dag(const vector<int> &order, const OrderScoring &scoring)
-{
-    size_t p = scoring.numparents.size();
-    vector<vector<int>> dag(p, vector<int>(p, 0));
-    for (size_t i = 0; i < order.size(); i++)
-    {
-        int node = order[i];
-        vector<int> parents = scoring.get_opt_parents(order, i);
-        for (size_t j = 0; j < parents.size(); j++)
-        {
-            dag[parents[j]][node] = 1;
-        }
-    }
-    return dag;
-}
+
 
 int main(int argc, char **argv)
 {
@@ -181,7 +164,18 @@ int main(int argc, char **argv)
         cout << endl;
     }
 
-    //vector<vector<int>> dag = get_dag(order, scoring);
+    vector<vector<int>> dag = order_to_dag(order, scoring);
+    // print as matrix
+    cout << "DAG: " << endl;
+    for (size_t i = 0; i < dag.size(); i++)
+    {
+        for (size_t j = 0; j < dag[i].size(); j++)
+        {
+            cout << dag[i][j] << " ";
+        }
+        cout << endl;
+    }
+
     
 
     auto stop = high_resolution_clock::now();

@@ -40,6 +40,10 @@ vector<int> no_right_gaps(RightOrder &ro, vector<double> &top_scores, OrderScori
 
 tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderScoring &scoring, vector<RightOrder> initial_right_orders);
 
+vector<vector<int>> order_to_dag(const vector<int>& order, const OrderScoring & scoring);
+
+Rcpp::NumericMatrix r_order_to_dag(Rcpp::List cpp_friendly_scores, Rcpp::NumericVector order);
+
 Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List initial_right_orders);
 
 #endif
