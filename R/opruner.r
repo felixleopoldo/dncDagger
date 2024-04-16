@@ -90,85 +90,7 @@ structure_components <- function(isolated_comp_membership, separable_comp_member
     #return(isocomps)
 }
 
-dnc <- function(cpp_friendly_scores, bidag_scores) {
-    #bidag_scores <- cpp_friendly_scores$bidag_scores
-    # This is now working if aliases is empty
-    aliases <- lapply(cpp_friendly_scores$aliases, function(a) a + 1)
-    var_labels <- cpp_friendly_scores$labels
-    print("Creating diff matrices")
-    diff_matrices <- get_diff_matrices(cpp_friendly_scores$rowmaps, cpp_friendly_scores$scoretable, aliases, var_labels)
-    H_min <- diff_matrices$H_min
-    H_max <- diff_matrices$H_max
-    p <- nrow(H_min)
-    H_min_adj <- (H_min> 0)*1
-    H_max_adj <- (H_max> 0)*1
-    G_H_min <- igraph::graph_from_adjacency_matrix(H_min_adj, mode="directed")
-    G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
-    # print("H_min:")
-    # print(H_min_adj)
-    # print("H_max:")
-    # print(H_max_adj)
 
-    # Components of H_min. Possible component in G.
-    print("Components of H_min:")
-    print(igraph::components(G_H_min))
-
-    # Components of H_max.
-    # One componeny of this may contain several componets of G.
-    # We call them isolated components.
-    print("Components of H_max:")
-    print(igraph::components(G_H_max))
-
-    # Run order search on each component from H_min and see which components in Hmin
-    # That the parents belong to
-
-    membership <- igraph::components(G_H_min)$membership
-    isolated_comp_membership <- igraph::components(G_H_max)$membership
-
-    round <- 1
-    opt_sub_orders <- NULL
-    max_n_particles <- 0
-    tot_n_particles <- 0
-    tot_order_to_dag_time <- 0
-
-    # maybe this loop or the div_n_conquer should be for each isolated component instead?
-    while (TRUE) {
-        print(paste("############# Round ",round," #################"))
-
-
-        ret <- restructure_components(membership, isolated_comp_membership, bidag_scores, cpp_friendly_scores, opt_sub_orders)
-        ultimate_membership <- ret$membership
-        merged_components_graph <- ret$merged_components_graph
-        max_n_particles <- max(max_n_particles, ret$max_n_particles)
-        tot_n_particles <- tot_n_particles + ret$tot_n_particles
-        #print(ret$tot_order_to_dag_time)
-        tot_order_to_dag_time <- tot_order_to_dag_time + ret$tot_order_to_dag_time
-
-        if (ret$no_cycles) { # no cycles to merge.
-            # Concatenate subboorder according to the DAG of component dependencies
-            res <- concat_suborders(ultimate_membership, merged_components_graph, ret$component_order)
-            # join the sub matrices
-            full_adjmat <- matrix(0, p, p)
-            for (suborder in ret$opt_sub_orders) {
-                full_adjmat <- full_adjmat + suborder$subadjmat
-            }
-            #fulldag <- igraph::graph_from_adjacency_matrix(full_adjmat, mode="directed")
-
-            res$adjmat <- full_adjmat
-            #res$dag <- fulldag
-            res$max_n_particles <- max_n_particles
-            res$tot_n_particles <- tot_n_particles
-            res$tot_order_to_dag_time <- tot_order_to_dag_time
-            return(res)
-        }
-
-        opt_sub_orders <- ret$opt_sub_orders
-        membership <- ultimate_membership # Update the membership to the new merged components
-        round <- round + 1
-    }
-}
-
-#dnc2 <- function(cpp_friendly_scores, bidag_scores) {
 dnc2 <- function() {
     #bidag_scores <- cpp_friendly_scores$bidag_scores
     # This is now working if aliases is empty
@@ -190,14 +112,14 @@ dnc2 <- function() {
     G_H_max <- igraph::graph_from_adjacency_matrix(H_max_adj, mode="directed")
   
     # Components of H_min. Possible component in G.
-    #print("Components of H_min:")
-    #print(igraph::components(G_H_min))
+    print("Components of H_min:")
+    print(igraph::components(G_H_min))
 
     # Components of H_max.
     # One component of this may contain several components of G.
     # We call them isolated components.
-    #print("Components of H_max:")
-    #print(igraph::components(G_H_max))
+    print("Components of H_max:")
+    print(igraph::components(G_H_max))
 
     # Run order search on each component from H_min and see which components in Hmin
     # That the parents belong to
@@ -213,13 +135,13 @@ dnc2 <- function() {
 
     # Order the components in H_min after the isolated components (induced by H_max).
     start <- proc.time()
-    # THIS IS A GLOBAL VARIABLES
+    # THIS IS A GLOBAL VARIABLE
     #isocomps <<- list()
     structure_components(isolated_comp_membership, membership)
     #isocomps <<- structure_components(isolated_comp_membership, membership)
     totaltime <- proc.time() - start
-    print("Total time for finding super components:")
-    print(totaltime)
+    #print("Total time for finding super components:")
+    #print(totaltime)
 
     # We initialize the process by computing the component dependencies once for each
     # isolated component.
@@ -227,10 +149,9 @@ dnc2 <- function() {
     print("Going through the isolated components and get the sub component dependencies.")
     start <- proc.time()
     for (i in seq(1, max(isolated_comp_membership))) {
-        print(paste("Isolated component:", i))
-        #isocomps[[i]] <- component_dependence2(isocomps[[i]], bidag_scores, cpp_friendly_scores)
+        #print(paste("Isolated component:", i))
         component_dependence2(i)#, bidag_scores, cpp_friendly_scores)
-        print("Isolated component done")
+        #print("Isolated component done")
         # Update isocomps costs(time and particle counts)
         isocomps$max_n_particles <<- max(isocomps$max_n_particles, isocomps[[i]]$max_n_particles)
         isocomps$tot_n_particles <<- isocomps$tot_n_particles + isocomps[[i]]$tot_n_particles
@@ -239,57 +160,40 @@ dnc2 <- function() {
     }
     totaltime <- proc.time() - start
     #print("--------------------  The isocomps after initial round")
-    #print(isocomps)
+
     print("*********** First round setup of Isolated components done.")
-    print("Total time for component dependence:")
-    print(totaltime)
-    print("Total time for order to dag:")
-    print(isocomps$tot_order_to_dag_time)
-    print("subtracted time")
-    print(totaltime - isocomps$tot_order_to_dag_time)
-    #print("tot get order time")
-    #print(tot_order_time)
-    print("Total time for dnc:")
-    print(proc.time() - starttot)
-    print("Total time for order to dag:")
-    print(isocomps$tot_order_to_dag_time)
-    print("subtracted time")
-    print(proc.time() - starttot - isocomps$tot_order_to_dag_time)
-    #return()
     # The divide and conquer procedure should, operate individually ion eas isolated component.
     print("************** Starting divide and conquer. Going through the isolated components and get the internal component dependencies.")
     #print("number of isocomps")
     #print(max(isolated_comp_membership))
     for (i in seq(1, max(isolated_comp_membership))) {
 
-        print(paste("*********** Treating isolated component", i))
+        #print(paste("*********** Treating isolated component", i))
         # print nodes in the subcomponents
         start <- proc.time() - isocomps[[i]]$tot_order_to_dag_time
         if (isocomps[[i]]$connected) {
-            print("Its already connected, i.e. has only one components Hmin=Hmax. So no dependencies to be handled, just use the optimal order.")
-            print(">>>> Time for isolated component")
-            print(proc.time() - start - isocomps[[i]]$tot_order_to_dag_time)
+            #print("Its already connected, i.e. has only one components Hmin=Hmax. So no dependencies to be handled, just use the optimal order.")
             next
         }
 
         round <- 1
         while (TRUE) {
-            print(paste("############# Merging round ",round," #################"))
+            #print(paste("############# Merging round ",round," #################"))
             #print("restructuring component")
             #isocomps[[i]] <- restructure_components2(isocomps[[i]], bidag_scores, cpp_friendly_scores, opt_sub_orders)
             #restructure_components2(i, bidag_scores, cpp_friendly_scores, opt_sub_orders)
             start <- proc.time()
             restructure_components2(i)
             # print time minus the time for order to dag
-            print("Total time for restructure component:")
-            print(proc.time() - start - isocomps[[i]]$tot_order_to_dag_time)
+            #print("Total time for restructure component:")
+            #print(proc.time() - start - isocomps[[i]]$tot_order_to_dag_time)
             
             #print("restructuring component done")
             if (isocomps[[i]]$no_cycles) break # no cycles to merge.
             round <- round + 1
         }
-        print(">>>> Time for isolated component - ordertodag")
-        print(proc.time() - start - isocomps[[i]]$tot_order_to_dag_time)
+        #print(">>>> Time for isolated component - ordertodag")
+        #print(proc.time() - start - isocomps[[i]]$tot_order_to_dag_time)
     }
 
     # Print and concat the whole isocomp
@@ -317,8 +221,8 @@ dnc2 <- function() {
        
     }
 
-    print("tot score")
-    print(isocomp_score)
+    #print("tot score")
+    #print(isocomp_score)
 
     isocomps$score <<- isocomp_score
     # print("Total time for dnc:")
@@ -760,8 +664,8 @@ restructure_components2 <- function(isocomp_id#, #bidag_scores, cpp_friendly_sco
     component_dependence2(isocomp_id)#, bidag_scores, cpp_friendly_scores)
     tot_order_to_dag_time <- isocomps[[isocomp_id]]$tot_order_to_dag_time - tot_order_to_dag_time 
     adjmat_compdep <- isocomps[[isocomp_id]]$comp_dep
-    print("Time for finding component dependence")
-    print(proc.time() - start - tot_order_to_dag_time)
+    #print("Time for finding component dependence")
+    #print(proc.time() - start - tot_order_to_dag_time)
 
     # 2.
     # Merge components that are dependent on each other in a cycle and neigboring cycles.
@@ -769,8 +673,8 @@ restructure_components2 <- function(isocomp_id#, #bidag_scores, cpp_friendly_sco
     
     start <- proc.time()
     membership_comp <- merged_neig_cycles(adjmat_compdep) # slow
-    print("Time for finding new components by merging cycles")
-    print(proc.time() - start)
+    #print("Time for finding new components by merging cycles")
+    #print(proc.time() - start)
 
     start <- proc.time()
     # Go through and create the new components
@@ -778,17 +682,17 @@ restructure_components2 <- function(isocomp_id#, #bidag_scores, cpp_friendly_sco
     n_newcomps <- max(membership_comp)
     new_subcomps <- list()
     for (i in seq(1, n_newcomps)) {
-        print(paste("Internal component:", i))
+        #print(paste("Internal component:", i))
         # Here we get all the components that below to a new component
         comps_to_merge <- which(membership_comp == i)
         # If only one, dont merge, use the same as before (a copy)
         if (length(comps_to_merge) == 1) {
-            print("No need to merge, using: ")
+            #print("No need to merge, using: ")
             new_subcomps[[i]] <- isocomps[[isocomp_id]]$subcomps[[comps_to_merge]] # this may me slow
         } else { 
             # Merge them if more then one
             new_subcomp <- list()
-            print("Merging components:")
+            #print("Merging components:")
             new_subcomp_nodes <- c()
             for (comp_no in comps_to_merge){                
                 new_subcomp_nodes <- c(new_subcomp_nodes, isocomps[[isocomp_id]]$subcomps[[comp_no]]$nodes)
@@ -801,15 +705,15 @@ restructure_components2 <- function(isocomp_id#, #bidag_scores, cpp_friendly_sco
             new_subcomps[[i]] <- new_subcomp
         }
     }
-    print("Time for maybe creating new sub components")
-    print(proc.time() - start)
+    # print("Time for maybe creating new sub components")
+    # print(proc.time() - start)
 
     # 3.
     # Get dependency graph for the merged components
     start <- proc.time()
     merged_components_adjmat <- merged_component_dependencies(adjmat_compdep, membership_comp)
-    print("Time for finding new component dependencies")
-    print(proc.time() - start)
+    # print("Time for finding new component dependencies")
+    # print(proc.time() - start)
 
     # 4. Update the isolate component
     start <- proc.time()
@@ -824,9 +728,9 @@ restructure_components2 <- function(isocomp_id#, #bidag_scores, cpp_friendly_sco
     }
 
 
-    totaltime <- proc.time() - start
-    print("Time for updating isolated component:")
-    print(totaltime)
+    # totaltime <- proc.time() - start
+    # print("Time for updating isolated component:")
+    # print(totaltime)
 
     #return(isocomp)
 }

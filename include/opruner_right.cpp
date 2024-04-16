@@ -559,10 +559,10 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
     vector<RightOrder> right_orders;
     // vector<RightOrder> right_orders_prev; // this should contain the initial sub order if that exists.
     vector<RightOrder> right_orders_prev = initial_right_orders;
-    vector<vector<double>> M = get_unrestr_mat(p, scoring);
-    vector<vector<double>> H = get_hard_restr_mat(p, scoring);
+    //vector<vector<double>> M = get_unrestr_mat(p, scoring);
+    //vector<vector<double>> H = get_hard_restr_mat(p, scoring);
     vector<double> top_scores = get_unrestricted_vec(p, scoring);
-    vector<double> bottom_scores = all_restr(p, scoring);
+    //vector<double> bottom_scores = all_restr(p, scoring);
 
     // cout << "Matrix loose restr" << endl;
     // print_matrix(M);

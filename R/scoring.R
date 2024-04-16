@@ -29,6 +29,11 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
 
     ret$H_min <- diff_matrices$H_min
     ret$H_max <- diff_matrices$H_max
+    ret$H_min_adj <- (ret$H_min> 0)*1
+    ret$H_max_adj <- (ret$H_max> 0)*1
+
+    # print("H_min:")
+    # print(ret$H_min)
     ret$bidag_scores <- myscore
     ret$labels <- labels(data)[[2]]
     return(ret)
@@ -56,6 +61,9 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
 get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
     nvars <- length(rowmaps)
+
+    # print("rowmaps")
+    # print(rowmaps)
 
     H_min = matrix(, nrow = nvars, ncol = nvars)
     H_max = matrix(, nrow = nvars, ncol = nvars)

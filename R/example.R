@@ -70,7 +70,7 @@ dnc2()#cpp_friendly_scores, cpp_friendly_scores$bidag_scores)
 #   dnc2()
 # )[c("expression", "min", "median", "itr/sec", "n_gc")]
 
-
+print(isocomps$score)
 print("Joint order")
 print(isocomps$order)
 print("Joint DAG")
