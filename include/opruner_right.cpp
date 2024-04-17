@@ -803,7 +803,71 @@ size_t getIndex(vector<int> &v, int K)
     return index;
 }
 
+/**
+ * opruner_right taking just initial nodes, which are automatically converted to a list with RighOrder
+ * 
+*/
+tuple<vector<int>, double, vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderScoring &scoring, vector<int> &initial_right_order){
+    vector<RightOrder> initial_right_orders = {};
+    if (initial_right_order.size() > 0)
+    {
+        size_t p = scoring.numparents.size();    // total number of nodes
+        size_t n = initial_right_order.size(); // number of nodes in the initial sub order
+        vector<double> top_scores = get_unrestricted_vec(p, scoring);
 
+        // Felix: To avoid calculation, maybe we shouldnt initialize here
+        // and just update in the end
+        RightOrder initial_order = init_right_order(top_scores, scoring);
+        size_t initial_node_index = getIndex(initial_order.order, initial_right_order[n - 1]);
+        initial_order = add_node_in_front(initial_order, initial_node_index, top_scores, scoring); // Adding node p-1, i.e.:  <[...], p-1>
+        update_insertion_scores(initial_order, scoring);
+        // As a reference order, add all nodes in order a.t.m.: <1,2,...,p-1>
+
+        for (int i = n - 2; i >= 0; i--)
+        {
+            // reference_order = add_node_in_front(reference_order, r_initial_right_order[i], top_scores, scoring);
+            //  Find the initial node amongs the hidden nodes.
+            initial_node_index = getIndex(initial_order.order, initial_right_order[i]);
+            initial_order = add_node_in_front(initial_order, initial_node_index, top_scores, scoring);
+            update_insertion_scores(initial_order, scoring);
+        }
+
+        // Manipution the insertion scores, so that the initial order doesnt get pruned.
+        for (size_t i = 0; i < initial_order.size_hidden(); i++)
+        {
+            size_t hidden_node = initial_order.order[i];
+
+            //  Make the best inserted score worse than adding it to the front
+            initial_order.inserted_max_order_scores[hidden_node] = initial_order.new_top_scores[hidden_node] - 100000;
+        }
+
+        initial_right_orders.push_back(initial_order);
+    }
+
+    // cout << "initial right orders: " << initial_right_orders.size() << endl;
+    // cout << "initial right orders: " << endl;
+    // for (auto &ro : initial_right_orders)
+    // {
+    //     cout << ro << endl;
+    // }
+
+    // Add the initial right orders
+
+    const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
+
+    // get the suborder
+    vector<int> sub_order = order;
+    sub_order.resize(order.size() - initial_right_order.size());
+    // get the total score for the suborders
+    double sub_order_log_score = 0;
+    for (size_t i = 0; i < sub_order.size(); i++)
+    {
+        sub_order_log_score += node_scores[sub_order[i]];
+    }
+
+    return (make_tuple(order, log_score, sub_order, sub_order_log_score, node_scores, max_n_particles, tot_n_particles));
+
+}
 /**
  * Get DAG associated with order.
  */
@@ -854,6 +918,8 @@ Rcpp::NumericMatrix r_order_to_dag(Rcpp::List cpp_friendly_scores, Rcpp::Numeric
 
     return (dag_mat);
 }
+
+
 
 
 // [[Rcpp::plugins(cpp17)]]

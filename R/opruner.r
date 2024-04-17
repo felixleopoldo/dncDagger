@@ -56,9 +56,8 @@ structure_components <- function(isolated_comp_membership, separable_comp_member
     # Find the sub components in H_min
     #print("Finding super components for:")
     for (j in seq(1, max(membership))) {
-
-        subnodes <- which(membership == j)
-
+         subnodes <- which(membership == j)
+ 
         if(length(unique(isolated_comp_membership[subnodes])) == 1) {
             isocompid <- isolated_comp_membership[subnodes][1]
             isocomps[[isocompid]]$subcompids <<- c(j, isocomps[[isocompid]]$subcompids)
@@ -81,6 +80,19 @@ structure_components <- function(isolated_comp_membership, separable_comp_member
             }
         }
     }
+    # print number of subcomponents of each isolated component
+    for (i in seq(1, max(isolated_comp_membership))) {
+        print(paste("Isolated component:", i, " has this number of subcomponents"))
+        print(length(isocomps[[i]]$subcompids))
+        # print(isocomps[[i]]$subcompids)
+        # # print the nodes in each subcomponent
+        # for (j in seq(1, length(isocomps[[i]]$subcomps))) {
+        #     print(paste("Subcomponent:", j))
+        #     print(isocomps[[i]]$subcomps[[j]]$nodes)
+        # }
+
+    }
+
 
     isocomps$max_n_particles <<- 0
     isocomps$tot_n_particles <<- 0
@@ -113,13 +125,13 @@ dnc2 <- function() {
   
     # Components of H_min. Possible component in G.
     print("Components of H_min:")
-    print(igraph::components(G_H_min))
+    print(igraph::components(G_H_min, mode="weak"))
 
     # Components of H_max.
     # One component of this may contain several components of G.
     # We call them isolated components.
     print("Components of H_max:")
-    print(igraph::components(G_H_max))
+    print(igraph::components(G_H_max, mode="weak"))
 
     # Run order search on each component from H_min and see which components in Hmin
     # That the parents belong to
@@ -140,6 +152,7 @@ dnc2 <- function() {
     structure_components(isolated_comp_membership, membership)
     #isocomps <<- structure_components(isolated_comp_membership, membership)
     totaltime <- proc.time() - start
+    
     #print("Total time for finding super components:")
     #print(totaltime)
 
@@ -160,7 +173,7 @@ dnc2 <- function() {
     }
     totaltime <- proc.time() - start
     #print("--------------------  The isocomps after initial round")
-
+    #print(isocomps)
     print("*********** First round setup of Isolated components done.")
     # The divide and conquer procedure should, operate individually ion eas isolated component.
     print("************** Starting divide and conquer. Going through the isolated components and get the internal component dependencies.")
@@ -279,9 +292,6 @@ component_dependence2 <- function(isocomp_id) {
     comp_dep <- matrix(0, n_components, n_components)
 
     for (component_id1 in seq(1, n_components)) {
-        #component1 <- components[[component_id1]] #copy
-        initial_suborder <- seq(1, p)[-isocomps[[isocomp_id]]$subcomps[[component_id1]]$nodes] #not in optimal order
-
         # Run order search for the nodes in component_id1, with all the other 
         # nodes as initial suborder, i.e possible parents. Then check to which 
         # component the parents belong to.         
@@ -290,6 +300,7 @@ component_dependence2 <- function(isocomp_id) {
             #print("Calculating optimal order for new component")
             
             # TODO: It seems like i should make this faster, perhaps by now scoring the initial nodes.
+            initial_suborder <- seq(1, p)[-isocomps[[isocomp_id]]$subcomps[[component_id1]]$nodes] #not in optimal order
             start1 <- proc.time()
             tmp <- optimal_order(cpp_friendly_scores, initial_suborder) 
             totaltime1 <- proc.time() - start1
@@ -332,9 +343,13 @@ component_dependence2 <- function(isocomp_id) {
             }
         }
         #print("Checking for component dependence. Done")
+        
     }
 
     isocomps[[isocomp_id]]$comp_dep <<- comp_dep
+    # print the component dependence
+    print("Component dependence:")
+    print(comp_dep)
     #isocomp$subcomps <- components
     #return(isocomp)
 }

@@ -3,7 +3,7 @@
 #include <boost/graph/adjacency_matrix.hpp>
 #include <boost/graph/graph_traits.hpp>
 
-typedef boost::adjacency_matrix<boost::directedS> Graph;
+typedef boost::adjacency_matrix<boost::undirectedS> Graph;
 
 
 /* A struct for a subcomponent.
@@ -11,7 +11,9 @@ typedef boost::adjacency_matrix<boost::directedS> Graph;
 struct SubComp
 {
     vector<int> nodes;
-    vector<int> suborder;
+    vector<int> suborder;    
+    size_t max_n_particles = 0;
+    size_t tot_n_particles = 0;
     vector<double> scores;
     vector<vector<int>> opt_adjmat;
     vector<vector<int>> subadjmat;
@@ -27,8 +29,9 @@ struct IsoComp
     vector<double> scores;
     vector<SubComp> subcomps;
     bool connected = false;
-    int max_n_particles = 0;
-    int tot_n_particles = 0;
+    vector<vector<int>> comp_dep;
+    size_t max_n_particles = 0;
+    size_t tot_n_particles = 0;
     double tot_order_to_dag_time = 0;
     double tot_order_time = 0;
 };
@@ -36,13 +39,14 @@ struct IsoComp
 struct IsoComps 
 {
     vector<IsoComp> iso_comps;
-    int max_n_particles = 0;
-    int tot_n_particles = 0;
+    size_t max_n_particles = 0;
+    size_t tot_n_particles = 0;
     double tot_order_to_dag_time = 0;
     double tot_order_time = 0;
 };
 
 
 vector<vector<bool>> dnc(OrderScoring &scoring, vector<vector<bool>> &h_min, vector<vector<bool>> &h_max);
-
+void printIsoComps(IsoComps &iso_comps);
+void component_dependence(IsoComp &iso_comp, OrderScoring &scoring);
 IsoComps structure_components(Graph &G_H_min, Graph &G_H_max);
