@@ -62,8 +62,8 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
     nvars <- length(rowmaps)
 
-    # print("rowmaps")
-    # print(rowmaps)
+    print("rowmaps")
+    print(rowmaps)
 
     H_min = matrix(, nrow = nvars, ncol = nvars)
     H_max = matrix(, nrow = nvars, ncol = nvars)
@@ -172,6 +172,8 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$aliases <- lapply(res$ptab$aliases, function(a) a - 1)
   ret$numparents <- res$ptab$numparents
   ret$rowmaps_backwards <- lapply(res$rowmaps, function(a) a$backwards - 1)
+  ret$rowmaps_forward <- lapply(res$rowmaps, function(a) a$forward - 1)
+
   ret$plus1listsparents <- lapply(res$plus1lists$parents, function(a) a - 1)
   ret$scoretable <- res$result$scoretable$table
   ret$bannedscore <- res$bannedscore

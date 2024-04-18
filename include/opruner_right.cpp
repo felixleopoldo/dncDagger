@@ -871,17 +871,17 @@ tuple<vector<int>, double, vector<int>, double, vector<double>, size_t, size_t> 
 /**
  * Get DAG associated with order.
  */
-vector<vector<int>> order_to_dag(const vector<int> &order, const OrderScoring &scoring)
+vector<vector<bool>> order_to_dag(const vector<int> &order, const OrderScoring &scoring)
 {
     size_t p = scoring.numparents.size();
-    vector<vector<int>> dag(p, vector<int>(p, 0));
+    vector<vector<bool>> dag(p, vector<bool>(p, 0));
     for (size_t i = 0; i < order.size(); i++)
     {
         int node = order[i];
         vector<int> parents = scoring.get_opt_parents(order, i);
         for (size_t j = 0; j < parents.size(); j++)
         {
-            dag[parents[j]][node] = 1;
+            dag[parents[j]][node] = true;
         }
     }
     return dag;
@@ -905,7 +905,7 @@ Rcpp::NumericMatrix r_order_to_dag(Rcpp::List cpp_friendly_scores, Rcpp::Numeric
     }
     // get DAG from order
     size_t p = order.size();
-    vector<vector<int>> dag = order_to_dag(order_vec, scoring);
+    vector<vector<bool>> dag = order_to_dag(order_vec, scoring);
     // convert dag to Rcpp matrix
     Rcpp::NumericMatrix dag_mat(p, p);
     for (size_t i = 0; i < p; i++)

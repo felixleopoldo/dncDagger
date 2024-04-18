@@ -108,6 +108,7 @@ int main(int argc, char **argv)
     OrderScoring scoring = get_score(ret);
     size_t p = scoring.numparents.size();
 
+    auto start = high_resolution_clock::now();
     // read the R matrix ret$H_max from into a c++ matrix    
     Rcpp::NumericMatrix H_max_r = ret["H_max_adj"];
     Rcpp::NumericMatrix H_min_r = ret["H_min_adj"];
@@ -127,36 +128,21 @@ int main(int argc, char **argv)
             }
             H_max_adj[i][j] = H_max_r(i, j) == true;
             H_min_adj[i][j] = H_min_r(i, j) == true;
-
         }
     }
-    // // print the matrices
-    // cout << "H_max: " << endl;
-    // for (size_t i = 0; i < p; i++)
-    // {
-    //     for (size_t j = 0; j < p; j++)
-    //     {
-    //         cout << H_max_adj[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
 
-    // cout << "H_min: " << endl;
-    // for (size_t i = 0; i < p; i++)
-    // {
-    //     for (size_t j = 0; j < p; j++)
-    //     {
-    //         cout << H_min_adj[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
+    vector<int> dnc_order = dnc(scoring, H_min_adj, H_max_adj);
+    vector<vector<bool>> dnc_mat = order_to_dag(dnc_order, scoring);
 
-
-    vector<vector<bool>> optmat = dnc(scoring, H_min_adj, H_max_adj);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+    cout << "Time taken by dnc function: " << duration.count() << " milliseconds" << endl;
+    
+    print_matrix(dnc_mat);
 
     vector<RightOrder> initial_right_orders = {}; 
 
-    auto start = high_resolution_clock::now();
+     start = high_resolution_clock::now();
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
 
@@ -168,7 +154,7 @@ int main(int argc, char **argv)
     }
     cout << endl;
 
-    vector<vector<int>> dag = order_to_dag(order, scoring);
+    vector<vector<bool>> dag = order_to_dag(order, scoring);
     // print as matrix
     cout << "DAG: " << endl;
     for (size_t i = 0; i < dag.size(); i++)
@@ -180,8 +166,8 @@ int main(int argc, char **argv)
         cout << endl;
     }    
 
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
+     stop = high_resolution_clock::now();
+     duration = duration_cast<milliseconds>(stop - start);
 }
 
 /*
@@ -277,83 +263,77 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
 */
 
-// pair<vector<vector<double>>, vector<vector<double>>> get_diff_matrices(vector<RowMap> rowmaps, vector<vector<vector<double>>> scoretable, vector<vector<int>> aliases, vector<string> var_labels)
-// {
-//     size_t nvars = rowmaps.size();
-//     vector<vector<double>> H_min(nvars, vector<double>(nvars, 0));
-//     vector<vector<double>> H_max(nvars, vector<double>(nvars, 0));
+pair<vector<vector<double>>, vector<vector<double>>> get_diff_matrices(vector<Rcpp::IntegerVector> rowmaps_backwards,vector<Rcpp::IntegerVector> rowmaps_forward, vector<vector<vector<double>>> scoretable, vector<vector<int>> potential_parents){
+    
+    size_t nvars = rowmaps_backwards.size();
 
-//     for (size_t i = 0; i < nvars; i++)
-//     {
-//         RowMap var = rowmaps[i];
-//         size_t n_pos_parents = aliases[i].size();
+    vector<vector<double>> H_min(nvars, vector<double>(nvars));
+    vector<vector<double>> H_max(nvars, vector<double>(nvars));
 
-//         for (size_t parent_ind = 0; parent_ind < n_pos_parents; parent_ind++)
-//         {
-//             if (n_pos_parents == 0)
-//                 continue;
-//             int parent = aliases[i][parent_ind];
-//             for (size_t hash : var.forward)
-//             {
-//                 int check = (hash - 1) % (1 << parent_ind);
-//                 if (check < (1 << (parent_ind - 1)))
-//                 {
-//                     int hash_with_parent = hash + (1 << (parent_ind - 1));
-//                     double score_diff = scoretable[i][0][var.backwards[hash_with_parent]] - scoretable[i][0][var.backwards[hash]];
-//                     if (isnan(H_max[i][parent]))
-//                     {
-//                         H_max[i][parent] = score_diff;
-//                     }
-//                     else
-//                     {
-//                         H_max[i][parent] = max(H_max[i][parent], score_diff);
-//                     }
+    for (size_t i = 0; i < nvars; i++) {
+        // total number of possible parents         
+        size_t n_pos_parents = potential_parents[i].size();
 
-//                     if (isnan(H_min[i][parent]))
-//                     {
-//                         H_min[i][parent] = score_diff;
-//                     }
-//                     else
-//                     {
-//                         H_min[i][parent] = min(H_min[i][parent], score_diff);
-//                     }
-//                 }
-//             }
-//         }
+        // For the possible parents, i.e. not plus1 parents
+        // We exclude each parent in turn and see how the score changes
+        for (size_t parent_ind = 0; parent_ind < n_pos_parents; parent_ind++){
+            // if no possible parents, skip
+            if(n_pos_parents == 0) continue; // since seq is weird
+            int parent = potential_parents[i][parent_ind]; // parent to exclude
+            ///for (size_t hash = 0; hash < rowmaps_forward[i].size(); hash++){
+            for (auto & hash: rowmaps_forward[i]){
+                // Check if the parent is in the hash
+                int check = (rowmaps_forward[i][hash]-1) % (1 << parent_ind);
+                if (check < (1 << (parent_ind-1))){
+                    // Compute the hash with the parent excluded
+                    int hash_with_parent = hash + (1 << (parent_ind-1));                                        
+                    // Using the no plus1 score table, i.e. index 1
+                    double score_diff = scoretable[i][0][rowmaps_backwards[i][hash_with_parent]] - scoretable[i][0][rowmaps_backwards[i][hash]];                    
+                    // Update the H matrices
+                    if (isnan(H_max[i][parent])){
+                        H_max[i][parent] = score_diff;
+                    } else {
+                        H_max[i][parent] = max(H_max[i][parent], score_diff);
+                    }
 
-//         vector<int> plus1parents;
-//         vector<int> plus1parent_inds;
+                    if (isnan(H_min[i][parent])){
+                        H_min[i][parent] = score_diff;
+                    } else {
+                        H_min[i][parent] = min(H_min[i][parent], score_diff);
+                    }
+                }
+            }
+        }
 
-//         for (size_t j = 0; j < var_labels.size(); j++)
-//         {
-//             if (j == i)
-//             {
-//                 continue;
-//             }
-//             if (find(aliases[i].begin(), aliases[i].end(), j) == aliases[i].end())
-//             {
-//                 // add label to plus1parents
-//                 //plus1parents.push_back(j);
-//                 plus1parents.push_back(var_labels[j]);
-//                 plus1parent_inds.push_back(j);
+        // For the plus1 parents        
+        // plus1parents are those parents that are not in the aliases
+        vector<int> plus1parents;
+        vector<int> plus1parent_inds;
 
-//             }
-//         }
+        for (size_t j = 0; j < nvars; j++){
+            if (j == i) {
+                continue;
+            }
+            if (find(potential_parents[i].begin(), potential_parents[i].end(), j) == potential_parents[i].end()){
+                // label not in aliases so it is a plus1 parent
+                plus1parents.push_back(j);
+                //plus1parents.push_back(potential_parents[i]);
+                plus1parent_inds.push_back(j);
+            }
+        }
 
-//         for (size_t j = 0; j < plus1parents.size(); j++)
-//         {
-//             vector<double> score_diffs;
-//             for (size_t k = 0; k < scoretable[i].size(); k++)
-//             {
-//                 score_diffs.push_back(scoretable[i][j + 1][k] - scoretable[i][0][k]);
-//             }
-//             H_max[i][plus1parent_inds[j]] = *max_element(score_diffs.begin(), score_diffs.end());
-//             H_min[i][plus1parent_inds[j]] = *min_element(score_diffs.begin(), score_diffs.end());
-//         }
-//     }
-//     return {H_min, H_max};
+        for(size_t j = 0; j < plus1parents.size(); j++){ 
+            vector<double> score_diffs;
+            for (size_t k = 0; k < scoretable[i].size(); k++){
+                score_diffs.push_back(scoretable[i][k][j] - scoretable[i][0][j]);
+            }
+            H_max[i][plus1parent_inds[j]] = *max_element(score_diffs.begin(), score_diffs.end());
+            H_min[i][plus1parent_inds[j]] = *min_element(score_diffs.begin(), score_diffs.end());
+        }
 
-// }
+    }            
+    return make_pair(H_min, H_max);
+}
 
 
 

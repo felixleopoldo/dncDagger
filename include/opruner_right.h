@@ -42,7 +42,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
 
 tuple<vector<int>, double, vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderScoring &scoring, vector<int> &initial_right_order);
 
-vector<vector<int>> order_to_dag(const vector<int> &order, const OrderScoring &scoring);
+vector<vector<bool>> order_to_dag(const vector<int> &order, const OrderScoring &scoring);
 
 Rcpp::NumericMatrix r_order_to_dag(Rcpp::List cpp_friendly_scores, Rcpp::NumericVector order);
 

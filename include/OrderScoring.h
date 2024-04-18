@@ -15,6 +15,7 @@ class OrderScoring
 private:
     vector<vector<int>> potential_parents;
     vector<Rcpp::IntegerVector> rowmaps_backwards;
+    vector<Rcpp::IntegerVector> rowmaps_forward;
     vector<vector<int>> potential_plus1_parents;
 
     bool MAP;
@@ -37,6 +38,7 @@ public:
     OrderScoring(vector<vector<int>> potential_parents, 
     vector<int> numparents, 
     vector<Rcpp::IntegerVector> rowmaps_backwards, 
+    vector<Rcpp::IntegerVector> rowmaps_forward,
     vector<vector<int>> potential_plus1_parents, 
     vector<vector<vector<double>>> scoretable, 
     vector<vector<vector<double>>> scoresmatrices, 

@@ -36,19 +36,19 @@ struct Vis {
     };
 };
 
-/**
- * Generic function to print a matrix
-*/
-template <typename T> void print_matrix(const vector<vector<T>> & matrix) {
-    for (size_t i = 0; i < matrix.size(); i++)
-    {
-        for (size_t j = 0; j < matrix[i].size(); j++)
-        {
-            cout << matrix[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
+// /**
+//  * Generic function to print a matrix
+// */
+// template <typename T> void print_matrix(const vector<vector<T>> & matrix) {
+//     for (size_t i = 0; i < matrix.size(); i++)
+//     {
+//         for (size_t j = 0; j < matrix[i].size(); j++)
+//         {
+//             cout << matrix[i][j] << " ";
+//         }
+//         cout << endl;
+//     }
+// }
 
 /**
  * Function that converts a matrix to a boost graph
@@ -72,7 +72,7 @@ template <typename U, typename T> U matrix_to_graph(const vector<vector<T>> & ma
 /*  Divide and conquer algorithm.
     Returns the optimal DAG.
 */
-vector<vector<bool>> dnc(OrderScoring &scoring,
+vector<int> dnc(OrderScoring &scoring,
                         vector<vector<bool>> &h_min_adj,
                         vector<vector<bool>> &h_max_adj)
 {
@@ -81,7 +81,7 @@ vector<vector<bool>> dnc(OrderScoring &scoring,
 
     IsoComps iso_comps = structure_components(G_H_min, G_H_max);
 
-    printIsoComps(iso_comps);
+    //printIsoComps(iso_comps);
 
     // Go through the isocomps and update the subcomponents
     // accoring to their dependence.
@@ -98,7 +98,7 @@ vector<vector<bool>> dnc(OrderScoring &scoring,
             new_cubcomponents_created = restructure_components(iso_comp, scoring);
         }
     }
-    printIsoComps(iso_comps);
+    //printIsoComps(iso_comps);
 
     // Create the final DAG and order by, for each isocomp, 
     // joining the subcomponents accorinng to a topological order of their dependencies
@@ -109,6 +109,20 @@ vector<vector<bool>> dnc(OrderScoring &scoring,
     for (auto & iso_comp: iso_comps.iso_comps){
         sub_order = concatenate_subcomponents(iso_comp, scoring);
         order_full.insert(order_full.end(), sub_order.begin(), sub_order.end());
+    }
+
+    // copy the columns opt_adjmat for each subcomponent, corresponding to
+    // the suborder, to the full_adjmat
+    
+    for (auto & iso_comp: iso_comps.iso_comps){
+        for (auto & subcomp: iso_comp.subcomps){
+            for (size_t i = 0; i < subcomp.opt_adjmat.size(); i++)
+            {
+                for (auto & node : subcomp.nodes){
+                    adjmat_full[i][node] = subcomp.opt_adjmat[i][node];
+                }
+            }
+        }
     }
 
     // Print the full order
@@ -126,11 +140,16 @@ vector<vector<bool>> dnc(OrderScoring &scoring,
             score += subcomp.score;
         }
     }
+
+    // print the full adjmat
+    // cout << "Full adjmat: " << endl;
+    print_matrix(adjmat_full);
     // print it
     cout << "Total score: " << score << endl;
+    return(order_full);
+    // adjmat_full = order_to_dag(order_full, scoring);
 
-
-    return(adjmat_full);
+    // return(adjmat_full);
 }
 
 /**
@@ -149,20 +168,20 @@ vector<int> concatenate_subcomponents(const IsoComp & iso_comp, OrderScoring & s
     
     topological_sort(D, back_inserter(c));
     // print the topological order
-    cout << "Topological comp order: " << endl;
+    // cout << "Topological comp order: " << endl;
 
-    for ( container::reverse_iterator ii=c.rbegin(); ii!=c.rend(); ++ii){
-        cout << *ii << " ";
-        // print the suborder in the subcomponent
-        cout << "Suborder: ";
-        for (size_t j = 0; j < iso_comp.subcomps[*ii].nodes.size(); j++)
-        {
-            cout << iso_comp.subcomps[*ii].suborder[j] << " ";
-        }
-        cout << endl;
-    }
+    // for ( container::reverse_iterator ii=c.rbegin(); ii!=c.rend(); ++ii){
+    //     cout << *ii << " ";
+    //     // print the suborder in the subcomponent
+    //     cout << "Suborder: ";
+    //     for (size_t j = 0; j < iso_comp.subcomps[*ii].nodes.size(); j++)
+    //     {
+    //         cout << iso_comp.subcomps[*ii].suborder[j] << " ";
+    //     }
+    //     cout << endl;
+    // }
 
-    cout << endl;
+    // cout << endl;
 
     // Join the nodes of the suborders in the topological order.
     for (auto & comp_id: c) {
@@ -171,13 +190,13 @@ vector<int> concatenate_subcomponents(const IsoComp & iso_comp, OrderScoring & s
         order.insert(order.end(), subcomp.suborder.begin(), subcomp.suborder.end()); 
     }
 
-    // print the order
-    cout << "Suborder: " << endl;
-    for (size_t i = 0; i < order.size(); i++)
-    {
-        cout << order[i] << " ";
-    }
-    cout << endl;
+    // // print the order
+    // cout << "Suborder: " << endl;
+    // for (size_t i = 0; i < order.size(); i++)
+    // {
+    //     cout << order[i] << " ";
+    // }
+    // cout << endl;
 
 
     return(order);
@@ -211,16 +230,16 @@ vector<size_t> merged_neig_cycles(const vector<vector<bool>> &  compdep){
     // Find the cycles in D
     tiernan_all_cycles(D, vis);
 
-    ///print vis cycles
-    cout << "Cycles: " << endl;
-    for (size_t i = 0; i < vis.cycles.size(); i++)
-    {
-        for (size_t j = 0; j < vis.cycles[i].size(); j++)
-        {
-            cout << vis.cycles[i][j] << " ";
-        }
-        cout << endl;
-    }
+    // ///print vis cycles
+    // cout << "Cycles: " << endl;
+    // for (size_t i = 0; i < vis.cycles.size(); i++)
+    // {
+    //     for (size_t j = 0; j < vis.cycles[i].size(); j++)
+    //     {
+    //         cout << vis.cycles[i][j] << " ";
+    //     }
+    //     cout << endl;
+    // }
 
     // Create undirected graph with edges between all nodes in each of the cycles
     Graph G(p);
@@ -243,13 +262,13 @@ vector<size_t> merged_neig_cycles(const vector<vector<bool>> &  compdep){
     vector<size_t> component(num_vertices(G));
     int num = connected_components(G, &component[0]);
     // print component vector
-    cout << "Number of components: " << num << endl;
-    cout << "Component vector: ";
-    for (size_t i = 0; i < component.size(); i++)
-    {
-        cout << component[i] << " ";
-    }
-    cout << endl;
+    //cout << "Number of components: " << num << endl;
+    //cout << "Component vector: ";
+    // for (size_t i = 0; i < component.size(); i++)
+    // {
+    //     cout << component[i] << " ";
+    // }
+    // cout << endl;
 
     return(component);
 }
@@ -274,7 +293,7 @@ bool restructure_components(IsoComp & iso_comp, OrderScoring & scoring) {
     //if (n_comp == iso_comp.subcomps.size()) {
     if (n_comp == membership_comp.size()) {
         // No cycles, just return
-        cout << "No cycles found." << endl;
+        //cout << "No cycles found." << endl;
         return false;
     }
 
@@ -373,9 +392,9 @@ void subcomponents_update(IsoComp & iso_comp,  OrderScoring & scoring){
             // run opruner_right conditioned on restnodes (initial nodes)
             const auto &[order, log_score, suborder, suborder_log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, restnodes);
             // find the correspodning DAG
-            vector<vector<int>> adjmat = order_to_dag(order, scoring);
+            vector<vector<bool>> adjmat = order_to_dag(order, scoring);
 
-            // updated the isocom and subcomp with the new information
+            // updated the isocomp and subcomp with the new information
             subcomp.suborder = suborder; // is this the suborder?
             subcomp.score = suborder_log_score;
             subcomp.tot_n_particles = tot_n_particles;
@@ -452,20 +471,9 @@ void printIsoComps(IsoComps & iso_comps) {
             }
             cout << endl;
             cout << "Score: " << subcomp.score << endl;
-        }
-        // // print comp_dep matrix
-        // cout << "Component dependence matrix: " << endl;
-        // for (size_t j = 0; j < iso_comp.comp_dep.size(); j++)
-        // {
-        //     for (size_t k = 0; k < iso_comp.comp_dep.size(); k++)
-        //     {
-        //         cout << iso_comp.comp_dep[j][k] << " ";
-        //     }
-        //     cout << endl;
-        // }
-        // cout << endl;
+            cout << endl;
+        }        
     }
-
 }
 
 IsoComps structure_components(Graph & G_H_min, Graph & G_H_max) {
@@ -473,13 +481,13 @@ IsoComps structure_components(Graph & G_H_min, Graph & G_H_max) {
     vector<int> component_sub(num_vertices(G_H_min));
     int num_sub = connected_components(G_H_min, &component_sub[0]);
     // print the compnent vector
-    cout << "Number of subcomponents: " << num_sub << endl; // "Number of components:
-    cout << "SubComponent vector: ";
-    for (size_t i = 0; i < component_sub.size(); i++)
-    {
-        cout << component_sub[i] << " ";
-    }
-    cout << endl;
+    // cout << "Number of subcomponents: " << num_sub << endl; // "Number of components:
+    // cout << "SubComponent vector: ";
+    // for (size_t i = 0; i < component_sub.size(); i++)
+    // {
+    //     cout << component_sub[i] << " ";
+    // }
+    // cout << endl;
     
 
     vector<int> component_max(num_vertices(G_H_max));
@@ -531,21 +539,21 @@ IsoComps structure_components(Graph & G_H_min, Graph & G_H_max) {
         // Just take the first node in the subcomponent and get the isolated component
         IsoComp & iso_comp = iso_comps.iso_comps[component_max[subnodes[0]]];
 
-        // print the nodes in the subcomponent
-        cout << "Subcomponent " << comp_id << " has " << subnodes.size() << " nodes." << endl;
-        cout << "Nodes: ";
-        for (size_t j = 0; j < subnodes.size(); j++)
-        {
-            cout << subnodes[j] << " ";
-        }
-        cout << endl;
-        // print nodes in isocomp
-        cout << "Nodes in isocomp: ";
-        for (size_t j = 0; j < iso_comp.nodes.size(); j++)
-        {
-            cout << iso_comp.nodes[j] << " ";
-        }
-        cout << endl;
+        // // print the nodes in the subcomponent
+        // cout << "Subcomponent " << comp_id << " has " << subnodes.size() << " nodes." << endl;
+        // cout << "Nodes: ";
+        // for (size_t j = 0; j < subnodes.size(); j++)
+        // {
+        //     cout << subnodes[j] << " ";
+        // }
+        // cout << endl;
+        // // print nodes in isocomp
+        // cout << "Nodes in isocomp: ";
+        // for (size_t j = 0; j < iso_comp.nodes.size(); j++)
+        // {
+        //     cout << iso_comp.nodes[j] << " ";
+        // }
+        // cout << endl;
 
         // Add the subcomponent to the isolated component
         iso_comp.subcomps.push_back(subcomp);

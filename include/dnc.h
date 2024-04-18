@@ -6,6 +6,7 @@
 #include <boost/graph/topological_sort.hpp>
 #include <strings.h>
 #include <string.h> // needed?
+#include "auxiliary.h"
 
 typedef boost::adjacency_matrix<boost::undirectedS> Graph;
 typedef boost::adjacency_matrix<boost::directedS> DiGraph;
@@ -20,8 +21,8 @@ struct SubComp
     size_t max_n_particles = 0;
     size_t tot_n_particles = 0;
     vector<double> scores;
-    vector<vector<int>> opt_adjmat;
-    vector<vector<int>> subadjmat;
+    vector<vector<bool>> opt_adjmat;
+    vector<vector<bool>> subadjmat;
     double score = 0;
 };
 
@@ -53,7 +54,7 @@ struct IsoComps
 };
 
 vector<size_t> merged_neig_cycles(const vector<vector<bool>> & compdep);
-vector<vector<bool>> dnc(OrderScoring &scoring, vector<vector<bool>> &h_min, vector<vector<bool>> &h_max);
+vector<int> dnc(OrderScoring &scoring, vector<vector<bool>> &h_min, vector<vector<bool>> &h_max);
 void printIsoComps(IsoComps &iso_comps);
 bool restructure_components(IsoComp & iso_comp,  OrderScoring & scoring);
 void subcomponents_update(IsoComp &iso_comp,  OrderScoring &scoring);

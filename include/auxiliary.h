@@ -19,7 +19,24 @@ bool definitelyLessThan(float a, float b, float epsilon);
 
 int rand_int_in_range(const size_t &from, const size_t &to);
 
-void print_matrix(vector<vector<double>>& M);
+//void print_matrix(vector<vector<double>>& M);
+//template <typename T> void print_matrix(const vector<vector<T>> & matrix);
+/**
+ * Generic function to print a matrix
+*/
+template <typename T> void print_matrix(const vector<vector<T>> & matrix) {
+    //     //cout << setprecision(2);
+    for (size_t i = 0; i < matrix.size(); i++)
+    {
+        for (size_t j = 0; j < matrix[i].size(); j++)
+        {
+            cout << matrix[i][j] << " ";
+        }
+        cout << endl;
+    }
+    //cout << setprecision(5);
+}
+
 
 vector<int> unique_sets(const vector<vector<bool>> &mats, const vector<double> &order_scores, double);
 // function that prints vector by passing begin and end iterators.

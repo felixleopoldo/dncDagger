@@ -35,21 +35,20 @@ int rand_int_in_range(const size_t &from, const size_t &to)
     return (from + (std::rand() % (to - from + 1)));
 }
 
-void print_matrix(vector<vector<double>> &M)
-{
-    //cout << setprecision(2);
-    for (auto &row : M)
-    {
-        for (auto &el : row)
-        {
-            cout << el << "\t";
-        }
+// void print_matrix(vector<vector<double>> &M)
+// {
+//     //cout << setprecision(2);
+//     for (auto &row : M)
+//     {
+//         for (auto &el : row)
+//         {
+//             cout << el << "\t";
+//         }
         
-        cout << endl;
-    }
-    //cout << setprecision(5);
-}
-
+//         cout << endl;
+//     }
+//     //cout << setprecision(5);
+// }
 
 
 /**

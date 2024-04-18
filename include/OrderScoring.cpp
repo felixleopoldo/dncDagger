@@ -13,6 +13,7 @@ OrderScoring::OrderScoring(
     vector<vector<int>> potential_parents,
     vector<int> numparents,
     vector<Rcpp::IntegerVector> rowmaps_backwards,
+    vector<Rcpp::IntegerVector> rowmaps_forward,
     vector<vector<int>> potential_plus1_parents,
     vector<vector<vector<double>>> scoretable,
     vector<vector<vector<double>>> scoresmatrices,
@@ -21,6 +22,7 @@ OrderScoring::OrderScoring(
     vector<vector<vector<int>>> parenttable,
     bool MAP) : potential_parents(potential_parents),
                 rowmaps_backwards(rowmaps_backwards),
+                rowmaps_forward(rowmaps_forward),
                 potential_plus1_parents(potential_plus1_parents),
                 MAP(MAP),
                 numparents(numparents),
@@ -664,6 +666,15 @@ OrderScoring get_score(Rcpp::List ret)
         rowmaps_backwards.push_back(m);
     }
 
+    // Read rowmaps_forward
+    Rcpp::List rowmaps_forwardR = Rcpp::as<Rcpp::List>(ret["rowmaps_forward"]);
+    vector<Rcpp::IntegerVector> rowmaps_forward;
+    for (size_t i = 0; i < p; i++)
+    {
+        Rcpp::IntegerVector m = Rcpp::as<Rcpp::IntegerVector>(rowmaps_forwardR[i]);
+        rowmaps_forward.push_back(m);
+    }
+
     // Read aliases
     Rcpp::List aliasesR = Rcpp::as<Rcpp::List>(ret["aliases"]);
     vector<vector<int>> aliases;
@@ -696,6 +707,7 @@ OrderScoring get_score(Rcpp::List ret)
     OrderScoring scoring(aliases,
                          numparents,
                          rowmaps_backwards,
+                         rowmaps_forward,
                          plus1listsparents,
                          scoretable,
                          bannedscore,
