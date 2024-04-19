@@ -20,11 +20,12 @@ OrderScoring::OrderScoring(
     vector<vector<vector<double>>> maxmatrix,
     vector<vector<vector<int>>> maxrow,
     vector<vector<vector<int>>> parenttable,
-    bool MAP) : potential_parents(potential_parents),
-                rowmaps_backwards(rowmaps_backwards),
-                rowmaps_forward(rowmaps_forward),
+    bool MAP) : 
                 potential_plus1_parents(potential_plus1_parents),
                 MAP(MAP),
+                potential_parents(potential_parents),
+                rowmaps_backwards(rowmaps_backwards),
+                rowmaps_forward(rowmaps_forward),                
                 numparents(numparents),
                 scoretable(scoretable), // this is called bannedscore in R
                 scoresmatrices(scoresmatrices),

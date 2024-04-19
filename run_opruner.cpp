@@ -104,32 +104,17 @@ int main(int argc, char **argv)
     RInside R(argc, argv);
     Rcpp::List ret = R.parseEval(r_code);
 
-
     OrderScoring scoring = get_score(ret);
     size_t p = scoring.numparents.size();
 
     auto start = high_resolution_clock::now();
-    // read the R matrix ret$H_max from into a c++ matrix    
-    Rcpp::NumericMatrix H_max_r = ret["H_max_adj"];
-    Rcpp::NumericMatrix H_min_r = ret["H_min_adj"];
-
-    // convert these into vector<vector<double>>
+ 
+    // // convert these into vector<vector<double>>
     vector<vector<bool>> H_max_adj(p, vector<bool>(p));
     vector<vector<bool>> H_min_adj(p, vector<bool>(p));
-    // read the values from th Rcpp matrices
-    for (size_t i = 0; i < p; i++)
-    {
-        for (size_t j = 0; j < p; j++)
-        {
-            if (i == j)
-            {
-                H_max_adj[i][i] = 0;
-                continue;
-            }
-            H_max_adj[i][j] = H_max_r(i, j) == true;
-            H_min_adj[i][j] = H_min_r(i, j) == true;
-        }
-    }
+  
+    // print H_min_adj and H_max_adj
+    tie(H_min_adj, H_max_adj) = get_diff_matrices(scoring);
 
     vector<int> dnc_order = dnc(scoring, H_min_adj, H_max_adj);
     vector<vector<bool>> dnc_mat = order_to_dag(dnc_order, scoring);
@@ -169,175 +154,3 @@ int main(int argc, char **argv)
      stop = high_resolution_clock::now();
      duration = duration_cast<milliseconds>(stop - start);
 }
-
-/*
-    c++ version of the following code.
-
-get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
-
-    nvars <- length(rowmaps)
-
-    H_min = matrix(, nrow = nvars, ncol = nvars)
-    H_max = matrix(, nrow = nvars, ncol = nvars)
-    colnames(H_min) <- var_labels
-    colnames(H_max) <- var_labels
-    rownames(H_min) <- var_labels
-    rownames(H_max) <- var_labels
-
-    for (i in seq(nvars)) {
-        var <- rowmaps[[i]]
-        # print("#############")
-        # print("var:")
-        # print(var_labels[[i]])
-        # print("aliases:")
-        # print(aliases[[i]])
-        # print("forward hashs:")
-        # print(var$forward)
-
-        # total number of possible parents         
-        n_pos_parents <- length(aliases[[i]])# sqrt(length(var$forward))
-        
-        # For the possible parents, i.e. not plus1 parents
-        # We exclude each parent in turn and see how the score changes
-        for (parent_ind in seq(n_pos_parents)){
-            # if no possible parents, skip
-            if(n_pos_parents == 0) next # since seq is weird
-            parent <- aliases[[i]][[parent_ind]] # parent to exclude
-            for (hash in var$forward){                
-                
-                # Check if the parent is in the hash
-                check <- (hash-1) %% 2^(parent_ind)
-                if (check < 2^(parent_ind-1)){
-                    
-                    # Compute the hash with the parent excluded
-                    hash_with_parent <- hash + 2^(parent_ind-1)                                        
-                    # Using the no plus1 score table, i.e. index 1
-                    score_diff <- scoretable[[i]][[1]][var$backwards[[hash_with_parent]]] - scoretable[[i]][[1]][var$backwards[[hash]]]                    
-                    # Update the H matrices
-                    if (is.na(H_max[i, parent])){                        
-                        H_max[i,parent] <- score_diff
-                    } else {
-                        H_max[i, parent] <- max(H_max[i, parent], score_diff)
-                    }
-
-                    if (is.na(H_min[i, parent])){                        
-                        H_min[i,parent] <- score_diff
-                    } else {
-                        H_min[i, parent] <- min(H_min[i, parent], score_diff)
-                    }
-                 }
-            }
-        }
-
-        ## For the plus1 parents        
-        # plus1parents are those parents that are not in the aliases
-        plus1parents <- c()
-        plus1parent_inds <- c()
-
-        j <- 1
-        for (label in var_labels){
-            if (j == i) {  # skip itself
-                j <- j + 1
-                next
-            }
-            if (!(label %in% labels(aliases[[i]]))){
-                # label not in aliases so it is a plus1 parent
-                plus1parents <- c(plus1parents, label)
-                plus1parent_inds <- c(plus1parent_inds, j)
-            }
-            j <- j + 1
-        }
-
-        for(j in seq(1, length(plus1parents))){ 
-            score_diffs <- scoretable[[i]][[j+1]] - scoretable[[i]][[1]] # the first one is the no plus1 score table. Subtracting all at once.
-            H_max[i, plus1parent_inds[j]] <- max(score_diffs) 
-            H_min[i, plus1parent_inds[j]] <- min(score_diffs)
-        }
-    }
-    # print("H_max:")
-    # print((H_max > 0) * 1)
-    # print("H_min:")
-    # print((H_min > 0) * 1)
-    return(list(H_min = H_min, H_max = H_max))
-}
-
-*/
-
-pair<vector<vector<double>>, vector<vector<double>>> get_diff_matrices(vector<Rcpp::IntegerVector> rowmaps_backwards,vector<Rcpp::IntegerVector> rowmaps_forward, vector<vector<vector<double>>> scoretable, vector<vector<int>> potential_parents){
-    
-    size_t nvars = rowmaps_backwards.size();
-
-    vector<vector<double>> H_min(nvars, vector<double>(nvars));
-    vector<vector<double>> H_max(nvars, vector<double>(nvars));
-
-    for (size_t i = 0; i < nvars; i++) {
-        // total number of possible parents         
-        size_t n_pos_parents = potential_parents[i].size();
-
-        // For the possible parents, i.e. not plus1 parents
-        // We exclude each parent in turn and see how the score changes
-        for (size_t parent_ind = 0; parent_ind < n_pos_parents; parent_ind++){
-            // if no possible parents, skip
-            if(n_pos_parents == 0) continue; // since seq is weird
-            int parent = potential_parents[i][parent_ind]; // parent to exclude
-            ///for (size_t hash = 0; hash < rowmaps_forward[i].size(); hash++){
-            for (auto & hash: rowmaps_forward[i]){
-                // Check if the parent is in the hash
-                int check = (rowmaps_forward[i][hash]-1) % (1 << parent_ind);
-                if (check < (1 << (parent_ind-1))){
-                    // Compute the hash with the parent excluded
-                    int hash_with_parent = hash + (1 << (parent_ind-1));                                        
-                    // Using the no plus1 score table, i.e. index 1
-                    double score_diff = scoretable[i][0][rowmaps_backwards[i][hash_with_parent]] - scoretable[i][0][rowmaps_backwards[i][hash]];                    
-                    // Update the H matrices
-                    if (isnan(H_max[i][parent])){
-                        H_max[i][parent] = score_diff;
-                    } else {
-                        H_max[i][parent] = max(H_max[i][parent], score_diff);
-                    }
-
-                    if (isnan(H_min[i][parent])){
-                        H_min[i][parent] = score_diff;
-                    } else {
-                        H_min[i][parent] = min(H_min[i][parent], score_diff);
-                    }
-                }
-            }
-        }
-
-        // For the plus1 parents        
-        // plus1parents are those parents that are not in the aliases
-        vector<int> plus1parents;
-        vector<int> plus1parent_inds;
-
-        for (size_t j = 0; j < nvars; j++){
-            if (j == i) {
-                continue;
-            }
-            if (find(potential_parents[i].begin(), potential_parents[i].end(), j) == potential_parents[i].end()){
-                // label not in aliases so it is a plus1 parent
-                plus1parents.push_back(j);
-                //plus1parents.push_back(potential_parents[i]);
-                plus1parent_inds.push_back(j);
-            }
-        }
-
-        for(size_t j = 0; j < plus1parents.size(); j++){ 
-            vector<double> score_diffs;
-            for (size_t k = 0; k < scoretable[i].size(); k++){
-                score_diffs.push_back(scoretable[i][k][j] - scoretable[i][0][j]);
-            }
-            H_max[i][plus1parent_inds[j]] = *max_element(score_diffs.begin(), score_diffs.end());
-            H_min[i][plus1parent_inds[j]] = *min_element(score_diffs.begin(), score_diffs.end());
-        }
-
-    }            
-    return make_pair(H_min, H_max);
-}
-
-
-
-
-
-
-

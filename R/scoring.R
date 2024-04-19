@@ -20,51 +20,21 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
     }
     ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
 
-    # print("labels:")
-    # print(labels(data)[[2]])
-    # print("aliases:")
     aliases <- lapply(ret$aliases, function(a) a + 1)
-    #print(aliases)
     diff_matrices <- get_diff_matrices(ret$rowmaps, ret$scoretable, aliases, labels(data)[[2]])
 
     ret$H_min <- diff_matrices$H_min
     ret$H_max <- diff_matrices$H_max
     ret$H_min_adj <- (ret$H_min> 0)*1
     ret$H_max_adj <- (ret$H_max> 0)*1
-
-    # print("H_min:")
-    # print(ret$H_min)
     ret$bidag_scores <- myscore
     ret$labels <- labels(data)[[2]]
     return(ret)
 }
 
-# get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
-#     # get the non banned parents in some way
-#     poss_non_banned_plus1_parents <- c(1,2,3,4,5)
-#     non_banned_parents <- c(1,2,3) #lapply(aliases, function(a) a + 1)
-#     poss_non_banned_plus1_parents <- c(7,3,9)    
-#     f_bar_z <- c() # the row in the summed score table
-#     # get the column (i.e. plus1 parent) that gives the max score
-#     # Use this to find the row in the $maxrow table  
-
-#     #mapfit$scoretable$maxmatrices
-
-#     #The $maxrow parts contain the index of the row with the highest score (in the original score tables), when the parent set corresponding to the row in that table is excluded due to the order constraint.
-
-#     #The $maxmatrix parts contain the maximum score, and the columns correspond to the case with no additional parents, and then with each one included. To get the DAG, you would need to check which parents from the search space are allowed from the order to get the row of the $maxmatrix table, then which plus1 parents are allowed (as columns), find the max amongst those columns and then get the row from the same entry in the $maxrow part.
-
-
-
-# }
-
 get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
     nvars <- length(rowmaps)
-
-    print("rowmaps")
-    print(rowmaps)
-
     H_min = matrix(, nrow = nvars, ncol = nvars)
     H_max = matrix(, nrow = nvars, ncol = nvars)
     colnames(H_min) <- var_labels
@@ -74,41 +44,35 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 
     for (i in seq(nvars)) {
         var <- rowmaps[[i]]
-        # print("#############")
-        # print("var:")
-        # print(var_labels[[i]])
-        # print("aliases:")
-        # print(aliases[[i]])
-        # print("forward hashs:")
-        # print(var$forward)
-
-        # total number of possible parents         
+        # total number of possible parents
         n_pos_parents <- length(aliases[[i]])# sqrt(length(var$forward))
-        
+
         # For the possible parents, i.e. not plus1 parents
         # We exclude each parent in turn and see how the score changes
         for (parent_ind in seq(n_pos_parents)){
             # if no possible parents, skip
             if(n_pos_parents == 0) next # since seq is weird
             parent <- aliases[[i]][[parent_ind]] # parent to exclude
-            for (hash in var$forward){                
-                
+            for (hash in var$forward){
+
                 # Check if the parent is in the hash
                 check <- (hash-1) %% 2^(parent_ind)
                 if (check < 2^(parent_ind-1)){
-                    
+                    # has parent parent
+                    #print(paste0("Has parent ind: ", parent_ind))
+
                     # Compute the hash with the parent excluded
-                    hash_with_parent <- hash + 2^(parent_ind-1)                                        
+                    hash_with_parent <- hash + 2^(parent_ind-1)
                     # Using the no plus1 score table, i.e. index 1
-                    score_diff <- scoretable[[i]][[1]][var$backwards[[hash_with_parent]]] - scoretable[[i]][[1]][var$backwards[[hash]]]                    
+                    score_diff <- scoretable[[i]][[1]][var$backwards[[hash_with_parent]]] - scoretable[[i]][[1]][var$backwards[[hash]]]
                     # Update the H matrices
-                    if (is.na(H_max[i, parent])){                        
+                    if (is.na(H_max[i, parent])){
                         H_max[i,parent] <- score_diff
                     } else {
                         H_max[i, parent] <- max(H_max[i, parent], score_diff)
                     }
 
-                    if (is.na(H_min[i, parent])){                        
+                    if (is.na(H_min[i, parent])){
                         H_min[i,parent] <- score_diff
                     } else {
                         H_min[i, parent] <- min(H_min[i, parent], score_diff)
@@ -117,7 +81,7 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
             }
         }
 
-        ## For the plus1 parents        
+        ## For the plus1 parents
         # plus1parents are those parents that are not in the aliases
         plus1parents <- c()
         plus1parent_inds <- c()
@@ -136,9 +100,9 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
             j <- j + 1
         }
 
-        for(j in seq(1, length(plus1parents))){ 
+        for(j in seq(1, length(plus1parents))){
             score_diffs <- scoretable[[i]][[j+1]] - scoretable[[i]][[1]] # the first one is the no plus1 score table. Subtracting all at once.
-            H_max[i, plus1parent_inds[j]] <- max(score_diffs) 
+            H_max[i, plus1parent_inds[j]] <- max(score_diffs)
             H_min[i, plus1parent_inds[j]] <- min(score_diffs)
         }
     }
@@ -152,7 +116,7 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
   MAP <- TRUE
 
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP, 
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP,
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
   print("score from MCMC:")
@@ -181,9 +145,9 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$space <- res$result$endspace
   ret$rowmaps <- res$rowmaps
   ret$maxmatrices <- res$maxmatrices
-  ret$maxmatrix <- res$maxmatrices$maxmatrix    
+  ret$maxmatrix <- res$maxmatrices$maxmatrix
   ret$maxrow <- lapply(res$maxmatrices$maxrow, function(a) a - 1)
-  
+
     # print("Info for node 3")
     # print("scoretable:")
     # print("adjacency")
@@ -197,7 +161,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
     # print("maxmatrix")
     # print(ret$maxmatrix[[3]])
     # print("maxrow")
-    # print(ret$maxrow[[3]]) 
+    # print(ret$maxrow[[3]])
     # print("rowmaps")
     # print(ret$rowmaps[[3]])
     # print("rowmaps_backwards")
@@ -206,7 +170,7 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   #ret$bidag_scores # put it in here too
 
   #print("max matrices/banned scores:")
-  #print(ret$bannedscore) 
+  #print(ret$bannedscore)
   return(ret)
 }
 

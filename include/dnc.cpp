@@ -36,19 +36,6 @@ struct Vis {
     };
 };
 
-// /**
-//  * Generic function to print a matrix
-// */
-// template <typename T> void print_matrix(const vector<vector<T>> & matrix) {
-//     for (size_t i = 0; i < matrix.size(); i++)
-//     {
-//         for (size_t j = 0; j < matrix[i].size(); j++)
-//         {
-//             cout << matrix[i][j] << " ";
-//         }
-//         cout << endl;
-//     }
-// }
 
 /**
  * Function that converts a matrix to a boost graph
@@ -81,8 +68,6 @@ vector<int> dnc(OrderScoring &scoring,
 
     IsoComps iso_comps = structure_components(G_H_min, G_H_max);
 
-    //printIsoComps(iso_comps);
-
     // Go through the isocomps and update the subcomponents
     // accoring to their dependence.
     // iterate over isolated components
@@ -98,9 +83,8 @@ vector<int> dnc(OrderScoring &scoring,
             new_cubcomponents_created = restructure_components(iso_comp, scoring);
         }
     }
-    //printIsoComps(iso_comps);
 
-    // Create the final DAG and order by, for each isocomp, 
+    // Create the final DAG and order by, for each isocomp,
     // joining the subcomponents accorinng to a topological order of their dependencies
     size_t p = scoring.numparents.size();
     vector<vector<bool>> adjmat_full(p, vector<bool>(p, 0));
@@ -116,22 +100,13 @@ vector<int> dnc(OrderScoring &scoring,
     
     for (auto & iso_comp: iso_comps.iso_comps){
         for (auto & subcomp: iso_comp.subcomps){
-            for (size_t i = 0; i < subcomp.opt_adjmat.size(); i++)
-            {
+            for (size_t i = 0; i < subcomp.opt_adjmat.size(); i++) {
                 for (auto & node : subcomp.nodes){
                     adjmat_full[i][node] = subcomp.opt_adjmat[i][node];
                 }
             }
         }
     }
-
-    // Print the full order
-    cout << "Full order: ";
-    for (size_t i = 0; i < order_full.size(); i++)
-    {
-        cout << order_full[i] << " ";
-    }
-    cout << endl;
 
     // Sum the scores of the subcomponents
     double score = 0;
@@ -141,15 +116,8 @@ vector<int> dnc(OrderScoring &scoring,
         }
     }
 
-    // print the full adjmat
-    // cout << "Full adjmat: " << endl;
-    print_matrix(adjmat_full);
-    // print it
     cout << "Total score: " << score << endl;
     return(order_full);
-    // adjmat_full = order_to_dag(order_full, scoring);
-
-    // return(adjmat_full);
 }
 
 /**
@@ -600,3 +568,110 @@ vector<vector<bool>> merged_component_dependencies(const vector<vector<bool>> & 
 
     return(merged_components_adjmat);
 }
+
+
+pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(OrderScoring & scores){
+    // just call the other function
+    return get_diff_matrices(scores.rowmaps_backwards, scores.rowmaps_forward, scores.scoretable, scores.potential_parents); 
+
+}
+
+pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(vector<Rcpp::IntegerVector> rowmaps_backwards,vector<Rcpp::IntegerVector> rowmaps_forward, vector<vector<vector<double>>> scoretable, vector<vector<int>> potential_parents){
+    
+    size_t nvars = rowmaps_backwards.size();
+    
+    vector<vector<bool>> H_min_isset(nvars, vector<bool>(nvars, false));
+    vector<vector<bool>> H_max_isset(nvars, vector<bool>(nvars, false));
+
+    vector<vector<double>> H_min(nvars, vector<double>(nvars, 0));
+    vector<vector<double>> H_max(nvars, vector<double>(nvars, 0));
+    
+    for (size_t i = 0; i < nvars; i++) {
+        // total number of possible parents         
+        size_t n_pos_parents = potential_parents[i].size();
+
+        // For the possible parents, i.e. not plus1 parents
+        // We exclude each parent in turn and see how the score changes
+        for (size_t parent_ind = 0; parent_ind < n_pos_parents; parent_ind++){
+            // if no possible parents, skip
+            if(n_pos_parents == 0) continue; // since seq is weird
+            int parent = potential_parents[i][parent_ind]; // parent to exclude
+            for (auto & hash: rowmaps_forward[i]){
+                // Check if the parent is in the hash
+                int check = hash % (1 << (parent_ind+1));
+
+                if (check < (1 << parent_ind)){
+                    // Compute the hash with the parent excluded
+                    int hash_with_parent = hash + (1 << (parent_ind));  
+
+                    // Using the no plus1 score table, i.e. index 1
+                    double score_diff = scoretable[i][0][rowmaps_backwards[i][hash_with_parent]] - scoretable[i][0][rowmaps_backwards[i][hash]];                    
+
+                    // Update the H matrices
+                    if (!H_max_isset[i][parent]){                        
+                        H_max[i][parent] = score_diff;
+                        H_max_isset[i][parent] = true;
+                    } else {
+                        H_max[i][parent] = max(H_max[i][parent], score_diff);
+                    }
+
+                    if (!H_min_isset[i][parent]){
+                        H_min[i][parent] = score_diff;
+                        H_min_isset[i][parent] = true;
+                    } else {
+                        H_min[i][parent] = min(H_min[i][parent], score_diff);
+                    }
+                }
+            }
+        }
+
+        // For the plus1 parents        
+        // plus1parents are those parents that are not in the aliases
+        vector<int> plus1parents;
+
+        for (size_t j = 0; j < nvars; j++){
+            if (j == i) {
+                continue;
+            }
+            if (find(potential_parents[i].begin(), potential_parents[i].end(), j) == potential_parents[i].end()){
+                // label not in aliases so it is a plus1 parent
+                plus1parents.push_back(j);
+            }
+        }
+       
+        for(size_t j = 0; j < plus1parents.size(); j++){ 
+            vector<double> score_diffs;
+
+            for (size_t k = 0; k < scoretable[i][0].size(); k++){ 
+                 score_diffs.push_back(scoretable[i][j+1][k] - scoretable[i][0][k]);
+            }
+ 
+            H_max[i][plus1parents[j]] = *max_element(score_diffs.begin(), score_diffs.end());
+            H_min[i][plus1parents[j]] = *min_element(score_diffs.begin(), score_diffs.end());
+        }        
+
+    }
+    // Threshold H_min and H_max at 0 and save in new matrices
+    // H_min_mat and H_max_mat
+    vector<vector<bool>> H_min_mat(nvars, vector<bool>(nvars, false));
+    vector<vector<bool>> H_max_mat(nvars, vector<bool>(nvars, false));
+    for (size_t i = 0; i < nvars; i++)
+    {
+        for (size_t j = 0; j < nvars; j++)
+        {
+            if(i==j) continue;
+            // should maybe take care of float value precision
+            H_min_mat[i][j] = H_min[i][j] > 0;            
+            H_max_mat[i][j] = H_max[i][j] > 0;        
+        }
+    }
+
+    return make_pair(H_min_mat, H_max_mat);
+}
+
+
+
+
+
+
+

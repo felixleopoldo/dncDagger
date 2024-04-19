@@ -56,8 +56,10 @@ struct IsoComps
 vector<size_t> merged_neig_cycles(const vector<vector<bool>> & compdep);
 vector<int> dnc(OrderScoring &scoring, vector<vector<bool>> &h_min, vector<vector<bool>> &h_max);
 void printIsoComps(IsoComps &iso_comps);
-bool restructure_components(IsoComp & iso_comp,  OrderScoring & scoring);
-void subcomponents_update(IsoComp &iso_comp,  OrderScoring &scoring);
+bool restructure_components(IsoComp & iso_comp, OrderScoring & scoring);
+void subcomponents_update(IsoComp &iso_comp, OrderScoring & scoring);
 vector<int> concatenate_subcomponents(const IsoComp & iso_comp, OrderScoring & scoring);
 vector<vector<bool>> subcomponents_dependence(const IsoComp & iso_comp, OrderScoring & scoring);
 IsoComps structure_components(Graph &G_H_min, Graph &G_H_max);
+pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(vector<Rcpp::IntegerVector> rowmaps_backwards,vector<Rcpp::IntegerVector> rowmaps_forward, vector<vector<vector<double>>> scoretable, vector<vector<int>> potential_parents);
+pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(OrderScoring & scores);
