@@ -6,6 +6,7 @@ setwd(paste(wd,"BiDAG", sep="/"))
 sourceAll(path = "R", echo=FALSE, verbose=FALSE)
 sourceCpp("src/cppfns.cpp")
 setwd(wd)
+source("R/export_to_gobnilp_score_tables.R")
 
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
                       bgepar = list(am = 1, aw = NULL),
@@ -119,8 +120,15 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP,
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
+
   print("score from MCMC:")
   print(res$result$score)
+
+#   print("Writing gobnilp scoretables")
+#   write_gobnilp_scores(res$result$scoretable$tables, 
+#                        res$result$scoretable$adjacency, 
+#                        "gobnilpscores.txt")
+#    print("done")
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {

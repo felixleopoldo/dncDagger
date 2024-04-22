@@ -5,9 +5,9 @@ library("Rcpp")
 # library("testit")
 library(argparser)
 library("BiDAG")
-print("test")
-Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
+Sys.setenv("PKG_CXXFLAGS" = "-fconcepts -Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
 sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
+sourceCpp("include/dnc.cpp",  verbose = TRUE)
 
 
 optimal_order <- function(cpp_friendly_scores, initial_sub_order){

@@ -10,5 +10,5 @@ do
     TO=$((i * N_SEEDS_EACH + N_SEEDS_EACH -1 + START_SEED))
     echo $FROM
     echo $TO
-    Rscript R/run_opruner.R --seeds_from $FROM --seeds_to $TO --output_dir $4 --filename $5 &
+    Rscript R/benchmark_opruner.R --seeds_from $FROM --seeds_to $TO --output_dir $4 --filename $5 &
 done

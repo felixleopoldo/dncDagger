@@ -42,9 +42,10 @@ source("R/opruner.r")
 # Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
 
 # sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
+# sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
 
 # Example usage:
-# $ script R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
+# $ Rscript R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
 
 p <- arg_parser("Order pruning")
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
@@ -56,7 +57,7 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(20, 20) # Number of nodes 
+ns <- seq(20, 25) # Number of nodes 
 ds <- seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
@@ -69,7 +70,7 @@ chi <- 0.5
 edgepf <- 2
 
 timing <- data.frame(matrix(ncol = 14, nrow = 0))
-x <- c("N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
+x <- c("alg", "N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
 skipseeds <- c(333) # some problem
 
@@ -119,16 +120,20 @@ for (n in ns) {
                             bdepar=list(chi=chi, edgepf=edgepf), # one of these should be ignored
                             plus1it=2) 
           
+          print("Running optimal order pruning")         
           start <- proc.time()[1] 
-          print("running optimal order pruning")         
           res <- optimal_order(ret, c())
-          totaltime <- as.numeric(proc.time()[1] - start)
-          #res <- dnc(ret, ret$bidag_scores)
-           #totaltime <- as.numeric(proc.time()[1] - start) - res$tot_order_to_dag_time
-           #print("varav Total order to dag time")
-           #print(res$tot_order_to_dag_time)
-          print("Total time")
-          print(totaltime)
+          op_totaltime <- as.numeric(proc.time()[1] - start)
+          print("Total time orderpruner")
+          print(op_totaltime)
+          
+          print("Running D&C")         
+          start <- proc.time()[1] 
+          res_dnc <- r_dnc(ret)
+          dnc_totaltime <- as.numeric(proc.time()[1] - start)
+          print("Total time D&C")
+          print(dnc_totaltime)
+
           # We run the itsearch here too for comparison of the scores.
           # itsearch is not guraranteed to be optimal but foor these small scale
           # graphs it seems to usually be.
@@ -141,13 +146,25 @@ for (n in ns) {
             #   print(itscore)
 
           #print("Score from order pruner")
-          #print(res$score)
-          df <- data.frame(N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
-                          totaltime = c(totaltime), 
+          print("Score from D&C order pruner")
+          print(res$log_score)
+          df_dnc <- data.frame(alg=c("dnc"), N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                          totaltime = c(dnc_totaltime), 
+                          max_particles = c(res_dnc$max_n_particles), tot_particles = c(res_dnc$tot_n_particles), 
+                          scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+                          edgepf=c(edgepf))
+
+          df_op <- data.frame(alg=c("orderpruner"),N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                          totaltime = c(op_totaltime), 
                           max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
                           scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
                           edgepf=c(edgepf))
+          
+          
+
+            df <- rbind(df_dnc, df_op)
           write.csv(df, file = results_filename, row.names = FALSE)
+
         }
       }
     }

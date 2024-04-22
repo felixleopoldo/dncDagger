@@ -4,7 +4,7 @@
 #include "include/opruner_right.h"
 #include "include/OrderScoring.h"
 #include "include/dnc.h"
-//#include "include/path_pruning.h"
+// #include "include/path_pruning.h"
 
 using namespace std::chrono;
 
@@ -25,8 +25,6 @@ std::vector<std::string> split(std::string s, std::string delimiter)
     res.push_back(s.substr(pos_start));
     return res;
 }
-
-
 
 int main(int argc, char **argv)
 {
@@ -105,29 +103,24 @@ int main(int argc, char **argv)
     Rcpp::List ret = R.parseEval(r_code);
 
     OrderScoring scoring = get_score(ret);
-    size_t p = scoring.numparents.size();
 
     auto start = high_resolution_clock::now();
- 
-    // // convert these into vector<vector<double>>
-    vector<vector<bool>> H_max_adj(p, vector<bool>(p));
-    vector<vector<bool>> H_min_adj(p, vector<bool>(p));
-  
-    // print H_min_adj and H_max_adj
-    tie(H_min_adj, H_max_adj) = get_diff_matrices(scoring);
 
-    vector<int> dnc_order = dnc(scoring, H_min_adj, H_max_adj);
+    const auto &[dnc_order, dnc_score, dnc_max_particles, dnc_tot_n_particles] = dnc(scoring);
     vector<vector<bool>> dnc_mat = order_to_dag(dnc_order, scoring);
-
+    
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     cout << "Time taken by dnc function: " << duration.count() << " milliseconds" << endl;
-    
+
     print_matrix(dnc_mat);
+    cout << "Dnc score: " << dnc_score << endl;
+    cout << "Dnc max particles: " << dnc_max_particles << endl;
+    cout << "Dnc total particles: " << dnc_tot_n_particles << endl;
 
-    vector<RightOrder> initial_right_orders = {}; 
+    vector<RightOrder> initial_right_orders = {};
 
-     start = high_resolution_clock::now();
+    start = high_resolution_clock::now();
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);
     cout << log_score << endl;
 
@@ -138,19 +131,15 @@ int main(int argc, char **argv)
         cout << order[i] << " ";
     }
     cout << endl;
+    cout << "Score: " << log_score << endl;
+    cout << "Max particles: " << max_n_particles << endl;
+    cout << "Total particles: " << tot_n_particles << endl;
 
     vector<vector<bool>> dag = order_to_dag(order, scoring);
-    // print as matrix
+    // print as matrix    
+    stop = high_resolution_clock::now();
     cout << "DAG: " << endl;
-    for (size_t i = 0; i < dag.size(); i++)
-    {
-        for (size_t j = 0; j < dag[i].size(); j++)
-        {
-            cout << dag[i][j] << " ";
-        }
-        cout << endl;
-    }    
-
-     stop = high_resolution_clock::now();
-     duration = duration_cast<milliseconds>(stop - start);
+    print_matrix(dag);
+    duration = duration_cast<milliseconds>(stop - start);
+    cout << "Time taken by opruner_right function: " << duration.count() << " milliseconds" << endl;
 }

@@ -979,13 +979,6 @@ Rcpp::List r_opruner_right(Rcpp::List ret, Rcpp::List r_initial_right_order)
         initial_right_orders.push_back(initial_order);
     }
 
-    // cout << "initial right orders: " << initial_right_orders.size() << endl;
-    // cout << "initial right orders: " << endl;
-    // for (auto &ro : initial_right_orders)
-    // {
-    //     cout << ro << endl;
-    // }
-
     // Add the initial right orders
 
     const auto &[order, log_score, node_scores, max_n_particles, tot_n_particles] = opruner_right(scoring, initial_right_orders);

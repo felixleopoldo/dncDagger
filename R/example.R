@@ -5,6 +5,7 @@ set.seed(2)
 # Generate data
 N = 50
 ndim <- 40
+#ndim <- 20
 dag <- randDAG(ndim, 3, method ="interEr", par1=5, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 3, method ="interEr", par1=2, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
@@ -89,6 +90,17 @@ print(totaltime - isocomps$tot_order_to_dag_time)
 
 print("Tot get order time")
 print(isocomps$tot_order_time)
+
+print("C++ time")
+start <- proc.time()
+ret <- r_dnc(cpp_friendly_scores)
+totaltime <- proc.time() - start
+print(totaltime)
+
+dag1 <- r_order_to_dag(cpp_friendly_scores, ret$order)
+
+print(ret)
+
 
 # dag <- igraph::graph_from_adjacency_matrix(isocomps$adjmat, mode="directed")
 # png("dnc.png")

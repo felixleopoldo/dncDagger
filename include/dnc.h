@@ -50,11 +50,10 @@ struct IsoComps
     size_t tot_n_particles = 0;
     double tot_order_to_dag_time = 0;
     double tot_order_time = 0;
-
 };
 
 vector<size_t> merged_neig_cycles(const vector<vector<bool>> & compdep);
-vector<int> dnc(OrderScoring &scoring, vector<vector<bool>> &h_min, vector<vector<bool>> &h_max);
+std::tuple<vector<int>, double, size_t, size_t> dnc(OrderScoring &scoring);
 void printIsoComps(IsoComps &iso_comps);
 bool restructure_components(IsoComp & iso_comp, OrderScoring & scoring);
 void subcomponents_update(IsoComp &iso_comp, OrderScoring & scoring);
@@ -63,3 +62,4 @@ vector<vector<bool>> subcomponents_dependence(const IsoComp & iso_comp, OrderSco
 IsoComps structure_components(Graph &G_H_min, Graph &G_H_max);
 pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(vector<Rcpp::IntegerVector> rowmaps_backwards,vector<Rcpp::IntegerVector> rowmaps_forward, vector<vector<vector<double>>> scoretable, vector<vector<int>> potential_parents);
 pair<vector<vector<bool>>, vector<vector<bool>>> get_diff_matrices(OrderScoring & scores);
+Rcpp::List r_dnc(Rcpp::List ret);
