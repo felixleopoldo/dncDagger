@@ -615,9 +615,9 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
         else
         {
             // Print the initial Right order
-            cout << endl;
-            cout << "Rightorders_prev before add in front and prune indep front "<< endl;
-            for (auto& rr : right_orders_prev) cout << rr << endl;
+            //cout << endl;
+            //cout << "Rightorders_prev before add in front and prune indep front "<< endl;
+            //for (auto& rr : right_orders_prev) cout << rr << endl;
             // Loop over all the sub orders from the previous round.            
             for (RightOrder &prev_order : right_orders_prev) // O( (p CR n-1) )
             {
@@ -663,14 +663,14 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
             // cout << "# orders after add in front and prune indep front: " << orders1 << endl;
             // print the orders
 
-            cout << "Rightorders after addinng node and pruning optimal_front, equal_and_unordered_top, no_right_gaps  "<< endl;
-            for (auto& rr : right_orders) cout << rr << endl;
+            ///cout << "Rightorders after addinng node and pruning optimal_front, equal_and_unordered_top, no_right_gaps  "<< endl;
+            //for (auto& rr : right_orders) cout << rr << endl;
 
         
             // For orders with the same nodes, keep only one having the maximal score.
             right_orders = prune_equal_sets(right_orders, true); // O(#particles * p) = O( (p CR n) * n * p) space and time.
-            cout << "Rightorders after prune equal sets "<< endl;
-            for (auto& rr : right_orders) cout << rr << endl;
+            //cout << "Rightorders after prune equal sets "<< endl;
+            //for (auto& rr : right_orders) cout << rr << endl;
 
             orders2 = right_orders.size();
 
