@@ -4,12 +4,19 @@ library(bench)
 set.seed(2)
 # Generate data
 N = 50
-ndim <- 40
+#ndim <- 40
 #ndim <- 20
-dag <- randDAG(ndim, 3, method ="interEr", par1=5, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
+ndim <- 6
+# matching
+adjmat <- matrix(0, nrow=ndim, ncol=ndim)
+adjmat[1,2] <- 1
+adjmat[3,4] <- 1
+adjmat[5,6] <- 1
+
+#dag <- randDAG(ndim, 3, method ="interEr", par1=5, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 3, method ="interEr", par1=2, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
 #dag <- randDAG(ndim, 2, method ="er", par1=4, par2=0.01, DAG = TRUE, weighted = FALSE, wFUN = list(runif, min=0.1, max=1))
-adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
+#adjmat <- 1 * t(as(dag, "matrix") ) # transpose?
 
 colnames(adjmat) <- paste0("X", 1:ndim)
 
@@ -44,11 +51,11 @@ cpp_friendly_scores <<- get_scores(filename, scoretype="bge",
                                   plus1it=2)
 
 # print("running optimal order pruning")
-# initial_suborder <- c()
+initial_suborder <- c()
 # start <- proc.time()[1]
-# opr <- optimal_order(cpp_friendly_scores, initial_suborder)
-# print("optimal order:")
-# print(opr)
+opr <- optimal_order(cpp_friendly_scores, initial_suborder)
+print("optimal order:")
+print(opr)
 # adjmat <- optimal_dag(cpp_friendly_scores$bidag_scores, cpp_friendly_scores$space, opr$order)
 # G_opt <- igraph::graph_from_adjacency_matrix(adjmat, mode="directed")
 # totaltime <- as.numeric(proc.time()[1] - start)

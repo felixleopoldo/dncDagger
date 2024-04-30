@@ -564,22 +564,6 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
     vector<double> top_scores = get_unrestricted_vec(p, scoring);
     //vector<double> bottom_scores = all_restr(p, scoring);
 
-    // cout << "Matrix loose restr" << endl;
-    // print_matrix(M);
-    // cout << "Matrix hard restr" << endl;
-    // print_matrix(H);
-
-    // // RightOrder reference
-    // RightOrder reference_order = init_right_order(top_scores, scoring);
-    // reference_order = add_node_in_front(reference_order, p - 1, top_scores, scoring); // Adding node p-1, i.e.:  <[...], p-1>
-    // update_insertion_scores(reference_order, scoring);
-    // // As a reference order, add all nodes in order a.t.m.: <1,2,...,p-1>
-    // for (int i = p - 2; i >= 0; i--)
-    // {
-    //     reference_order = add_node_in_front(reference_order, i, top_scores, scoring);
-    //     update_insertion_scores(reference_order, scoring); // maybe do this after the loop?
-    // }
-
     size_t orders1 = 0;
     size_t orders2 = 0;
     size_t orders3 = 0;
@@ -630,7 +614,11 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
         }
         else
         {
-            // Loop over all the sub orders from the previous round.
+            // Print the initial Right order
+            cout << endl;
+            cout << "Rightorders_prev before add in front and prune indep front "<< endl;
+            for (auto& rr : right_orders_prev) cout << rr << endl;
+            // Loop over all the sub orders from the previous round.            
             for (RightOrder &prev_order : right_orders_prev) // O( (p CR n-1) )
             {
                 // cout << "prev_order " << prev_order << endl;
@@ -673,9 +661,16 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
             // O(|right_orders_prev| * p) particles. space
             orders1 = right_orders.size();
             // cout << "# orders after add in front and prune indep front: " << orders1 << endl;
+            // print the orders
 
+            cout << "Rightorders after addinng node and pruning optimal_front, equal_and_unordered_top, no_right_gaps  "<< endl;
+            for (auto& rr : right_orders) cout << rr << endl;
+
+        
             // For orders with the same nodes, keep only one having the maximal score.
             right_orders = prune_equal_sets(right_orders, true); // O(#particles * p) = O( (p CR n) * n * p) space and time.
+            cout << "Rightorders after prune equal sets "<< endl;
+            for (auto& rr : right_orders) cout << rr << endl;
 
             orders2 = right_orders.size();
 
@@ -701,6 +696,7 @@ tuple<vector<int>, double, vector<double>, size_t, size_t> opruner_right(OrderSc
                 right_orders_tmp.push_back(move(ro));
             }
             right_orders = move(right_orders_tmp);
+            
 
             orders3 = right_orders.size();
             // cout << "# orders after has gap prune: " << orders3 << endl;
@@ -832,7 +828,7 @@ tuple<vector<int>, double, vector<int>, double, vector<double>, size_t, size_t> 
             update_insertion_scores(initial_order, scoring);
         }
 
-        // Manipution the insertion scores, so that the initial order doesnt get pruned.
+        // Manipulating the insertion scores, so that the initial order doesnt get pruned.
         for (size_t i = 0; i < initial_order.size_hidden(); i++)
         {
             size_t hidden_node = initial_order.order[i];
@@ -843,13 +839,6 @@ tuple<vector<int>, double, vector<int>, double, vector<double>, size_t, size_t> 
 
         initial_right_orders.push_back(initial_order);
     }
-
-    // cout << "initial right orders: " << initial_right_orders.size() << endl;
-    // cout << "initial right orders: " << endl;
-    // for (auto &ro : initial_right_orders)
-    // {
-    //     cout << ro << endl;
-    // }
 
     // Add the initial right orders
 

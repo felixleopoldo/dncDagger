@@ -1,48 +1,10 @@
 library("Rcpp")
 library("Jmisc")
 library("pcalg")
-#library("ggplot2")
-#library("testit")
 library(argparser)
 source("R/scoring.R")
 source("R/opruner.r")
 
-# # This function generates Gaussian data from a DAG
-# # following the topological order.
-# rmvDAG <- function(trueDAGedges, N) {
-#   trueDAG <- 1 * (trueDAGedges != 0) # the edge presence in the DAG
-#   n <- ncol(trueDAG) # number of variables
-#   data <- matrix(0, nrow = N, ncol = n) # to store the simulated data
-#   top_order <- rev(BiDAG:::DAGtopartition(n, trueDAG)$permy) # go down order
-#   for (jj in top_order) {
-#     parents <- which(trueDAG[, jj] == 1) # find parents
-#     lp <- length(parents) # number of parents
-#     if (lp == 0) {
-#       # no parents
-#       data[, jj] <- 0
-#     } else if (lp == 1) {
-#       # one parent
-#       data[, jj] <- data[, parents] * trueDAGedges[parents, jj]
-#     } else {
-#       # more than one parent
-#       data[, jj] <- colSums(t(data[, parents]) * trueDAGedges[parents, jj])
-#     }
-#     # add random noise
-#     data[, jj] <- data[, jj] + rnorm(N)
-#   }
-#   data
-# }
-
-# wFUN <- function(m, lb, ub) {
-#   # This function gives edges weights between the bounds
-#   # with both positive and negative signs
-#   runif(m, lb, ub) * sample(c(-1, 1), m, replace = TRUE)
-# }
-
-# Sys.setenv("PKG_CXXFLAGS" = "-Wall -pipe -Wno-unused -pedantic -Wall -L /usr/lib/R/lib -l R -L /usr/local/lib/R/site-library/RInside/lib/ -l RInside -Wl,-rpath,/usr/local/lib/R/site-library/RInside/lib  -I /usr/local/lib/R/site-library/RInside/include/ -I /usr/local/lib/R/site-library/Rcpp/include/ -I /usr/share/R/include/ -std=c++17 -O3")
-
-# sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
-# sourceCpp("include/opruner_right.cpp",  verbose = TRUE)
 
 # Example usage:
 # $ Rscript R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
@@ -57,8 +19,11 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
+
+
 ns <- seq(20, 25) # Number of nodes 
-ds <- seq(0, 2, 0.1) # graph density (avg indegree)
+#ds <- seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(0) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -126,7 +91,8 @@ for (n in ns) {
           op_totaltime <- as.numeric(proc.time()[1] - start)
           print("Total time orderpruner")
           print(op_totaltime)
-          
+          print(res)
+ 
           print("Running D&C")         
           start <- proc.time()[1] 
           res_dnc <- r_dnc(ret)

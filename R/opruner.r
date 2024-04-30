@@ -786,3 +786,26 @@ concat_suborders2 <- function(isocomp){
 
     return(list("order"=full_order, "score"=total_score))
 }
+
+sample_matching <- function(p) {
+    # Sample disjoint pairs of integers in the set [1,..,p] x [1,..,p].
+    elements <- 1:p
+    edges <- list()
+
+    adjmat <- matrix(0, nrow = p, ncol = p)
+    # sample pairs from elements and store in edges
+    i <- 1
+    while (length(elements) > 1) {
+        pair <- sample(elements, 2, replace=FALSE)
+        # delete the paried elements from elements
+        elements <- elements[!elements %in% pair]
+
+        edges[[i]] <- pair
+        i <- i + 1
+    }
+    # add the edges as 1s in adjmat
+    for (pair in edges) {
+        adjmat[pair[1], pair[2]] <- 1
+    }
+    return(adjmat)
+}
