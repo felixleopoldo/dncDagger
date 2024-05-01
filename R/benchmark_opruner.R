@@ -5,7 +5,6 @@ library(argparser)
 source("R/scoring.R")
 source("R/opruner.r")
 
-
 # Example usage:
 # $ Rscript R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
 
@@ -19,11 +18,9 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-
-
 ns <- seq(20, 25) # Number of nodes 
-ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-#ds <- c(0) #seq(0, 2, 0.1) # graph density (avg indegree)
+#ds <- seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(0) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -84,15 +81,7 @@ for (n in ns) {
                             bgepar=list(am=am, aw=aw), 
                             bdepar=list(chi=chi, edgepf=edgepf), # one of these should be ignored
                             plus1it=2) 
-          
-          print("Running optimal order pruning")         
-          start <- proc.time()[1] 
-          res <- optimal_order(ret, c())
-          op_totaltime <- as.numeric(proc.time()[1] - start)
-          print("Total time orderpruner")
-          print(op_totaltime)
-          print(res)
- 
+
           print("Running D&C")         
           start <- proc.time()[1] 
           res_dnc <- r_dnc(ret)
@@ -100,35 +89,30 @@ for (n in ns) {
           print("Total time D&C")
           print(dnc_totaltime)
 
-          # We run the itsearch here too for comparison of the scores.
-          # itsearch is not guraranteed to be optimal but foor these small scale
-          # graphs it seems to usually be.
-          #set.seed(1) # This is just for iterative MCMC and will be overwritten
-            #   data <- read.csv(filename, check.names = FALSE)
-            #   myscore <- scoreparameters(scoretype = scoretype, data, bgepar = list(am = am, aw=aw))
-            #   itres <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE, plus1it = NULL, iterations = NULL) 
-            #   itscore <- itres$result$score
-            #   print("Score from iterative MCMC")
-            #   print(itscore)
-
-          #print("Score from order pruner")
-          print("Score from D&C order pruner")
-          print(res$log_score)
+          print("Score from D&C")
+          print(res_dnc$log_score)
           df_dnc <- data.frame(alg=c("dnc"), N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
                           totaltime = c(dnc_totaltime), 
                           max_particles = c(res_dnc$max_n_particles), tot_particles = c(res_dnc$tot_n_particles), 
                           scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
                           edgepf=c(edgepf))
 
-          df_op <- data.frame(alg=c("orderpruner"),N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
-                          totaltime = c(op_totaltime), 
-                          max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
-                          scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
-                          edgepf=c(edgepf))
+        #   print("Running optimal order pruning")         
+        #   start <- proc.time()[1] 
+        #   res <- optimal_order(ret, c())
+        #   op_totaltime <- as.numeric(proc.time()[1] - start)
+        #   print("Total time orderpruner")
+        #   print(op_totaltime)
+        #   print(res)
+        #   df_op <- data.frame(alg=c("orderpruner"),N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+        #                   totaltime = c(op_totaltime), 
+        #                   max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
+        #                   scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+        #                   edgepf=c(edgepf))
+        #   df <- rbind(df_dnc, df_op)
           
+          df <- df_dnc
           
-
-            df <- rbind(df_dnc, df_op)
           write.csv(df, file = results_filename, row.names = FALSE)
 
         }
