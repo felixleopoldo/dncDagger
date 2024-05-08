@@ -145,3 +145,6 @@ for (n in ns) {
 
 write.csv(timing, file = argv$filename, row.names = FALSE)
 print(timing)
+
+
+# Translation of the code above to bash

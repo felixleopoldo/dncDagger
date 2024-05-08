@@ -115,9 +115,8 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
 }
 
 get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
-  MAP <- TRUE
-
-  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = MAP,
+  
+  res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE,
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
 

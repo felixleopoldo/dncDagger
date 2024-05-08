@@ -3,10 +3,12 @@ library(dplyr)
 #library(tidyverse)
 library(latex2exp)
 library(patchwork)
-timings <- read.csv("../joinedresults.csv") # change this
+#timings <- read.csv("../joinedresults.csv") # change this
+timings <- read.csv("../joint.csv") # change this
 #dir.create("figures")
 
-algs <- c("dnc", "orderpruner")
+algs <- c("dnc")
+#algs <- c("dnc", "orderpruner")
 
 for (alg in algs){
   print(alg)
@@ -31,13 +33,13 @@ for (alg in algs){
   
   
   for (dd in ds[["d"]]) {
-    #print(timing %>% filter(d == dd))
+    print(timing %>% filter(d == dd))
     mylm <- lm(log2(tot_particles) ~ n + log2(n), timing %>% filter(d == dd)) # Could change to max_particles
   
     stderrs <- sqrt(diag(vcov(mylm)))
     astderrs <- c(astderrs, stderrs[2])
     bstderrs <- c(bstderrs, stderrs[3])
-    #print( coef(mylm))
+    print( coef(mylm))
     a <- coef(mylm)[["n"]]
     b <- coef(mylm)[["log2(n)"]] # gets NA for some reason
     as <- c(as, a)
@@ -53,12 +55,12 @@ for (alg in algs){
     ggtitle(TeX("$\\log_2(N_p) \\sim  a*p + b*\\log_2(p) + c$")) +
     #xlab("graph (d)ensity") + ylab("a") +
     xlab("d") + ylab("a") +
-    ylim(-20,20) +
+    #ylim(-20,20) +
     geom_line(colour="blue") +
     geom_point(colour="blue")+
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size = 14))+
-    geom_errorbar(aes(ymin=a-aerr, ymax=a+aerr), width=.2, colour="blue")
+    geom_errorbar(aes(ymin=a-aerr, ymax=a+aerr), width=.09, colour="blue")
   #                position=position_dodge(0.05))
   
   #ggsave("figures/aplots.png")
@@ -69,12 +71,12 @@ for (alg in algs){
     geom_line(colour="blue") +
     geom_point(colour="blue") +
     theme_bw() +
-    ylim(-300,300) +
+    #ylim(-300,300) +
     theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size = 14)) +
-    geom_errorbar(aes(ymin=b-berr, ymax=b+berr), width=.2, colour="blue",
+    geom_errorbar(aes(ymin=b-berr, ymax=b+berr), width=.09, colour="blue",
                   position=position_dodge(0.05))
   
-  p1 + p2 
+  p1 / p2 
   
   
   #ggsave("figures/bplots.png")
@@ -82,7 +84,7 @@ for (alg in algs){
  
   
   ## Reg coeffs ########
-  png("figures/reglines.png")
+  png(paste0("figures/",alg,"_reglines.png"))
   par(mfrow=c(2,1))
   
   #errbar(as.factor(ds[["d"]]), as, y+error_values,y-error_values,type='b')
