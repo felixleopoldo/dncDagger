@@ -20,7 +20,7 @@ reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
 ns <- seq(20, 25) # Number of nodes 
 #ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-ds <- c(0) #seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(1.5) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -31,14 +31,18 @@ aw <- NULL
 chi <- 0.5
 edgepf <- 2
 
+gobnilp <- TRUE
+
 timing <- data.frame(matrix(ncol = 14, nrow = 0))
 x <- c("alg", "N", "lb", "ub", "n", "d", "seed", "totaltime", "max_particles", "tot_particles")
 
-skipseeds <- c(333) # some problem
+skipseeds <- c() # some problem
 
 results <- list.files(argv$output_dir)
 
 dir.create(argv$output_dir)
+dir.create(paste0("/home/felix/git/orderpruner","/results/gobnilp_scores"))
+
 
 for (n in ns) {
     print(paste("n:", n))
@@ -54,10 +58,15 @@ for (n in ns) {
         } else if (scoretype == "bde") {
           name <- paste(datastr, "_scoretype=", scoretype, "_chi=", chi, "_edgepf=", edgepf, ".csv", sep = "")
         }
+        
         results_filename <- paste(argv$output_dir,"/", name , sep = "")
+        gobnilp_scores_filename  <- NULL
+        if (gobnilp) {
+            gobnilp_scores_filename  <- paste(argv$output_dir,"/gobnilp_scores/", name , sep = "")
+        } 
 
         if (basename(results_filename) %in% results) {
-          
+          # Do nothing
         } else {
           print(paste("n: ", n, "d: ", d, "seed: ", i))
 
@@ -80,8 +89,10 @@ for (n in ns) {
           ret <- get_scores(filename, scoretype=scoretype, 
                             bgepar=list(am=am, aw=aw), 
                             bdepar=list(chi=chi, edgepf=edgepf), # one of these should be ignored
-                            plus1it=2) 
-
+                            plus1it=2,
+                            gobnilp_scores_filename=gobnilp_scores_filename
+                            )
+          
           print("Running D&C")         
           start <- proc.time()[1] 
           res_dnc <- r_dnc(ret)
@@ -97,6 +108,16 @@ for (n in ns) {
                           scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
                           edgepf=c(edgepf))
 
+          if (!is.null(gobnilp_scores_filename)) {
+
+            output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 bash -c 'time /myappdir/gobnilp/bin/gobnilp ", gobnilp_scores_filename, "'"), intern=TRUE)
+            #output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 /myappdir/gobnilp/bin/gobnilp ", gobnilp_scores_filename), intern=TRUE)
+            print("******** gobnilp output")
+            #print(output)
+            print("******** gobnilp output. End")
+
+        }            
+          
         #   print("Running optimal order pruning")         
         #   start <- proc.time()[1] 
         #   res <- optimal_order(ret, c())
@@ -114,7 +135,7 @@ for (n in ns) {
           df <- df_dnc
           
           write.csv(df, file = results_filename, row.names = FALSE)
-
+        
         }
       }
     }

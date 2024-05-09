@@ -27,16 +27,20 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
     # write_gobnilp_scores(tables, adjmat, scorefile)
     # print("done")
     
+    
     p <- length(tables)
-    write(p, file = scorefile, append = FALSE)
-
+    output_str <- paste0(p, "\n")
+    #write(p, file = scorefile, append = FALSE)
+    
     labels <- colnames(adjmat) # maybe the labels are wrong here..
 
     # For each node
     for (i in seq(p)) {
         n_plus1 <- length(tables[[i]])
         nscores <- n_plus1 * length(tables[[i]][[1]]) # the first plus1 table
-        write(paste(labels[i], nscores), file = scorefile, append = TRUE)
+        #write(paste(labels[i], nscores), file = scorefile, append = TRUE)
+        output_str <- paste(output_str, paste(labels[i], nscores), "\n", sep="")
+        
         potparents <- colnames(adjmat)[adjmat[, i] == 1]
         parenttable <- parent_table(p, length(potparents))
 
@@ -53,7 +57,9 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
             parents <- potparents[parvec]
             parentstr <- paste(parents, collapse = " ")
             str <- paste(str, parentstr)
-            write(str, file = scorefile, append = TRUE)
+            #write(str, file = scorefile, append = TRUE)
+            output_str <- paste(output_str, str, "\n", sep="")
+            
         }
 
         # The below is for the plus1 tables
@@ -77,11 +83,14 @@ write_gobnilp_scores <- function(tables, adjmat, scorefile) {
                 parents <- potparents[parvec]
                 parentstr <- paste(parents, collapse = " ")
                 str <- paste(str, parentstr)
-                write(str, file = scorefile, append = TRUE)
+
+                #write(str, file = scorefile, append = TRUE)
+                output_str <- paste(output_str, str, "\n", sep="")
             }
             j <- j + 1
         }
     }
+    return(output_str)
 }
 
 # # Export score tables to GOBNILP format

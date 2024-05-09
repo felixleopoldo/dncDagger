@@ -10,7 +10,11 @@ source("R/export_to_gobnilp_score_tables.R")
 
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
                       bgepar = list(am = 1, aw = NULL),
-                      bdepar = list(chi = 0.5, edgepf = 2), plus1it=NULL, iterations=NULL) {
+                      bdepar = list(chi = 0.5, edgepf = 2), 
+                      plus1it=NULL, 
+                      iterations=NULL,
+                      gobnilp_scores_filename=NULL
+                      ) {
     MAP <- TRUE
 
     data <- read.csv(filename, check.names = FALSE)
@@ -19,7 +23,10 @@ get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
     } else if (scoretype == "bde") {
         myscore <- scoreparameters(scoretype = scoretype, data[-1, ], bdepar = bdepar)
     }
-    ret <- get_plus1_score_essentials_for_cpp(myscore, plus1it=plus1it, iterations=iterations)
+    ret <- get_plus1_score_essentials_for_cpp(myscore, 
+                                              plus1it=plus1it, 
+                                              iterations=iterations, 
+                                              gobnilp_scores_filename=gobnilp_scores_filename)
 
     aliases <- lapply(ret$aliases, function(a) a + 1)
     diff_matrices <- get_diff_matrices(ret$rowmaps, ret$scoretable, aliases, labels(data)[[2]])
@@ -114,7 +121,7 @@ get_diff_matrices <- function(rowmaps, scoretable, aliases, var_labels){
     return(list(H_min = H_min, H_max = H_max))
 }
 
-get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL) {
+get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations=NULL, gobnilp_scores_filename=NULL) {
   
   res <- iterativeMCMC(myscore, chainout = TRUE, scoreout = TRUE, MAP = TRUE,
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
@@ -123,11 +130,16 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   print("score from MCMC:")
   print(res$result$score)
 
-#   print("Writing gobnilp scoretables")
-#   write_gobnilp_scores(res$result$scoretable$tables, 
-#                        res$result$scoretable$adjacency, 
-#                        "gobnilpscores.txt")
-#    print("done")
+    if (!is.null(gobnilp_scores_filename)) {
+
+        #print("Writing gobnilp scoretables")
+        gobnscores<-write_gobnilp_scores(res$result$scoretable$tables, 
+                                res$result$scoretable$adjacency, 
+                                gobnilp_scores_filename)
+        #cat(gobnscores)
+        write(gobnscores, file = gobnilp_scores_filename)
+        #print("done")
+    }
 
   ret <- list()
   ret$parenttable <- lapply(res$ptab$parenttable, function(a) {
@@ -148,31 +160,12 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
   ret$plus1listsparents <- lapply(res$plus1lists$parents, function(a) a - 1)
   ret$scoretable <- res$result$scoretable$table
   ret$bannedscore <- res$bannedscore
-  ret$MAP <- MAP
+  ret$MAP <- TRUE
   ret$space <- res$result$endspace
   ret$rowmaps <- res$rowmaps
   ret$maxmatrices <- res$maxmatrices
   ret$maxmatrix <- res$maxmatrices$maxmatrix
   ret$maxrow <- lapply(res$maxmatrices$maxrow, function(a) a - 1)
-
-    # print("Info for node 3")
-    # print("scoretable:")
-    # print("adjacency")
-    # print(res$result$scoretable$adjacency)
-    # print("tables")
-    # print(res$result$scoretable$tables[[3]])
-    # print("aliases")
-    # print(ret$aliases[[3]])
-    # print("parenttable")
-    # print(ret$parenttable[[3]])
-    # print("maxmatrix")
-    # print(ret$maxmatrix[[3]])
-    # print("maxrow")
-    # print(ret$maxrow[[3]])
-    # print("rowmaps")
-    # print(ret$rowmaps[[3]])
-    # print("rowmaps_backwards")
-    # print(ret$rowmaps_backwards[[3]])
 
   #ret$bidag_scores # put it in here too
 

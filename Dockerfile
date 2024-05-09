@@ -15,15 +15,19 @@ RUN apt-get update
 RUN apt install git -y
 RUN git clone https://github.com/atofigh/edmonds-alg.git
 
+
+RUN wget https://github.com/apptainer/apptainer/releases/download/v1.3.1/apptainer_1.3.1_amd64.deb
+RUN apt install -y ./apptainer_1.3.1_amd64.deb
+# Setuid install
+#RUN echo setuid installation
+#RUN wget https://github.com/apptainer/apptainer/releases/download/v1.3.1/apptainer-suid_1.3.1_amd64.deb
+#RUN dpkg -i ./apptainer-suid_1.3.1_amd64.deb
+
+# Fix namespace creation. Needed? 
+#RUN sh -c 'echo kernel.unprivileged_userns_clone=1 >/etc/sysctl.d/90-unprivileged_userns.conf'
+#RUN sysctl -p /etc/sysctl.d /etc/sysctl.d/90-unprivileged_userns.conf
+
+# Order pruner:
 WORKDIR /orderpruner
 COPY . .
-# RUN make
-
-
-
-#RUN R -e "install.packages(\"ggplot2\")" --no-save
-#RUN R -e "install.packages(c(\"testit\"))" --no-save
-#RUN R -e "install.packages(c(\"dplyr\"))" --no-save
-
-#RUN apt-get -y update
-#RUN apt-get install gdb -y
+# run make on the singularity container
