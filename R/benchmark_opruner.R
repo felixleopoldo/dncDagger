@@ -20,7 +20,7 @@ reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
 ns <- seq(20, 25) # Number of nodes 
 #ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-ds <- c(1.5) #seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(0,0.5) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -30,6 +30,8 @@ am <- 0.1
 aw <- NULL
 chi <- 0.5
 edgepf <- 2
+
+algs <- c("dnc", "gobnilp")
 
 gobnilp <- TRUE
 
@@ -61,7 +63,7 @@ for (n in ns) {
         
         results_filename <- paste(argv$output_dir,"/", name , sep = "")
         gobnilp_scores_filename  <- NULL
-        if (gobnilp) {
+        if ("gobnilp" %in% algs) {
             gobnilp_scores_filename  <- paste(argv$output_dir,"/gobnilp_scores/", name , sep = "")
         } 
 
@@ -69,6 +71,10 @@ for (n in ns) {
           # Do nothing
         } else {
           print(paste("n: ", n, "d: ", d, "seed: ", i))
+          
+          # create empty data frame to be filled up with results
+            df <- data.frame(matrix(ncol = 15, nrow = 0))
+            colnames(df) <- c("alg", "N", "ub", "lb", "n", "d", "seed", "totaltime", "max_particles", "tot_particles", "scoretype", "am", "aw", "chi", "edgepf")
 
           set.seed(i)
           adjmat <- 1 * (as(pcalg::randDAG(n, d = d, method = "er"), "matrix") != 0)
@@ -93,47 +99,71 @@ for (n in ns) {
                             gobnilp_scores_filename=gobnilp_scores_filename
                             )
           
-          print("Running D&C")         
-          start <- proc.time()[1] 
-          res_dnc <- r_dnc(ret)
-          dnc_totaltime <- as.numeric(proc.time()[1] - start)
-          print("Total time D&C")
-          print(dnc_totaltime)
+          if ("dnc" %in% algs) {
 
-          print("Score from D&C")
-          print(res_dnc$log_score)
-          df_dnc <- data.frame(alg=c("dnc"), N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
-                          totaltime = c(dnc_totaltime), 
-                          max_particles = c(res_dnc$max_n_particles), tot_particles = c(res_dnc$tot_n_particles), 
-                          scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
-                          edgepf=c(edgepf))
+            print("Running D&C")         
+            start <- proc.time()[1] 
+            res_dnc <- r_dnc(ret)
+            dnc_totaltime <- as.numeric(proc.time()[1] - start)
+            print("Total time D&C")
+            print(dnc_totaltime)
 
-          if (!is.null(gobnilp_scores_filename)) {
+            print("Score from D&C")
+            print(res_dnc$log_score)
+            df_dnc <- data.frame(alg=c("dnc"), N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                            totaltime = c(dnc_totaltime), 
+                            max_particles = c(res_dnc$max_n_particles), tot_particles = c(res_dnc$tot_n_particles), 
+                            scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+                            edgepf=c(edgepf))
+            df <- rbind(df, df_dnc)
 
-            output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 bash -c 'time /myappdir/gobnilp/bin/gobnilp ", gobnilp_scores_filename, "'"), intern=TRUE)
-            #output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 /myappdir/gobnilp/bin/gobnilp ", gobnilp_scores_filename), intern=TRUE)
-            print("******** gobnilp output")
-            #print(output)
-            print("******** gobnilp output. End")
+          }
+          if ("gobnilp" %in% algs) {
+            # Compose the gibnilp.set file
+            # Name the gobnilp.set file
+            dir.create("gobnilp/")
+            dir.create("results/gobnilp/")
+            gobnilp_conf_name <- paste0("gobnilp/", basename(name),  ".set")
+            gobnilp_time_name <- paste0("results/gobnilp/", basename(name),  ".txt")
+            setstr <- paste0('gobnilp/scoring/continuous = TRUE\n',
+                             'gobnilp/scoring/score_type = "BGe"\n',
+                             'gobnilp/outputfile/scoreandtime = "',
+                             gobnilp_time_name, 
+                             '"')
+            write(setstr, gobnilp_conf_name)
+            # Read the time  from the time file as a csv file
+            output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
+            
+            gobnilp_time <- read.csv(gobnilp_time_name, sep="\t", header = FALSE)
+
+            df_gobnilp <- data.frame(alg=c("gobnilp"), N=c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                            totaltime = c(gobnilp_time[["V2"]]), 
+                            max_particles = c("NULL"), tot_particles = c("NULL"), 
+                            scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+                            edgepf=c(edgepf))
+            
+            df <- rbind(df, df_gobnilp)
 
         }            
           
-        #   print("Running optimal order pruning")         
-        #   start <- proc.time()[1] 
-        #   res <- optimal_order(ret, c())
-        #   op_totaltime <- as.numeric(proc.time()[1] - start)
-        #   print("Total time orderpruner")
-        #   print(op_totaltime)
-        #   print(res)
-        #   df_op <- data.frame(alg=c("orderpruner"),N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
-        #                   totaltime = c(op_totaltime), 
-        #                   max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
-        #                   scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
-        #                   edgepf=c(edgepf))
-        #   df <- rbind(df_dnc, df_op)
-          
-          df <- df_dnc
-          
+          if ("orderpruner" %in% algs) {
+            print("Running optimal order pruning")         
+            start <- proc.time()[1] 
+            res <- optimal_order(ret, c())
+            op_totaltime <- as.numeric(proc.time()[1] - start)
+            print("Total time orderpruner")
+            print(op_totaltime)
+            print(res)
+            df_op <- data.frame(alg=c("orderpruner"),N = c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 
+                            totaltime = c(op_totaltime), 
+                            max_particles = c(res$max_n_particles), tot_particles = c(res$tot_n_particles), 
+                            scoretype=c(scoretype), am=c(as.numeric(am)), aw=c(format(aw)), chi=c(chi), 
+                            edgepf=c(edgepf))
+            df <- rbind(df_dnc, df_op)
+            
+          }
+          print(df)
+
           write.csv(df, file = results_filename, row.names = FALSE)
         
         }
