@@ -20,7 +20,7 @@ reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
 ns <- seq(20, 25) # Number of nodes 
 #ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-ds <- c(0,0.5) #seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(0,0.5, 2) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -132,7 +132,7 @@ for (n in ns) {
                              '"')
             write(setstr, gobnilp_conf_name)
             # Read the time  from the time file as a csv file
-            output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
+            output <- system(paste0("singularity exec library://felixleopoldo/bn/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
             
             gobnilp_time <- read.csv(gobnilp_time_name, sep="\t", header = FALSE)
 
