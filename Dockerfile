@@ -31,3 +31,6 @@ RUN apt install -y ./apptainer_1.3.1_amd64.deb
 WORKDIR /orderpruner
 COPY . .
 # run make on the singularity container
+
+# set default servers for apptainer
+RUN apptainer remote add --no-login SylabsCloud cloud.sycloud.io

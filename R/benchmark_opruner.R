@@ -162,8 +162,7 @@ for (n in ns) {
                             edgepf=c(edgepf))
             df <- rbind(df_dnc, df_op)
             
-          }
-          print(df)
+          }          
 
           write.csv(df, file = results_filename, row.names = FALSE)
         
