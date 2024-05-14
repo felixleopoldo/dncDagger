@@ -43,8 +43,8 @@ skipseeds <- c() # some problem
 results <- list.files(argv$output_dir)
 
 dir.create(argv$output_dir)
-#dir.create(paste0("/home/felix/git/orderpruner","/results/gobnilp_scores"))
-dir.create("results/gobnilp_scores")
+dir.create(paste0(argv$output_dir,"/gobnilp_scores"))
+#dir.create("results/gobnilp_scores")
 
 
 for (n in ns) {
@@ -123,9 +123,9 @@ for (n in ns) {
             # Compose the gibnilp.set file
             # Name the gobnilp.set file
             dir.create("gobnilp/")
-            dir.create("results/gobnilp/")
+            dir.create(paste0(argv$output_dir,"/gobnilp/"))
             gobnilp_conf_name <- paste0("gobnilp/", basename(name),  ".set")
-            gobnilp_time_name <- paste0("results/gobnilp/", basename(name),  ".txt")
+            gobnilp_time_name <- paste0(argv$output_dir,"/gobnilp/", basename(name),  ".txt")
             setstr <- paste0('gobnilp/scoring/continuous = TRUE\n',
                              'gobnilp/scoring/score_type = "BGe"\n',
                              'gobnilp/outputfile/scoreandtime = "',
