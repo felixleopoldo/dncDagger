@@ -43,7 +43,8 @@ skipseeds <- c() # some problem
 results <- list.files(argv$output_dir)
 
 dir.create(argv$output_dir)
-dir.create(paste0("/home/felix/git/orderpruner","/results/gobnilp_scores"))
+#dir.create(paste0("/home/felix/git/orderpruner","/results/gobnilp_scores"))
+dir.create("results/gobnilp_scores")
 
 
 for (n in ns) {
