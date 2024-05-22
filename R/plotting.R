@@ -4,7 +4,7 @@ library(dplyr)
 library(latex2exp)
 library(patchwork)
 #timings <- read.csv("../joinedresults.csv") # change this
-timings <- read.csv("../joint.csv") # change this
+timings <- read.csv("../paper_joint.csv") # change this
 #dir.create("figures")
 
 algs <- c("dnc")
@@ -15,7 +15,6 @@ for (alg in algs){
   
   timing <- timings[timings["alg"]==alg,]
 
-  
   ds <- timing %>% distinct(d)
   
   #####################
