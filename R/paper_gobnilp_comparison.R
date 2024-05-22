@@ -4,7 +4,7 @@ library(dplyr)
 library(latex2exp)
 library(patchwork)
 # timings <- read.csv("../joinedresults.csv") # change this
-timings <- read.csv("../paper_gobnilpjoint.csv") # change this
+timings <- read.csv("../paper_joint.csv") # change this
 # dir.create("figures")
 
 timings["d"] <- timings["d"] 
