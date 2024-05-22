@@ -20,7 +20,7 @@ reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
 ns <- seq(20, 25) # Number of nodes 
 #ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-ds <- c(0,0.5) #seq(0, 2, 0.1) # graph density (avg indegree)
+ds <- c(0,0.5, 2) #seq(0, 2, 0.1) # graph density (avg indegree)
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -43,7 +43,8 @@ skipseeds <- c() # some problem
 results <- list.files(argv$output_dir)
 
 dir.create(argv$output_dir)
-dir.create(paste0("/home/felix/git/orderpruner","/results/gobnilp_scores"))
+dir.create(paste0(argv$output_dir,"/gobnilp_scores"))
+#dir.create("results/gobnilp_scores")
 
 
 for (n in ns) {
@@ -122,9 +123,9 @@ for (n in ns) {
             # Compose the gibnilp.set file
             # Name the gobnilp.set file
             dir.create("gobnilp/")
-            dir.create("results/gobnilp/")
+            dir.create(paste0(argv$output_dir,"/gobnilp/"))
             gobnilp_conf_name <- paste0("gobnilp/", basename(name),  ".set")
-            gobnilp_time_name <- paste0("results/gobnilp/", basename(name),  ".txt")
+            gobnilp_time_name <- paste0(argv$output_dir,"/gobnilp/", basename(name),  ".txt")
             setstr <- paste0('gobnilp/scoring/continuous = TRUE\n',
                              'gobnilp/scoring/score_type = "BGe"\n',
                              'gobnilp/outputfile/scoreandtime = "',
@@ -132,7 +133,7 @@ for (n in ns) {
                              '"')
             write(setstr, gobnilp_conf_name)
             # Read the time  from the time file as a csv file
-            output <- system(paste0("apptainer exec docker://bpimages/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
+            output <- system(paste0("singularity exec library://felixleopoldo/bn/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
             
             gobnilp_time <- read.csv(gobnilp_time_name, sep="\t", header = FALSE)
 
@@ -161,8 +162,7 @@ for (n in ns) {
                             edgepf=c(edgepf))
             df <- rbind(df_dnc, df_op)
             
-          }
-          print(df)
+          }          
 
           write.csv(df, file = results_filename, row.names = FALSE)
         
