@@ -131,8 +131,9 @@ for (n in ns) {
             write(setstr, gobnilp_conf_name)
             # Read the time  from the time file as a csv file
             
-            output <- system(paste0("singularity exec library://felixleopoldo/bn/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
-            
+            # Using the singularity version of 
+            output <- system(paste0("singularity exec gobnilp_4347c64.sif bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
+
             gobnilp_time <- read.csv(gobnilp_time_name, sep="\t", header = FALSE)
 
             df_gobnilp <- data.frame(alg=c("gobnilp"), N=c(N), ub = c(ub), lb = c(lb), n = c(n), d = c(d), seed = c(i), 

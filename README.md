@@ -10,19 +10,23 @@
     ```sh
         docker run -it --privileged -w /neurips24 -v $(pwd):/neurips24 dnc bash
     ```
-4. To run the 1000 random seeds (starting at 1) simulations using 50 cores in parallel (20 for each core) do:
+4. Build a singularity image for gobnilp
+    ```sh
+       singularity pull docker://bpimages/gobnilp:4347c64
+    ```
+5. To run the 1000 random seeds (starting at 1) simulations using 50 cores in parallel (20 for each core) do:
     ```sh
         ./runsims.sh 1 50 20 results/ tmpfile.csv
     ```
-5. Join the results into one CSV file called paper_joint.csv by
+6. Join the results into one CSV file called paper_joint.csv by
     ```sh
         Rscript R/benchmark_opruner.R --seeds_from 1 --seeds_to 1000 --output_dir results/ --filename paper_joint.csv
     ```
-6. To generate all figures except for Figure 4 run 
+7. To generate all figures except for Figure 4 run 
     ```sh
         Rscript R/paper_benchmarks.R
     ```
-7. To generate Figure 4 do
+8. To generate Figure 4 do
     ```sh
         Rscript R/gobnilp_comparison.R
     ```
