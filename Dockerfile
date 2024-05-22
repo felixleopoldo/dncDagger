@@ -15,19 +15,19 @@ RUN apt-get update
 RUN apt install git -y
 RUN git clone https://github.com/atofigh/edmonds-alg.git
 
-
+# Installing Apptainer, could be useful if Docker is not available.
 RUN wget https://github.com/apptainer/apptainer/releases/download/v1.3.1/apptainer_1.3.1_amd64.deb
 RUN apt install -y ./apptainer_1.3.1_amd64.deb
-# Setuid install
-#RUN echo setuid installation
-#RUN wget https://github.com/apptainer/apptainer/releases/download/v1.3.1/apptainer-suid_1.3.1_amd64.deb
-#RUN dpkg -i ./apptainer-suid_1.3.1_amd64.deb
 
-# Fix namespace creation. Needed? 
-#RUN sh -c 'echo kernel.unprivileged_userns_clone=1 >/etc/sysctl.d/90-unprivileged_userns.conf'
-#RUN sysctl -p /etc/sysctl.d /etc/sysctl.d/90-unprivileged_userns.conf
+# install some R pakcages fro the plotting
+RUN R -e "install.packages(\"ggplot2\")" 
+RUN R -e "install.packages(\"dplyr\")" 
+RUN R -e "install.packages(\"latex2exp\")" 
+RUN R -e "install.packages(\"patchwork\")" 
 
 # Order pruner:
 WORKDIR /orderpruner
 COPY . .
+
+
 # run make on the singularity container
