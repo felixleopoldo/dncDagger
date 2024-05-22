@@ -24,14 +24,15 @@ RUN R -e "install.packages(\"ggplot2\")"
 RUN R -e "install.packages(\"dplyr\")" 
 RUN R -e "install.packages(\"latex2exp\")" 
 RUN R -e "install.packages(\"patchwork\")" 
+# RUN R -e "install.packages(\"quantreg\")" # not compatible with R 4.2.3 used here
 
 # set default servers for apptainer
 RUN apptainer remote add --no-login SylabsCloud cloud.sycloud.io
 
 # Order pruner:
-WORKDIR /orderpruner
-COPY . .
+#WORKDIR /orderpruner
+#COPY . .
   
-# run make on the singularity/apptainer container
+# can run make on the singularity/apptainer container
 
   
