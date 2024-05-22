@@ -25,12 +25,13 @@ RUN R -e "install.packages(\"dplyr\")"
 RUN R -e "install.packages(\"latex2exp\")" 
 RUN R -e "install.packages(\"patchwork\")" 
 
+# set default servers for apptainer
+RUN apptainer remote add --no-login SylabsCloud cloud.sycloud.io
+
 # Order pruner:
 WORKDIR /orderpruner
 COPY . .
+  
+# run make on the singularity/apptainer container
 
-
-# run make on the singularity container
-
-# set default servers for apptainer
-RUN apptainer remote add --no-login SylabsCloud cloud.sycloud.io
+  

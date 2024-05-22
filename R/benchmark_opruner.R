@@ -18,9 +18,9 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(20, 25) # Number of nodes 
-#ds <- seq(0, 2, 0.1) # graph density (avg indegree)
-ds <- c(0,0.5, 2) #seq(0, 2, 0.1) # graph density (avg indegree)
+ns <- seq(10, 30) # Number of nodes 
+ds <- seq(0, 2, 0.1) # graph density (avg indegree)
+
 lb <- 0.25 # SEM parameters lower bound
 ub <- 1 # SEM parameters upper bound
 N <- 300 # number of samples
@@ -122,17 +122,15 @@ for (n in ns) {
           if ("gobnilp" %in% algs) {
             # Compose the gibnilp.set file
             # Name the gobnilp.set file
-            dir.create("gobnilp/")
+            dir.create("gobnilp/") # weher the settings files are stored
             dir.create(paste0(argv$output_dir,"/gobnilp/"))
             gobnilp_conf_name <- paste0("gobnilp/", basename(name),  ".set")
             gobnilp_time_name <- paste0(argv$output_dir,"/gobnilp/", basename(name),  ".txt")
-            setstr <- paste0('gobnilp/scoring/continuous = TRUE\n',
-                             'gobnilp/scoring/score_type = "BGe"\n',
-                             'gobnilp/outputfile/scoreandtime = "',
-                             gobnilp_time_name, 
-                             '"')
+            setstr <- paste0('gobnilp/outputfile/scoreandtime = "', gobnilp_time_name, '"')
+
             write(setstr, gobnilp_conf_name)
             # Read the time  from the time file as a csv file
+            
             output <- system(paste0("singularity exec library://felixleopoldo/bn/gobnilp:4347c64 bash -c '/myappdir/gobnilp/bin/gobnilp ", "-g=", gobnilp_conf_name, " " , gobnilp_scores_filename, "'"), intern=TRUE)
             
             gobnilp_time <- read.csv(gobnilp_time_name, sep="\t", header = FALSE)
@@ -196,6 +194,3 @@ for (n in ns) {
 
 write.csv(timing, file = argv$filename, row.names = FALSE)
 print(timing)
-
-
-# Translation of the code above to bash

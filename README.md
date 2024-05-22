@@ -1,4 +1,4 @@
-### Instruction to replicate ths reuslts from the paper
+### Instruction to replicate the results presented in the paper
 
 0. Make sure the is an internet connection.
 1. Download Docker from docker.com
@@ -8,7 +8,7 @@
     ```
 3. Start a docker container by
     ```sh
-        docker run -it -w /neurips -v $(pwd):/neurips orderpruner bash
+        docker run -it --privileged -w /neurips24 -v $(pwd):/neurips24 orderpruner bash
     ```
 4. To run the 1000 random seeds (starting at 1) simulations using 50 cores in parallel (20 for each core) do:
     ```sh
