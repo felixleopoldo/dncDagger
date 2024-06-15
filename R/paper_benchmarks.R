@@ -2,8 +2,13 @@ library(ggplot2)
 library(dplyr)
 library(latex2exp)
 library(patchwork)
+library(argparser)
+
+p <- arg_parser("Benchmarking")
+p <- add_argument(p, "--filename", help = "Output filename", default="joined_results.csv") # the filename of the joined results
+argv <- parse_args(p)
 #library(quantreg) . #not working on R 4.2.3  
-timings <- read.csv("paper_joint.csv") # change this
+timings <- read.csv(argv$filename) # change this
 #dir.create("figures")
 timings["d"] <- timings["d"]
 

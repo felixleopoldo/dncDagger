@@ -22,19 +22,27 @@ The D&C order pruner is an exact structure learning algorithm for Bayesian netwo
 <!-- GETTING STARTED -->
 # Getting Started
 
- 
-Easies way to run the algorithms is to build a Docker image from the Docker file and run the algorithm in a container.
+ Clone the repository and make
+
+```sh
+git clone https://github.com/felixleopoldo/orderpruner.git
+```
+Easiest way to run the algorithms is to build a Docker image from the Docker file and run the algorithm in a container.
 
 ## Docker
 
 ```bash
     $ docker build . -t dnc
 ```
-
+Run the container and mount the current directory, with the repo
 ```bash
     $ docker run -w /mnt -v $(pwd):/mnt -it dnc
 ```
-Inside the 
+Inside the container run 
+```bash
+make
+```
+Now follow the instructions below
 
 ## Native
 
@@ -59,15 +67,13 @@ Inside the
 ### Installation
 
 
-Clone the repository and make
+After cloning th repo, type make 
 
-   ```sh
-   git clone https://github.com/felixleopoldo/orderpruner.git
-   make
-   ```
+```sh
+make
+```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
-The easiest way to get started is to create an Docker image based on Dockerfile and run the program there.
 
 
 <!-- USAGE EXAMPLES -->
@@ -75,20 +81,22 @@ The easiest way to get started is to create an Docker image based on Dockerfile 
 
 To run the algorithm with the data file *data/p20n300gaussdata.csv* type
 ```sh
-    ./run_opruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL
+./run_opruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL --output_csv dag_adjmat.csv
 ```
+The estimate dag is then as an adjacency matrix in the CSV file *dag_adjmat.csv*.
+If M_ij=1 in the adjacency matrix, then there is an edge i->j in the DAG.
 
 
 ## Benchmarks 
 To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
 
 ```sh
-    Rscript R/run_opruner.R --output_dir results --filename res.csv --seeds_from 1 --seeds_to 5
+Rscript R/benchmark_opruner.R --output_dir results --filename res.csv --seeds_from 1 --seeds_to 5
 ```
 
 This produces joined results in the file *res.csv* which can be analysed by typing
 ```R
-    source('R/plotting.R')
+source('R/plotting.R')
 ```
 
 
@@ -101,14 +109,6 @@ This produces joined results in the file *res.csv* which can be analysed by typi
 
 Distributed under the Apache 2.0 License. See `LICENSE.txt` for more information.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-<!-- CONTACT -->
-## Contact
-
-Felix Rios - felix leopoldo rios at gmail com
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

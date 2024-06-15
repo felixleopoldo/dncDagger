@@ -6,11 +6,11 @@ source("R/scoring.R")
 source("R/opruner.r")
 
 # Example usage:
-# $ Rscript R/benchmark_opruner.R  --filename joinedresults.csv --seeds_from 1 --seeds_to 1
+# $ Rscript R/benchmark_opruner.R  --filename joined_results.csv --seeds_from 1 --seeds_to 3
 
 p <- arg_parser("Order pruning")
 p <- add_argument(p, "--output_dir", help = "output dir", default = "results")
-p <- add_argument(p, "--filename", help = "Output filename") # the filename of the joined results
+p <- add_argument(p, "--filename", help = "Output filename", default ="joined_results.csv") # the filename of the joined results
 p <- add_argument(p, "--seeds_from", help = "Seeds from")
 p <- add_argument(p, "--seeds_to", help = "Seeds to")
 argv <- parse_args(p)
@@ -18,7 +18,7 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(10, 30) # Number of nodes 
+ns <- seq(15, 16) # Number of nodes 
 ds <- seq(0, 2, 0.1) # graph density (avg indegree)
 
 lb <- 0.25 # SEM parameters lower bound
