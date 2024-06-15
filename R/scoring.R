@@ -1,11 +1,9 @@
 rm(list = ls())
 library("Rcpp")
 library("Jmisc")
-wd <- getwd()
-setwd(paste(wd,"BiDAG", sep="/"))
-sourceAll(path = "R", echo=FALSE, verbose=FALSE)
-sourceCpp("src/cppfns.cpp")
-setwd(wd)
+
+insertSource("R/iterativeMCMC.R", package = "BiDAG")
+
 source("R/export_to_gobnilp_score_tables.R")
 
 get_scores <- function(filename,  scoretype = c("bge", "bde", "bdecat"),
