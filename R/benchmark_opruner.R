@@ -31,7 +31,7 @@ aw <- NULL
 chi <- 0.5
 edgepf <- 2
 
-algs <- c("dnc", "gobnilp")
+algs <- c("dnc")
 
 gobnilp <- TRUE
 
