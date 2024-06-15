@@ -125,8 +125,8 @@ get_plus1_score_essentials_for_cpp <- function(myscore, plus1it=NULL, iterations
                        plus1it=plus1it, iterations=iterations, verbose=TRUE) #this is bidag version 2.0.0
 
 
-  print("score from MCMC:")
-  print(res$result$score)
+  #print("score from MCMC:")
+  #print(res$result$score)
 
     if (!is.null(gobnilp_scores_filename)) {
 

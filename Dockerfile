@@ -15,7 +15,7 @@ RUN apt-get update
 RUN apt install git -y
 RUN git clone https://github.com/atofigh/edmonds-alg.git
 
-# Installing Apptainer, could be useful if Docker is not available.
+# Installing Apptainer, can be useful for benchmarking gobnilp if Docker is not available.
 RUN wget https://github.com/apptainer/apptainer/releases/download/v1.3.1/apptainer_1.3.1_amd64.deb
 RUN apt install -y ./apptainer_1.3.1_amd64.deb
 
@@ -24,6 +24,8 @@ RUN R -e "install.packages(\"ggplot2\")"
 RUN R -e "install.packages(\"dplyr\")" 
 RUN R -e "install.packages(\"latex2exp\")" 
 RUN R -e "install.packages(\"patchwork\")" 
+RUN R -e "install.packages(\"remotes\")"
+RUN R -e 'library(remotes); install_version("BiDAG", "2.0.0")'
 # RUN R -e "install.packages(\"quantreg\")" # not compatible with R 4.2.3 used here
 
 # set default servers for apptainer

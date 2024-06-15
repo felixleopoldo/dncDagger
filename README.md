@@ -8,47 +8,53 @@
 -->
 
 
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-<!-- 
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url] -->
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
-
 
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-The order pruner is an exact structure learning algorithm for Bayesian networks, using the order representation.
-It learns the order scores sequentially and at each step prune the paths which will not lead to the optimal order.
+The D&C order pruner is an exact structure learning algorithm for Bayesian networks, operating on the space of topological orders and using a divide and conquer technique.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
-<!-- 
-### Built With
-
-This section should list any major frameworks/libraries used to bootstrap your project. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-
-* [Next.js](https://nextjs.org/)
-* [React.js](https://reactjs.org/)
-
-<p align="right">(<a href="#top">back to top</a>)</p> -->
-
-
-
 <!-- GETTING STARTED -->
-## Getting Started
+# Getting Started
+
+ 
+Easies way to run the algorithms is to build a Docker image from the Docker file and run the algorithm in a container.
+
+## Docker
+
+```bash
+    $ docker build . -t dnc
+```
+
+```bash
+    $ docker run -w /mnt -v $(pwd):/mnt -it dnc
+```
+Inside the 
+
+## Native
+
+### Requirements
+
+- Boost 1.82.0 C++ library
+
+#### R packages
+- RInside
+- Rcpp
+- Jmisc
+- argparser
+- igraph
+- BiDAG 2.0.0
+
+#### For plotting:
+- ggplot2
+- dplyr
+- latex2exp
+- patchwork
 
 ### Installation
 
@@ -69,9 +75,11 @@ The easiest way to get started is to create an Docker image based on Dockerfile 
 
 To run the algorithm with the data file *data/p20n300gaussdata.csv* type
 ```sh
-    ./run_opruner --filename data/p20n300gaussdata.csv--scoretype bge --am 0.1 --aw NULL
+    ./run_opruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL
 ```
 
+
+## Benchmarks 
 To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
 
 ```sh
@@ -83,21 +91,6 @@ This produces joined results in the file *res.csv* which can be analysed by typi
     source('R/plotting.R')
 ```
 
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
