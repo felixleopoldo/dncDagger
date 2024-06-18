@@ -16,7 +16,7 @@
 
 The D&C order pruner is an exact structure learning algorithm for Bayesian networks, operating on the space of topological orders and using a divide and conquer technique.
 
-<p align="right">(<a href="#top">back to top</a>)</p>
+
 
 
 <!-- GETTING STARTED -->
@@ -25,7 +25,7 @@ The D&C order pruner is an exact structure learning algorithm for Bayesian netwo
  Clone the repository and make
 
 ```sh
-git clone https://github.com/felixleopoldo/orderpruner.git
+git clone https://github.com/felixleopoldo/dncpruner.git
 ```
 Easiest way to run the algorithms is to build a Docker image from the Docker file and run the algorithm in a container.
 
@@ -81,17 +81,17 @@ make
 
 To run the algorithm with the data file *data/p20n300gaussdata.csv* type
 ```sh
-./run_opruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL --output_csv dag_adjmat.csv
+./dncpruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL --output_csv dag_adjmat.csv
 ```
 The estimate dag is then as an adjacency matrix in the CSV file *dag_adjmat.csv*.
 If M_ij=1 in the adjacency matrix, then there is an edge i->j in the DAG.
 
 
 ## Benchmarks 
-To generate benchmarks (with the setting specified in *R/run_opruner.R*) type
+To generate benchmarks (with the setting specified in *R/benchmark_dncpruner.R*) type
 
 ```sh
-Rscript R/benchmark_opruner.R --output_dir results --filename res.csv --seeds_from 1 --seeds_to 5
+Rscript R/benchmark_dncpruner.R --output_dir results --filename res.csv --seeds_from 1 --seeds_to 5
 ```
 
 This produces joined results in the file *res.csv* which can be analysed by typing

@@ -3,7 +3,7 @@ library("Jmisc")
 library("pcalg")
 library(argparser)
 source("R/scoring.R")
-source("R/opruner.r")
+source("R/opruner.R")
 
 # Example usage:
 # $ Rscript R/benchmark_opruner.R  --filename joined_results.csv --seeds_from 1 --seeds_to 3
