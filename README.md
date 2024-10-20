@@ -79,12 +79,11 @@ make
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-To run the algorithm with the data file *data/p20n300gaussdata.csv* type
+To run the algorithm with the data file *data/asiadata.csv* type
 ```sh
 ./dncpruner --filename data/asiadata.csv --scoretype bge --am 0.1 --aw NULL --output_csv dag_adjmat.csv
 ```
-The estimate dag is then as an adjacency matrix in the CSV file *dag_adjmat.csv*.
-If M_ij=1 in the adjacency matrix, then there is an edge i->j in the DAG.
+The estimate dag is then as an adjacency matrix in the CSV file *dag_adjmat.csv*, where M_ij=1 in the adjacency matrix corresponds to the edge i->j in the DAG.
 
 
 ## Benchmarks 
@@ -96,7 +95,7 @@ Rscript R/benchmark_dncpruner.R --output_dir results --filename res.csv --seeds_
 
 This produces joined results in the file *res.csv* which can be analysed by typing
 ```R
-source('R/plotting.R')
+source('R/benchmark_dncpruner.R --filename res.csv')
 ```
 
 

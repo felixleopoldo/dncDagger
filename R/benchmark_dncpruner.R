@@ -18,7 +18,7 @@ print(as.integer(argv$seeds_from))
 
 reps <- seq(as.integer(argv$seeds_from), as.integer(argv$seeds_to))
 
-ns <- seq(15, 16) # Number of nodes 
+ns <- c(15, 16, 17) # Number of nodes 
 ds <- seq(0, 2, 0.1) # graph density (avg indegree)
 
 lb <- 0.25 # SEM parameters lower bound
